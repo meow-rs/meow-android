@@ -21,6 +21,10 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
     private var callback: Callback? = null
     private var service: IMeowService? = null
     private var callbackRegistered = false
+    // Remembered so onServiceDisconnected can rebind and resume the callback
+    // registration (state + traffic) when the :vpn process restarts.
+    private var bound = false
+    private var bindContext: Context? = null
 
     val serviceState: BaseService.State
         get() = try {
@@ -29,16 +33,26 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
             BaseService.State.Idle
         }
 
+    @Synchronized
     fun connect(context: Context, callback: Callback) {
         this.callback = callback
+        if (bound) return
+        bindContext = context
         val intent = Intent(context, io.github.madeye.meow.bg.VpnService::class.java)
             .setAction(io.github.madeye.meow.utils.Action.SERVICE)
-        context.bindService(intent, this, Context.BIND_AUTO_CREATE)
+        bound = context.bindService(intent, this, Context.BIND_AUTO_CREATE)
     }
 
+    @Synchronized
     fun disconnect(context: Context) {
-        unregisterCallback()
-        context.unbindService(this)
+        // Drop the rebind context first so a racing onServiceDisconnected
+        // cannot rebind after a clean disconnect.
+        bindContext = null
+        if (bound) {
+            unregisterCallback()
+            context.unbindService(this)
+            bound = false
+        }
         callback = null
         service = null
     }
@@ -56,12 +70,23 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
         callback?.stateChanged(serviceState, service.profileName ?: "", null)
     }
 
+    @Synchronized
     override fun onServiceDisconnected(name: ComponentName?) {
         callbackRegistered = false
         service = null
+        bound = false
         // VPN runs in a separate :vpn process; if it dies (system kill, crash),
         // the UI would otherwise keep showing the last-known state.
         callback?.stateChanged(BaseService.State.Stopped, "", null)
+        // Rebind immediately so registerCallback()/startListeningForBandwidth()
+        // run against the new process instance as soon as it is up. Without
+        // this, the Activity never re-registered, and state + traffic
+        // callbacks stayed dead until the Activity was recreated.
+        bindContext?.let { ctx ->
+            val intent = Intent(ctx, io.github.madeye.meow.bg.VpnService::class.java)
+                .setAction(io.github.madeye.meow.utils.Action.SERVICE)
+            bound = ctx.bindService(intent, this, Context.BIND_AUTO_CREATE)
+        }
     }
 
     private fun unregisterCallback() {
