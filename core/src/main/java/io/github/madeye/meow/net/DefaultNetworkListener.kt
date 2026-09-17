@@ -8,8 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
 
 object DefaultNetworkListener {
-    private var callback: ConnectivityManager.NetworkCallback? = null
-    private var connectivityManager: ConnectivityManager? = null
+    @Volatile private var callback: ConnectivityManager.NetworkCallback? = null
+    @Volatile private var connectivityManager: ConnectivityManager? = null
 
     fun start(service: android.net.VpnService, onNetworkChanged: (Network?) -> Unit) {
         val cm = service.getSystemService(ConnectivityManager::class.java)
