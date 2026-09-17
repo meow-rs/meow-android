@@ -2,7 +2,7 @@
 
 ![Feature Graphic](fastlane/metadata/android/en-US/images/featureGraphic.png)
 
-A Clash/meow Android client with a native Jetpack Compose UI, powered by [meow-rs](https://github.com/madeye/meow-rs) and lwip-based tun2socks.
+A Clash/meow Android client with a native Jetpack Compose UI, powered by [meow-rs](https://github.com/meow-rs/meow-rs) and lwip-based tun2socks.
 
 An iOS port is in public beta — see [madeye/meow-ios](https://github.com/madeye/meow-ios).
 
