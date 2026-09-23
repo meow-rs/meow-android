@@ -497,6 +497,7 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
     val scope = rememberCoroutineScope()
     val revertedMessage = stringResource(R.string.yaml_reverted)
     val savedMessage = stringResource(R.string.yaml_saved)
+    var confirmRevert by remember { mutableStateOf(false) }
 
     MeowScaffold(
         title = name,
@@ -506,12 +507,7 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
                 dirty = dirty,
                 valid = error == null,
                 canRevert = canRevert,
-                onRevert = {
-                    viewModel.revert { reverted ->
-                        handle.setText(reverted)
-                        scope.launch { snackbarHost.showSnackbar(revertedMessage) }
-                    }
-                },
+                onRevert = { confirmRevert = true },
                 onSave = {
                     viewModel.save(handle.text()) {
                         scope.launch { snackbarHost.showSnackbar(savedMessage) }
@@ -528,7 +524,14 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
             contentPadding = padding,
             onEdit = viewModel::onEdit,
             onRequestSave = { viewModel.save(it) {} },
-            onRequestRevert = { viewModel.revert { handle.setText(it) } },
+            onRequestRevert = {
+                viewModel.revert { reverted ->
+                    handle.setText(reverted)
+                    scope.launch { snackbarHost.showSnackbar(revertedMessage) }
+                }
+            },
+            confirmRevert = confirmRevert,
+            onDismissRevert = { confirmRevert = false },
             onNavigateBack = onBack,
             handle = handle,
         )

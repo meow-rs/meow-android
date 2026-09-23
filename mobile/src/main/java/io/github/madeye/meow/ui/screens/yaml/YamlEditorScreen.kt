@@ -45,12 +45,13 @@ fun YamlEditorScreen(
     onEdit: (String) -> Unit,
     onRequestSave: (String) -> Unit,
     onRequestRevert: () -> Unit,
+    confirmRevert: Boolean,
+    onDismissRevert: () -> Unit,
     onNavigateBack: () -> Unit,
     handle: SoraEditorHandle,
     modifier: Modifier = Modifier,
 ) {
     var confirmDiscard by remember { mutableStateOf(false) }
-    var confirmRevert by remember { mutableStateOf(false) }
 
     // Composes cleanly with predictive back: while clean, the handler is
     // disabled and the system animation runs as usual.
@@ -97,15 +98,15 @@ fun YamlEditorScreen(
 
     if (confirmRevert) {
         AlertDialog(
-            onDismissRequest = { confirmRevert = false },
+            onDismissRequest = onDismissRevert,
             title = { Text(stringResource(R.string.yaml_revert_confirm)) },
             confirmButton = {
-                TextButton(onClick = { confirmRevert = false; onRequestRevert() }) {
+                TextButton(onClick = { onDismissRevert(); onRequestRevert() }) {
                     Text(stringResource(R.string.yaml_revert))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmRevert = false }) {
+                TextButton(onClick = onDismissRevert) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },

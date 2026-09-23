@@ -4,13 +4,21 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     kotlin("android")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 }
 
 setupApp()
+
+// google-services.json is a CI secret that is not exposed to fork PRs. Apply the
+// Firebase plugins only when it exists so fork/CI builds still configure; the
+// Firebase SDKs no-op at runtime without a google_app_id.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+} else {
+    logger.warn("mobile/google-services.json not found; skipping Firebase Gradle plugins")
+}
 
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")

@@ -47,6 +47,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -67,8 +69,23 @@ class ConnectionsViewModel(private val api: MeowApi) : ViewModel() {
     private val connections = MutableStateFlow<List<Connection>>(emptyList())
     private val query = MutableStateFlow("")
 
+    /**
+     * Polls the engine only while collected, so it starts and stops with
+     * [uiState]'s subscription instead of running for the ViewModel's lifetime.
+     */
+    private val polling = flow<Unit> {
+        while (true) {
+            connections.value = try {
+                api.connections().connections
+            } catch (e: MeowApiException) {
+                emptyList()
+            }
+            delay(POLL_INTERVAL_MS)
+        }
+    }.onStart { emit(Unit) }
+
     val uiState: StateFlow<ConnectionsUiState> =
-        combine(connections, query) { list, search -> ConnectionsUiState(list, search) }
+        combine(connections, query, polling) { list, search, _ -> ConnectionsUiState(list, search) }
             .stateIn(
                 viewModelScope,
                 // Polling stops when the screen leaves the composition, rather
@@ -76,19 +93,6 @@ class ConnectionsViewModel(private val api: MeowApi) : ViewModel() {
                 SharingStarted.WhileSubscribed(5_000),
                 ConnectionsUiState(),
             )
-
-    init {
-        viewModelScope.launch {
-            while (true) {
-                try {
-                    connections.value = api.connections().connections
-                } catch (e: MeowApiException) {
-                    connections.value = emptyList()
-                }
-                delay(POLL_INTERVAL_MS)
-            }
-        }
-    }
 
     fun onQueryChange(value: String) { query.value = value }
 

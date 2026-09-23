@@ -5,6 +5,9 @@ import android.app.Application
 import androidx.core.content.getSystemService
 import io.github.madeye.meow.database.PrivateDatabase
 import io.github.madeye.meow.editor.SoraTextMateBootstrap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class App : Application() {
@@ -20,8 +23,16 @@ class App : Application() {
         if (!isMainProcess()) return
 
         AppGraph.init(this)
-        // Ensure database is created on first launch
-        PrivateDatabase.profileDao.getAll()
+        // Ensure database is created on first launch. Off the main thread: it
+        // may rename legacy DB files, create/migrate the schema and read every
+        // profile, none of which should block cold start.
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                PrivateDatabase.profileDao.getAll()
+            } catch (e: Exception) {
+                Timber.w(e, "database warm-up failed")
+            }
+        }
         // Sora Editor TextMate registries are process-global; populate once.
         SoraTextMateBootstrap.init(this)
     }

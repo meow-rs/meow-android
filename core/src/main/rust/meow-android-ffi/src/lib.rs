@@ -76,7 +76,9 @@ pub(crate) struct EngineState {
 
 pub(crate) static ENGINE: Mutex<Option<EngineState>> = Mutex::new(None);
 pub(crate) static HOME_DIR: Mutex<Option<String>> = Mutex::new(None);
-pub(crate) static DNS_RESOLVER: OnceLock<Arc<meow_dns::Resolver>> = OnceLock::new();
+// Overwritten on every engine start (and cleared on stop) so tun2socks' DNS
+// intercept always queries the current session's resolver, not the first one.
+pub(crate) static DNS_RESOLVER: RwLock<Option<Arc<meow_dns::Resolver>>> = RwLock::new(None);
 
 // ---------------------------------------------------------------------------
 // Thread-local error message
@@ -286,7 +288,7 @@ async fn start_engine_async(
         &config.dns.resolver,
     ))));
 
-    let _ = DNS_RESOLVER.set(config.dns.resolver.clone());
+    *DNS_RESOLVER.write() = Some(config.dns.resolver.clone());
 
     let raw_config = Arc::new(RwLock::new(config.raw.clone()));
     let tunnel = Tunnel::new(config.dns.resolver.clone());
@@ -416,6 +418,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
 ) {
     tun2socks::stop();
     protect::clear();
+    *DNS_RESOLVER.write() = None;
     let mut engine = ENGINE.lock();
     if let Some(state) = engine.take() {
         for handle in state._handles {

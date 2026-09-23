@@ -299,7 +299,11 @@ private class StreamClosed(code: Int, reason: String) :
 
 private suspend fun Call.await(): Response = suspendCancellableCoroutine { cont ->
     enqueue(object : Callback {
-        override fun onResponse(call: Call, response: Response) = cont.resume(response)
+        override fun onResponse(call: Call, response: Response) {
+            // A response delivered after cancellation would otherwise leak
+            // its body and connection.
+            if (cont.isActive) cont.resume(response) else response.close()
+        }
         override fun onFailure(call: Call, e: IOException) {
             if (!cont.isCancelled) cont.resumeWithException(e)
         }

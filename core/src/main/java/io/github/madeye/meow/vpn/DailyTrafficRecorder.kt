@@ -15,6 +15,10 @@ import java.time.format.DateTimeFormatter
  * contributes nothing and only subsequent deltas are recorded.
  *
  * The `yyyy-MM-dd` key format is shared with the iOS app's `DailyTraffic`.
+ *
+ * [record] and [reset] are synchronized: each traffic callback launches its own
+ * coroutine on a multi-threaded dispatcher, and interleaved calls would race on
+ * the baselines and on the read-modify-write of the day's row.
  */
 class DailyTrafficRecorder {
 
@@ -22,11 +26,13 @@ class DailyTrafficRecorder {
     private var lastRx = 0L
 
     /** Called when a new session starts; the next sample re-baselines. */
+    @Synchronized
     fun reset() {
         lastTx = 0L
         lastRx = 0L
     }
 
+    @Synchronized
     fun record(stats: TrafficStats, today: String = todayKey()) {
         val deltaTx = if (lastTx > 0) stats.txTotal - lastTx else 0L
         val deltaRx = if (lastRx > 0) stats.rxTotal - lastRx else 0L

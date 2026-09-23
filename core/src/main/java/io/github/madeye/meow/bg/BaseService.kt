@@ -29,8 +29,8 @@ object BaseService {
     interface ExpectedException
 
     class Data internal constructor(private val service: Interface) {
-        var state = State.Stopped
-        var meowInstance: MeowInstance? = null
+        @Volatile var state = State.Stopped
+        @Volatile var meowInstance: MeowInstance? = null
         var notification: ServiceNotification? = null
         var closeReceiverRegistered = false
         val binder = Binder(this)
@@ -53,7 +53,7 @@ object BaseService {
         }
     }
 
-    class Binder(private var data: Data? = null) : IMeowService.Stub(), CoroutineScope, AutoCloseable {
+    class Binder(@Volatile private var data: Data? = null) : IMeowService.Stub(), CoroutineScope, AutoCloseable {
         // RemoteCallbackList drops dead binders automatically; the parallel
         // bandwidthListeners map must mirror that. If a binder that died with
         // the app process stayed in the map, the 1 Hz traffic looper would

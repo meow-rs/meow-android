@@ -1,5 +1,6 @@
 package io.github.madeye.meow
 
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,7 +45,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val autoConnect = intent?.getBooleanExtra("auto_connect", false) == true
+        // MainActivity is exported, so any app could send this extra. Only the
+        // e2e harness needs it, and it installs the debug APK: ignore it in
+        // non-debuggable builds so third-party apps cannot force-start the VPN.
+        val debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        val autoConnect = debuggable &&
+            intent?.getBooleanExtra("auto_connect", false) == true
 
         setContent {
             MeowTheme {

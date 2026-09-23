@@ -56,7 +56,8 @@ interface ProfileDao {
     @Query("UPDATE clash_profile SET selected = 0")
     fun deselectAll()
 
-    @Query("UPDATE clash_profile SET selected = 1 WHERE id = :id")
+    /** Selects [id] and deselects every other row in one atomic statement. */
+    @Query("UPDATE clash_profile SET selected = (id = :id)")
     fun select(id: Long)
 
     @Query("UPDATE clash_profile SET tx = :tx, rx = :rx WHERE id = :id")

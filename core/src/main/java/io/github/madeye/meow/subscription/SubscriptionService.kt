@@ -3,18 +3,54 @@ package io.github.madeye.meow.subscription
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.net.HttpURLConnection
 import java.net.URL
 
 object SubscriptionService {
+    /** Upper bound on a subscription body; real configs are well under this. */
+    private const val MAX_SUBSCRIPTION_BYTES = 5 * 1024 * 1024
+
+    /** Bounds the whole fetch; `readTimeout` only bounds each individual read. */
+    private const val FETCH_TIMEOUT_MS = 60_000L
+
     suspend fun fetchSubscription(profile: ClashProfile): ClashProfile = withContext(Dispatchers.IO) {
         val url = URL(profile.url)
         val connection = url.openConnection()
         connection.connectTimeout = 10000
         connection.readTimeout = 10000
         connection.setRequestProperty("User-Agent", "clash.meta/1.0")
-        val yaml = connection.inputStream.bufferedReader().readText()
+        val yaml = try {
+            // The timeout interrupts the reading thread; readCapped checks the
+            // flag between reads, so a slow-trickle body stops within one
+            // readTimeout of the deadline.
+            withTimeoutOrNull(FETCH_TIMEOUT_MS) {
+                runInterruptible { connection.inputStream.use(::readCapped) }
+            } ?: throw IOException("subscription download timed out")
+        } finally {
+            (connection as? HttpURLConnection)?.disconnect()
+        }
         profile.copy(yamlContent = yaml, yamlBackup = yaml, lastUpdated = System.currentTimeMillis())
+    }
+
+    private fun readCapped(input: InputStream): String {
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(8192)
+        while (true) {
+            if (Thread.interrupted()) throw InterruptedException()
+            val n = input.read(buf)
+            if (n < 0) break
+            if (out.size() + n > MAX_SUBSCRIPTION_BYTES) {
+                throw IOException("subscription exceeds ${MAX_SUBSCRIPTION_BYTES / (1024 * 1024)} MB")
+            }
+            out.write(buf, 0, n)
+        }
+        return out.toString(Charsets.UTF_8.name())
     }
 
     suspend fun addSubscription(name: String, url: String): ClashProfile = withContext(Dispatchers.IO) {

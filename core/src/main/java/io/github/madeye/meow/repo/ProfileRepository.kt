@@ -30,7 +30,6 @@ class ProfileRepository {
     suspend fun getSelected(): ClashProfile? = withContext(Dispatchers.IO) { dao.getSelected() }
 
     suspend fun select(id: Long) = withContext(Dispatchers.IO) {
-        dao.deselectAll()
         dao.select(id)
     }
 

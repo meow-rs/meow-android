@@ -36,6 +36,10 @@ type FlowTasks = Arc<Mutex<Vec<JoinHandle<()>>>>;
 
 static TUN2SOCKS_ACTIVE: AtomicBool = AtomicBool::new(false);
 static TUN2SOCKS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
+// Handle of the running session's top-level task, so `stop()` can wait for
+// it to finish touching the TUN fd before Kotlin closes it.
+static TUN2SOCKS_TASK: Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
+const TUN2SOCKS_STOP_TIMEOUT: Duration = Duration::from_secs(3);
 
 const DNS_BURST_CAP: usize = 256;
 const DNS_TASK_TIMEOUT: Duration = Duration::from_secs(5);
@@ -76,7 +80,7 @@ pub fn start(fd: i32, _dns_port: u16) -> Result<(), String> {
     }
 
     let rt = crate::get_runtime();
-    rt.spawn(async move {
+    let handle = rt.spawn(async move {
         if let Err(e) = run_tun2socks(fd).await {
             logging::bridge_log(&format!("tun2socks error: {}", e));
         }
@@ -84,12 +88,30 @@ pub fn start(fd: i32, _dns_port: u16) -> Result<(), String> {
         TUN2SOCKS_ACTIVE.store(false, Ordering::SeqCst);
         logging::bridge_log("tun2socks exited");
     });
+    *TUN2SOCKS_TASK.lock() = Some(handle);
 
     Ok(())
 }
 
+/// Request shutdown and block until the session's reader/writer tasks have
+/// stopped using the TUN fd (bounded by `TUN2SOCKS_STOP_TIMEOUT`).
 pub fn stop() {
     TUN2SOCKS_STOP_REQUESTED.store(true, Ordering::SeqCst);
+    let Some(handle) = TUN2SOCKS_TASK.lock().take() else {
+        return;
+    };
+    // Only block from a non-runtime thread (JNI callers); block_on would
+    // panic inside a tokio worker.
+    if tokio::runtime::Handle::try_current().is_ok() {
+        return;
+    }
+    let rt = crate::get_runtime();
+    if rt
+        .block_on(tokio::time::timeout(TUN2SOCKS_STOP_TIMEOUT, handle))
+        .is_err()
+    {
+        logging::bridge_log("tun2socks: stop timed out waiting for shutdown");
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +139,7 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
     let udp_reply_tx_lwip = udp_reply_tx.clone();
     let reply_readers_lwip = reply_readers.clone();
     let flow_tasks_lwip = flow_tasks.clone();
+    let flow_tasks_dns = flow_tasks.clone();
     // lwip's Rust listener/socket wrappers are backed by C callbacks that
     // mutate Rust queues and wakers through raw pointers. Keep all wrapper
     // polling and UDP writes on one task; detached tasks only own accepted
@@ -243,7 +266,7 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                     };
                     let request = ip_data.to_vec();
                     let egress = egress_tx.clone();
-                    tokio::spawn(async move {
+                    let handle = tokio::spawn(async move {
                         let _permit = permit;
                         let work = async {
                             let Some(parsed) = parse_udp_packet(&request) else {
@@ -252,11 +275,11 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                             let qtype = parse_dns_qtype(parsed.payload);
 
                             let response_payload = if matches!(qtype, Some(1) | Some(28)) {
-                                let Some(resolver) = crate::DNS_RESOLVER.get() else {
+                                let Some(resolver) = crate::DNS_RESOLVER.read().clone() else {
                                     trace!("tun2socks: DNS dropped — resolver not ready");
                                     return;
                                 };
-                                match DnsServer::handle_query(parsed.payload, resolver).await {
+                                match DnsServer::handle_query(parsed.payload, &resolver).await {
                                     Ok(bytes) => bytes,
                                     Err(e) => {
                                         trace!("tun2socks: DnsServer::handle_query error: {}", e);
@@ -294,6 +317,7 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                             );
                         }
                     });
+                    track_flow_task(&flow_tasks_dns, handle);
                     continue;
                 }
 

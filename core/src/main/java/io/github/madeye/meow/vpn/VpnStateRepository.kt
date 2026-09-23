@@ -31,6 +31,13 @@ class VpnStateRepository(
 
     private val connection = MeowConnection(listenForBandwidth = true)
 
+    /**
+     * Records run one at a time, in callback order: the recorder derives deltas
+     * from the previous sample, so concurrent or reordered records would lose
+     * or double-count traffic.
+     */
+    private val recordDispatcher = Dispatchers.IO.limitedParallelism(1)
+
     private val _state = MutableStateFlow(BaseService.State.Idle)
     val state: StateFlow<BaseService.State> = _state.asStateFlow()
 
@@ -69,7 +76,7 @@ class VpnStateRepository(
 
     override fun trafficUpdated(profileId: Long, stats: TrafficStats) {
         _traffic.value = stats
-        scope.launch { recorder.record(stats) }
+        scope.launch(recordDispatcher) { recorder.record(stats) }
     }
 
     override fun trafficPersisted(profileId: Long) = Unit

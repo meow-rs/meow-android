@@ -78,6 +78,8 @@ class YamlEditorViewModel(
         viewModelScope.launch {
             profiles.updateYaml(profileId, text)
             analytics.profileYamlEdit()
+            val backup = profiles.getById(profileId)?.yamlBackup
+            _canRevert.value = !backup.isNullOrEmpty() && backup != text
             _initialText.value = text
             _dirty.value = false
             onDone()
