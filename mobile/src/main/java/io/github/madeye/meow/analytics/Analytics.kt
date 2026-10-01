@@ -40,6 +40,10 @@ class Analytics(context: Context) {
         param("proxy_name", proxyName)
     }
 
+    fun routeModeSelect(mode: String) = firebase.logEvent("route_mode_select") {
+        param("mode", mode)
+    }
+
     fun profileYamlEdit() = firebase.logEvent("profile_yaml_edit") {}
 
     fun profileYamlRevert() = firebase.logEvent("profile_yaml_revert") {}

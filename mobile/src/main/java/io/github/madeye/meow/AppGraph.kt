@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
+import io.github.madeye.meow.preference.RouteModeStore
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppRepository
@@ -50,6 +51,7 @@ object AppGraph {
     val configValidator: ConfigValidator by lazy { ConfigValidator() }
     val analytics: Analytics by lazy { Analytics(appContext) }
     val appVersions: AppVersions by lazy { AppVersions(appContext) }
+    val routeModes: RouteModeStore get() = RouteModeStore.default
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -63,7 +65,7 @@ object AppGraph {
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
             when (modelClass) {
                 HomeViewModel::class.java ->
-                    HomeViewModel(vpn, profiles, api, analytics)
+                    HomeViewModel(vpn, profiles, api, analytics, routeModes)
 
                 SubscribeViewModel::class.java ->
                     SubscribeViewModel(profiles, configValidator, analytics)

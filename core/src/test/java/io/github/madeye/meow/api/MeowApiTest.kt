@@ -77,6 +77,26 @@ class MeowApiTest {
     }
 
     @Test
+    fun `visibleGroups lists GLOBAL first only in global mode`() = runTest {
+        enqueue(
+            """
+            {"proxies": {
+              "Proxy":  {"type": "Selector", "now": "a", "all": []},
+              "GLOBAL": {"type": "Selector", "now": "Proxy", "all": ["Proxy", "DIRECT"]}
+            }}
+            """.trimIndent(),
+        )
+
+        val result = api.proxies()
+
+        assertEquals(listOf("GLOBAL", "Proxy"), result.visibleGroups(RouteMode.Global).map { it.name })
+        assertEquals(listOf("Proxy"), result.visibleGroups(RouteMode.Rule).map { it.name })
+        assertEquals(listOf("Proxy"), result.visibleGroups(RouteMode.Direct).map { it.name })
+        // Mode not known yet (e.g. /configs failed): never guess global.
+        assertEquals(listOf("Proxy"), result.visibleGroups(null).map { it.name })
+    }
+
+    @Test
     fun `proxy history accepts both Go string time and Rust SystemTime`() = runTest {
         enqueue(
             """
@@ -142,6 +162,27 @@ class MeowApiTest {
     }
 
     @Test
+    fun `setMode PATCHes configs with the wire value`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.setMode(RouteMode.Global)
+
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/configs", request.requestUrl!!.encodedPath)
+        assertEquals("""{"mode":"global"}""", request.body.readUtf8())
+    }
+
+    @Test
+    fun `setMode surfaces an engine rejection`() = runTest {
+        enqueue("""{"message": "Body invalid"}""", code = 400)
+
+        assertThrows(MeowApiException.Http::class.java) {
+            kotlinx.coroutines.runBlocking { api.setMode(RouteMode.Direct) }
+        }
+    }
+
+    @Test
     fun `closeConnection DELETEs the id`() = runTest {
         server.enqueue(MockResponse().setResponseCode(204))
 
@@ -174,6 +215,7 @@ class MeowApiTest {
         val config = api.configs()
 
         assertEquals("global", config.mode)
+        assertEquals(RouteMode.Global, config.routeMode)
         assertTrue(config.allowLan)
         assertEquals("debug", config.logLevel)
         assertEquals(7891, config.mixedPort)

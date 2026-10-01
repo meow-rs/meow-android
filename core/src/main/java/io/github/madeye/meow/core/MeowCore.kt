@@ -8,7 +8,8 @@ object MeowCore {
 
     external fun nativeInit()
     external fun nativeSetHomeDir(dir: String)
-    external fun nativeStartEngine(addr: String, secret: String): Int
+    /** [mode] overrides the config's `mode:` (`rule`/`global`/`direct`); empty keeps it. */
+    external fun nativeStartEngine(addr: String, secret: String, mode: String): Int
     external fun nativeStopEngine()
     external fun nativeStartTun2Socks(vpnService: Any, fd: Int, dnsPort: Int): Int
     external fun nativeIsRunning(): Boolean

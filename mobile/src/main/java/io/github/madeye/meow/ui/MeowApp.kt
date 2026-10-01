@@ -251,6 +251,7 @@ private fun HomeRoute(
             onToggleExpanded = viewModel::onToggleExpanded,
             onSelectNode = viewModel::onSelectNode,
             onTestGroup = viewModel::onTestGroup,
+            onSelectRouteMode = viewModel::onSelectRouteMode,
         )
     }
     SnackbarHost(snackbarHost)

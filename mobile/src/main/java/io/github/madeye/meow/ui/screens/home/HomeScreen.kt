@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +32,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +51,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
+import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
 import io.github.madeye.meow.ui.components.DelayBadge
 import io.github.madeye.meow.ui.components.GlassCard
@@ -63,6 +68,7 @@ fun HomeScreen(
     onToggleExpanded: (String) -> Unit,
     onSelectNode: (String, String) -> Unit,
     onTestGroup: (String) -> Unit,
+    onSelectRouteMode: (RouteMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -101,6 +107,15 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+
+        item {
+            RouteModeCard(
+                mode = state.routeMode,
+                // Usable while disconnected too: the pick applies on the next connect.
+                enabled = !state.isBusy,
+                onSelect = onSelectRouteMode,
+            )
         }
 
         item {
@@ -198,6 +213,47 @@ private fun StatusCard(state: HomeUiState, onToggle: (Boolean) -> Unit) {
                         .testTag("vpn_switch")
                         .semantics { contentDescription = toggleLabel },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteModeCard(mode: RouteMode, enabled: Boolean, onSelect: (RouteMode) -> Unit) {
+    GlassCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Filled.Route,
+                contentDescription = null,
+                tint = MaterialTheme.meow.accent,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.home_route_mode),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            RouteMode.entries.forEachIndexed { index, entry ->
+                SegmentedButton(
+                    selected = mode == entry,
+                    onClick = { if (mode != entry) onSelect(entry) },
+                    enabled = enabled,
+                    shape = SegmentedButtonDefaults.itemShape(index, RouteMode.entries.size),
+                    modifier = Modifier.testTag("route_mode_${entry.wire}"),
+                ) {
+                    Text(
+                        stringResource(
+                            when (entry) {
+                                RouteMode.Rule -> R.string.route_mode_rule
+                                RouteMode.Global -> R.string.route_mode_global
+                                RouteMode.Direct -> R.string.route_mode_direct
+                            },
+                        ),
+                    )
+                }
             }
         }
     }

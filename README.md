@@ -46,7 +46,8 @@ Network
 - **REST API**: Embedded external controller (`127.0.0.1:9090`) drives the
   live connections, logs, rules, and traffic views
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
-  - Home: VPN toggle, proxy group & node selection, connection status
+  - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
+    reconnects), proxy group & node selection, connection status
   - Subscribe: Add/edit/remove subscriptions, YAML editor, import/export config
   - Traffic: Real-time speed chart, session upload/download stats
   - Connections / Logs / Rules: Live views powered by the REST API

@@ -25,6 +25,7 @@ use jni::sys::{jboolean, jint, jlong, jstring, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use meow_api::log_stream::{LogBroadcastLayer, LogMessage};
 use meow_api::ApiServer;
+use meow_common::TunnelMode;
 use meow_tunnel::Tunnel;
 use parking_lot::{Mutex, RwLock};
 use std::collections::HashMap;
@@ -188,7 +189,11 @@ fn drain_log_buffer() -> Vec<String> {
 // Engine lifecycle
 // ---------------------------------------------------------------------------
 
-fn start_engine(external_controller: Option<String>, secret: Option<String>) -> i32 {
+fn start_engine(
+    external_controller: Option<String>,
+    secret: Option<String>,
+    mode: Option<TunnelMode>,
+) -> i32 {
     logging::bridge_log("start_engine: acquiring ENGINE lock");
     let mut engine = ENGINE.lock();
     if engine.is_some() {
@@ -197,7 +202,7 @@ fn start_engine(external_controller: Option<String>, secret: Option<String>) -> 
     }
 
     let rt = get_runtime();
-    match rt.block_on(async { start_engine_async(external_controller, secret).await }) {
+    match rt.block_on(async { start_engine_async(external_controller, secret, mode).await }) {
         Ok(state) => {
             logging::bridge_log("start_engine: engine started successfully");
             *engine = Some(state);
@@ -214,6 +219,7 @@ fn start_engine(external_controller: Option<String>, secret: Option<String>) -> 
 async fn start_engine_async(
     external_controller: Option<String>,
     secret: Option<String>,
+    mode: Option<TunnelMode>,
 ) -> Result<EngineState, anyhow::Error> {
     logging::bridge_log("start_engine_async: initializing rustls");
     let _ = rustls::crypto::ring::default_provider().install_default();
@@ -268,6 +274,13 @@ async fn start_engine_async(
     }
     if let Some(s) = secret {
         config.api.secret = if s.is_empty() { None } else { Some(s) };
+    }
+    // The app's route-mode picker outlives a session, so its pick replaces
+    // the profile's `mode:`. `raw` is what `GET /configs` echoes back.
+    if let Some(mode) = mode {
+        logging::bridge_log(&format!("start_engine_async: route mode override {mode}"));
+        config.general.mode = mode;
+        config.raw.mode = Some(mode.to_string());
     }
 
     // Install the global host-resolver hook so `meow_common::connect_tcp_host`
@@ -402,13 +415,34 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartEngin
     _class: JClass,
     addr: JString,
     secret: JString,
+    mode: JString,
 ) -> jint {
     let addr_str: String = env.get_string(&addr).map(|s| s.into()).unwrap_or_default();
     let secret_str: String = env
         .get_string(&secret)
         .map(|s| s.into())
         .unwrap_or_default();
-    start_engine(Some(addr_str), Some(secret_str))
+    let mode_str: String = env.get_string(&mode).map(|s| s.into()).unwrap_or_default();
+    start_engine(
+        Some(addr_str),
+        Some(secret_str),
+        parse_mode_override(&mode_str),
+    )
+}
+
+/// Empty means "keep the config's `mode:`". An unknown value is logged and
+/// ignored rather than failing the start: a stale pick must not brick the VPN.
+fn parse_mode_override(raw: &str) -> Option<TunnelMode> {
+    if raw.is_empty() {
+        return None;
+    }
+    match raw.parse() {
+        Ok(mode) => Some(mode),
+        Err(e) => {
+            logging::bridge_log(&format!("nativeStartEngine: ignoring route mode: {e}"));
+            None
+        }
+    }
 }
 
 #[no_mangle]

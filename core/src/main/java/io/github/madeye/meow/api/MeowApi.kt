@@ -175,6 +175,11 @@ class MeowApi(
         execute(request, "patchConfigs", okCodes = setOf(200, 204))
     }
 
+    /** Switches routing for new flows; open connections keep their route. */
+    suspend fun setMode(mode: RouteMode) {
+        patchConfigs(JsonObject(mapOf("mode" to kotlinx.serialization.json.JsonPrimitive(mode.wire))))
+    }
+
     // -------------------------------------------------------------------------
     // Streams
     // -------------------------------------------------------------------------

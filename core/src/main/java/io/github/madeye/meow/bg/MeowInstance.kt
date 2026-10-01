@@ -5,6 +5,7 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
+import io.github.madeye.meow.preference.RouteModeStore
 import timber.log.Timber
 import java.io.File
 
@@ -78,7 +79,10 @@ class MeowInstance(val profile: ClashProfile) {
             .replace(Regex("(?m)^subscriptions:.*?(?=^[a-z]|\\Z)", RegexOption.DOT_MATCHES_ALL), "")
         configFile.writeText(yaml)
         MeowCore.nativeSetHomeDir(configDir.absolutePath)
-        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", "")
+        // The Home route-mode pick overrides the profile's `mode:`; empty
+        // means the user never picked one.
+        val routeMode = RouteModeStore.default.load()?.wire.orEmpty()
+        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", "", routeMode)
         if (result != 0) {
             throw RuntimeException("Failed to start engine: ${MeowCore.nativeGetLastError()}")
         }

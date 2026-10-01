@@ -30,6 +30,10 @@
     <string name="home_upload">上传</string>
     <string name="home_download">下载</string>
     <string name="home_vpn_toggle">开关 VPN</string>
+    <string name="home_route_mode">路由模式</string>
+    <string name="route_mode_rule">规则</string>
+    <string name="route_mode_global">全局</string>
+    <string name="route_mode_direct">直连</string>
 
     <!-- Proxy groups -->
     <string name="proxy_groups_title">代理分组</string>

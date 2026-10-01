@@ -10,6 +10,45 @@ import kotlinx.serialization.json.longOrNull
 /** Group types as reported by the engine's `/proxies` endpoint. */
 internal val GROUP_TYPES = setOf("Selector", "URLTest", "Fallback", "LoadBalance", "Relay")
 
+/** The engine's built-in selector that global mode routes every flow through. */
+internal const val GLOBAL_GROUP = "GLOBAL"
+
+/**
+ * The engine's outbound routing mode — the `mode` that `GET /configs` reports
+ * and `PATCH /configs` accepts. Mirrors meow-ios's `RouteMode`.
+ */
+enum class RouteMode(val wire: String) {
+    Rule("rule"),
+    Global("global"),
+    Direct("direct"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): RouteMode? =
+            entries.firstOrNull { it.wire.equals(value.trim(), ignoreCase = true) }
+
+        /**
+         * The top-level `mode:` of a Clash YAML profile, i.e. the mode the
+         * engine starts in when the user never picked one. [Rule] (the
+         * engine's own fallback) when the key is missing or unrecognised.
+         *
+         * A line scan rather than a YAML parse: profiles can carry thousands
+         * of rules and only this one scalar is needed. Indented `mode:` keys
+         * (plugin options) are not top-level and are skipped.
+         */
+        fun configured(yaml: String): RouteMode {
+            for (raw in yaml.lineSequence()) {
+                // Profiles saved by some editors start with a byte-order mark.
+                val line = raw.removePrefix("\uFEFF")
+                if (!line.startsWith("mode:")) continue
+                val value = line.removePrefix("mode:").substringBefore('#').trim().trim('"', '\'')
+                return fromWire(value) ?: Rule
+            }
+            return Rule
+        }
+    }
+}
+
 /**
  * One latency probe.
  *
@@ -56,8 +95,22 @@ data class ProxiesResult(
      */
     val selectableGroups: List<ProxyGroup>
         get() = groups.values
-            .filter { it.name != "GLOBAL" && it.type in GROUP_TYPES }
+            .filter { it.name != GLOBAL_GROUP && it.type in GROUP_TYPES }
             .sortedBy { it.name.lowercase() }
+
+    /**
+     * The groups to list under [mode]. In global mode every flow goes
+     * through `GLOBAL`, so it is listed first: picking its member is the only
+     * choice that changes routing. Any other mode never consults it.
+     */
+    fun visibleGroups(mode: RouteMode?): List<ProxyGroup> {
+        val global = groups[GLOBAL_GROUP]
+        return if (mode == RouteMode.Global && global != null) {
+            listOf(global) + selectableGroups
+        } else {
+            selectableGroups
+        }
+    }
 
     companion object {
         fun parse(root: JsonObject): ProxiesResult {
@@ -149,7 +202,9 @@ data class RuntimeConfig(
     @SerialName("log-level") val logLevel: String = "info",
     @SerialName("mixed-port") val mixedPort: Int = 7890,
     @SerialName("external-controller") val externalController: String = "",
-)
+) {
+    val routeMode: RouteMode? get() = RouteMode.fromWire(mode)
+}
 
 // -----------------------------------------------------------------------------
 // JSON helpers — the /proxies payload is a heterogeneous map discriminated by a
