@@ -24,6 +24,7 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.traffic.TrafficViewModel
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
 import io.github.madeye.meow.ui.util.AppVersions
+import io.github.madeye.meow.vpn.ConfigReloader
 import io.github.madeye.meow.vpn.SpeedSampleStore
 import io.github.madeye.meow.vpn.VpnStateRepository
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +57,7 @@ object AppGraph {
     val analytics: Analytics by lazy { Analytics(appContext) }
     val appVersions: AppVersions by lazy { AppVersions(appContext) }
     val routeModes: RouteModeStore get() = RouteModeStore.default
+    val configReloader: ConfigReloader get() = ConfigReloader.default
 
     fun init(context: Context) {
         appContext = context.applicationContext

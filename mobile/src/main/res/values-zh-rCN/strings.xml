@@ -26,6 +26,8 @@
     <string name="home_connected">已连接</string>
     <string name="home_disconnecting">断开中…</string>
     <string name="home_disconnected">已断开</string>
+    <string name="home_reconnecting_profile">正在使用更新后的配置重新连接…</string>
+    <string name="home_profile_rejected">更新后的配置有误，继续使用当前连接</string>
     <string name="home_no_subscription_hint">未选择订阅\n请前往订阅页面添加</string>
     <string name="home_upload">上传</string>
     <string name="home_download">下载</string>

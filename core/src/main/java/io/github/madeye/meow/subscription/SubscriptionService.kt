@@ -2,6 +2,7 @@ package io.github.madeye.meow.subscription
 
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
+import io.github.madeye.meow.vpn.ConfigReloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
@@ -88,12 +89,16 @@ object SubscriptionService {
     }
 
     suspend fun refreshAll() = withContext(Dispatchers.IO) {
-        val profiles = PrivateDatabase.profileDao.getAll().filter { it.url.isNotEmpty() }
-        for (profile in profiles) {
-            try {
-                val updated = fetchSubscription(profile)
-                PrivateDatabase.profileDao.update(updated)
-            } catch (_: Exception) { }
+        // One check around the whole batch, so a connected VPN restarts at
+        // most once, after every fetch has landed.
+        ConfigReloader.default.applying {
+            val profiles = PrivateDatabase.profileDao.getAll().filter { it.url.isNotEmpty() }
+            for (profile in profiles) {
+                try {
+                    val updated = fetchSubscription(profile)
+                    PrivateDatabase.profileDao.update(updated)
+                } catch (_: Exception) { }
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
 import io.github.madeye.meow.subscription.SubscriptionService
+import io.github.madeye.meow.vpn.ConfigReloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -14,8 +15,13 @@ import kotlinx.coroutines.withContext
  * The database is still built with `allowMainThreadQueries()` because
  * `BaseService` reads the selected profile synchronously on the service's main
  * thread. UI code must not rely on that — everything here hops to IO.
+ *
+ * Writes that can change what the engine runs go through
+ * [ConfigReloader.applying], so a connected VPN picks them up.
  */
-class ProfileRepository {
+class ProfileRepository(
+    private val reloader: ConfigReloader = ConfigReloader.default,
+) {
 
     private val dao get() = PrivateDatabase.profileDao
 
@@ -30,7 +36,7 @@ class ProfileRepository {
     suspend fun getSelected(): ClashProfile? = withContext(Dispatchers.IO) { dao.getSelected() }
 
     suspend fun select(id: Long) = withContext(Dispatchers.IO) {
-        dao.select(id)
+        reloader.applying { dao.select(id) }
     }
 
     suspend fun add(name: String, url: String): ClashProfile =
@@ -41,12 +47,14 @@ class ProfileRepository {
 
     /** Renames/re-points a subscription and immediately re-fetches it. */
     suspend fun update(id: Long, name: String, url: String) = withContext(Dispatchers.IO) {
-        val existing = dao.getById(id) ?: return@withContext
-        existing.name = name
-        existing.url = url
-        dao.update(existing)
-        if (url.isNotEmpty()) {
-            dao.update(SubscriptionService.fetchSubscription(existing))
+        reloader.applying {
+            val existing = dao.getById(id) ?: return@applying
+            existing.name = name
+            existing.url = url
+            dao.update(existing)
+            if (url.isNotEmpty()) {
+                dao.update(SubscriptionService.fetchSubscription(existing))
+            }
         }
     }
 
@@ -55,20 +63,22 @@ class ProfileRepository {
     }
 
     suspend fun refresh(id: Long) = withContext(Dispatchers.IO) {
-        val profile = dao.getById(id) ?: return@withContext
-        if (profile.url.isEmpty()) return@withContext
-        dao.update(SubscriptionService.fetchSubscription(profile))
+        reloader.applying {
+            val profile = dao.getById(id) ?: return@applying
+            if (profile.url.isEmpty()) return@applying
+            dao.update(SubscriptionService.fetchSubscription(profile))
+        }
     }
 
     suspend fun refreshAll() = SubscriptionService.refreshAll()
 
     suspend fun updateYaml(id: Long, yaml: String) = withContext(Dispatchers.IO) {
-        dao.updateYamlContent(id, yaml)
+        reloader.applying { dao.updateYamlContent(id, yaml) }
     }
 
     /** Restores the last downloaded YAML and returns it. */
     suspend fun revertYaml(id: Long): String = withContext(Dispatchers.IO) {
-        dao.revertYamlContent(id)
+        reloader.applying { dao.revertYamlContent(id) }
         dao.getById(id)?.yamlContent.orEmpty()
     }
 

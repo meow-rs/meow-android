@@ -41,7 +41,9 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -87,6 +89,8 @@ import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.readText
 import io.github.madeye.meow.ui.util.rememberClipboardText
 import io.github.madeye.meow.ui.util.writeText
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
 /**
@@ -105,6 +109,7 @@ fun MeowApp(
 ) {
     val navController = rememberNavController()
     val snackbarHost = remember { SnackbarHostState() }
+    ProfileReloadNotice(snackbarHost)
 
     Box(
         // Exposes every Modifier.testTag as a resource-id in uiautomator dumps,
@@ -120,6 +125,37 @@ fun MeowApp(
             installLink = installLink,
             onInstallLinkHandled = onInstallLinkHandled,
         )
+    }
+}
+
+/**
+ * Says so when a profile change restarts the connected VPN, or when an update
+ * fails the engine's check and the VPN keeps its current config. Profiles
+ * change on several screens (and in the background), so this sits at the
+ * root; the restart itself is `ConfigReloader`'s. Collected only while
+ * started, and the flows do not replay, so nothing is announced late.
+ */
+@Composable
+private fun ProfileReloadNotice(snackbarHost: SnackbarHostState) {
+    val reconnecting = stringResource(R.string.home_reconnecting_profile)
+    val rejected = stringResource(R.string.home_profile_rejected)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle, reconnecting, rejected) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            val reloader = AppGraph.configReloader
+            merge(
+                reloader.reloads.map { reconnecting },
+                // The engine's error goes to the log only; it runs too long
+                // for a snackbar.
+                reloader.rejected.map { rejected },
+            ).collect { message ->
+                // Both only matter while the VPN is up: the broadcast is a
+                // no-op otherwise, and a rejected update kept nothing from it.
+                if (AppGraph.vpn.state.value == BaseService.State.Connected) {
+                    snackbarHost.showSnackbar(message)
+                }
+            }
+        }
     }
 }
 

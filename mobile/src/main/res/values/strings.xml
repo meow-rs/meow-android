@@ -36,6 +36,8 @@
     <string name="home_connected">Connected</string>
     <string name="home_disconnecting">Disconnecting…</string>
     <string name="home_disconnected">Disconnected</string>
+    <string name="home_reconnecting_profile">Reconnecting with the updated profile…</string>
+    <string name="home_profile_rejected">Updated profile has errors — keeping the current connection</string>
     <string name="home_no_subscription_hint">No subscription selected.\nGo to the Subscribe tab to add one.</string>
     <string name="home_upload">Upload</string>
     <string name="home_download">Download</string>

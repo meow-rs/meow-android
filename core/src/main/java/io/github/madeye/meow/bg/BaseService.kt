@@ -36,11 +36,18 @@ object BaseService {
         val binder = Binder(this)
         var connectingJob: Job? = null
 
+        /**
+         * A reload arrived mid-start; [Interface.reloadIfChanged] runs again
+         * once connected. A stale flag from a start that failed is harmless:
+         * the check compares against what the next start actually read.
+         */
+        var reloadPending = false
+
         val closeReceiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     Intent.ACTION_SHUTDOWN -> {}
-                    Action.RELOAD -> service.forceLoad()
+                    Action.RELOAD -> service.reloadIfChanged()
                     else -> service.stopRunner()
                 }
             }
@@ -162,6 +169,32 @@ object BaseService {
             }
         }
 
+        /**
+         * Handles [Action.RELOAD], which the UI sends after committing a
+         * change to the selected profile (`vpn.ConfigReloader`). Unlike
+         * [forceLoad] it never starts a stopped service, and it restarts only
+         * if the selected profile now differs from the one this run started
+         * with, so duplicate or cancelled-out requests cost nothing.
+         *
+         * The restart is [stopRunner]'s: the TUN goes down and comes back,
+         * [onStartCommand] reads the selected profile from Room afresh,
+         * [MeowInstance.start] replays the route mode from `RouteModeStore`,
+         * and the engine restores selector picks from its own cache file
+         * (`selector-cache.json` in the engine home dir, keyed by group name).
+         */
+        fun reloadIfChanged() {
+            val data = data
+            val running = ActiveConfig.of(data.meowInstance?.profile)
+            when (ReloadPolicy.onRequest(data.state, running) { ActiveConfig.of(Core.currentProfile) }) {
+                ReloadPolicy.Decision.Restart -> {
+                    Timber.i("Reloading: the selected profile changed")
+                    stopRunner(true)
+                }
+                ReloadPolicy.Decision.Defer -> data.reloadPending = true
+                ReloadPolicy.Decision.Ignore -> {}
+            }
+        }
+
         val isVpnService get() = false
 
         suspend fun startProcesses()
@@ -229,6 +262,10 @@ object BaseService {
                     preInit()
                     startProcesses()
                     data.changeState(State.Connected)
+                    if (data.reloadPending) {
+                        data.reloadPending = false
+                        reloadIfChanged()
+                    }
                 } catch (_: CancellationException) {
                 } catch (exc: Throwable) {
                     Timber.w(exc)
