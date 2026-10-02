@@ -25,17 +25,30 @@ object SubscriptionService {
         connection.connectTimeout = 10000
         connection.readTimeout = 10000
         connection.setRequestProperty("User-Agent", "clash.meta/1.0")
-        val yaml = try {
+        val (yaml, userInfo) = try {
             // The timeout interrupts the reading thread; readCapped checks the
             // flag between reads, so a slow-trickle body stops within one
             // readTimeout of the deadline.
             withTimeoutOrNull(FETCH_TIMEOUT_MS) {
-                runInterruptible { connection.inputStream.use(::readCapped) }
+                runInterruptible {
+                    val body = connection.inputStream.use(::readCapped)
+                    body to SubscriptionUserInfo.parse(connection.getHeaderField(SubscriptionUserInfo.HEADER))
+                }
             } ?: throw IOException("subscription download timed out")
         } finally {
             (connection as? HttpURLConnection)?.disconnect()
         }
-        profile.copy(yamlContent = yaml, yamlBackup = yaml, lastUpdated = System.currentTimeMillis())
+        // The header describes the plan as of this response, so a successful
+        // fetch without it clears the stored figures (parse returns NONE)
+        // instead of keeping them: the provider dropped it, or the URL now
+        // points elsewhere, and a stale quota would be worse than none. A
+        // failed fetch throws above and leaves the last-known figures alone.
+        profile.copy(
+            yamlContent = yaml,
+            yamlBackup = yaml,
+            lastUpdated = System.currentTimeMillis(),
+            userInfo = userInfo,
+        )
     }
 
     private fun readCapped(input: InputStream): String {

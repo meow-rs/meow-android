@@ -1,6 +1,7 @@
 package io.github.madeye.meow.database
 
 import androidx.room.*
+import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "clash_profile")
@@ -15,6 +16,8 @@ data class ClashProfile(
     var rx: Long = 0,
     @ColumnInfo(name = "selected_proxy") var selectedProxy: String = "",
     @ColumnInfo(name = "yaml_backup") var yamlBackup: String = "",
+    /** Provider-reported plan usage as of the last successful fetch; see [SubscriptionUserInfo]. */
+    @Embedded(prefix = "sub_") var userInfo: SubscriptionUserInfo = SubscriptionUserInfo.NONE,
 )
 
 @Dao

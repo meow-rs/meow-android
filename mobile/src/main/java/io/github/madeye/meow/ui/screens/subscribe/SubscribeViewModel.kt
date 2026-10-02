@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.ProfileRepository
+import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,6 +31,7 @@ data class ProfileUi(
     val lastUpdated: Long,
     val hasYaml: Boolean,
     val hasBackup: Boolean,
+    val userInfo: SubscriptionUserInfo,
 )
 
 @Immutable
@@ -75,6 +77,7 @@ class SubscribeViewModel(
                         lastUpdated = it.lastUpdated,
                         hasYaml = it.yamlContent.isNotEmpty(),
                         hasBackup = it.yamlBackup.isNotEmpty(),
+                        userInfo = it.userInfo,
                     )
                 },
                 busy = isBusy,

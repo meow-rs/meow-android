@@ -7,7 +7,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import io.github.madeye.meow.Core
 
-@Database(entities = [ClashProfile::class, DailyTraffic::class], version = 4)
+@Database(entities = [ClashProfile::class, DailyTraffic::class], version = 5)
 abstract class PrivateDatabase : RoomDatabase() {
     companion object {
         // Every shipped schema step must have a migration here; the SQL
@@ -34,6 +34,16 @@ abstract class PrivateDatabase : RoomDatabase() {
                 db.execSQL("UPDATE `clash_profile` SET `yaml_backup` = `yaml_content`")
             }
         }
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // subscription-userinfo plan usage. 0 is "not reported", the
+                // same value a fetch without the header writes.
+                db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `sub_upload` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `sub_download` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `sub_total` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `sub_expire` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
 
         private val instance by lazy {
             // The database was named mihomo.db before the app-wide
@@ -50,7 +60,7 @@ abstract class PrivateDatabase : RoomDatabase() {
             }
             Room.databaseBuilder(Core.deviceStorage, PrivateDatabase::class.java, "meow.db")
                 .allowMainThreadQueries()
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 // Only reached when no migration path exists (e.g. a downgrade).
                 .fallbackToDestructiveMigration()
                 .build()

@@ -57,6 +57,9 @@
     <string name="subs_edit_yaml">编辑 YAML</string>
     <string name="subs_updated">%1$s 已更新</string>
     <string name="subs_last_updated">更新于 %1$s</string>
+    <string name="subs_usage">已用 %1$s / %2$s</string>
+    <string name="subs_expires">%1$s 到期</string>
+    <string name="subs_expired">已于 %1$s 到期</string>
     <string name="subs_refresh_failed">刷新失败：%1$s</string>
     <string name="subs_imported">已导入 \"%1$s\"</string>
     <string name="subs_import_failed">导入失败：%1$s</string>

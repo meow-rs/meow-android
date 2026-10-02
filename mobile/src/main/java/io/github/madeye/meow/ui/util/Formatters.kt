@@ -66,6 +66,18 @@ object Formatters {
     fun timestamp(epochMillis: Long): String =
         if (epochMillis <= 0) "" else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))
 
+    private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    /**
+     * Local calendar date of a Unix time in **seconds** (the unit subscription
+     * headers use), e.g. `2026-12-31`. Empty for 0, and for a value too far out
+     * for java.time to place on a calendar — headers come from third parties.
+     */
+    fun date(epochSeconds: Long, zone: ZoneId = ZoneId.systemDefault()): String {
+        if (epochSeconds <= 0) return ""
+        return runCatching { DATE.format(Instant.ofEpochSecond(epochSeconds).atZone(zone)) }.getOrDefault("")
+    }
+
     /** Elapsed wall-clock since an ISO-8601 instant, as `1h 04m` / `12s`. */
     fun elapsedSince(iso: String, now: Instant = Instant.now()): String {
         val start = runCatching { Instant.parse(iso) }.getOrNull() ?: return ""

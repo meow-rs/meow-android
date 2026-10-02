@@ -67,6 +67,9 @@
     <string name="subs_edit_yaml">Edit YAML</string>
     <string name="subs_updated">%1$s updated</string>
     <string name="subs_last_updated">Updated %1$s</string>
+    <string name="subs_usage">Used %1$s / %2$s</string>
+    <string name="subs_expires">Expires %1$s</string>
+    <string name="subs_expired">Expired on %1$s</string>
     <string name="subs_refresh_failed">Refresh failed: %1$s</string>
     <string name="subs_imported">Imported \"%1$s\"</string>
     <string name="subs_import_failed">Import failed: %1$s</string>

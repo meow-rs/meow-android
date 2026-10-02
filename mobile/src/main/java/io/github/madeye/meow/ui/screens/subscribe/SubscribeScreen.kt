@@ -1,11 +1,13 @@
 package io.github.madeye.meow.ui.screens.subscribe
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
@@ -37,11 +40,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
+import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
@@ -171,6 +177,9 @@ private fun ProfileCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                if (profile.userInfo.hasQuota || profile.userInfo.hasExpiry) {
+                    PlanUsage(profile.userInfo)
+                }
                 if (profile.lastUpdated > 0) {
                     Text(
                         text = stringResource(
@@ -234,6 +243,73 @@ private fun ProfileCard(
                     Text(stringResource(R.string.common_cancel))
                 }
             },
+        )
+    }
+}
+
+/**
+ * The provider's `subscription-userinfo` figures: used of total over a thin
+ * bar, then the expiry date. Each part renders only when the provider reported
+ * it, so a plain config URL keeps the compact card.
+ */
+@Composable
+private fun PlanUsage(info: SubscriptionUserInfo) {
+    val colors = MaterialTheme.meow
+    Column(
+        modifier = Modifier.padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (info.hasQuota) {
+            val exhausted = info.used >= info.total
+            Text(
+                text = stringResource(
+                    R.string.subs_usage,
+                    Formatters.bytes(info.used),
+                    Formatters.bytes(info.total),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (exhausted) colors.danger else colors.mutedText,
+            )
+            UsageBar(
+                fraction = info.usedFraction(),
+                color = if (exhausted) colors.danger else colors.accent,
+            )
+        }
+        // Blank when the provider sent a date java.time can't place; skip the
+        // row rather than render "Expires " with nothing after it.
+        val expiry = Formatters.date(info.expire)
+        if (expiry.isNotEmpty()) {
+            // Read at composition rather than ticking: the list recomposes on
+            // every profile emission and tab revisit, which is fresh enough
+            // for a day-granular date.
+            val expired = info.isExpired(System.currentTimeMillis() / 1000)
+            Text(
+                text = stringResource(
+                    if (expired) R.string.subs_expired else R.string.subs_expires,
+                    expiry,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (expired) colors.danger else colors.mutedText,
+                fontWeight = if (expired) FontWeight.SemiBold else null,
+            )
+        }
+    }
+}
+
+/** Hand-drawn rather than LinearProgressIndicator, whose M3 gap and stop dot crowd a 4 dp bar. */
+@Composable
+private fun UsageBar(fraction: Float, color: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .background(color.copy(alpha = 0.16f), CircleShape),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction)
+                .fillMaxHeight()
+                .background(color, CircleShape),
         )
     }
 }
