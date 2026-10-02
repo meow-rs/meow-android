@@ -43,7 +43,9 @@
     <string name="proxy_groups_title">代理分组</string>
     <string name="proxy_no_groups">未找到代理分组。\n连接 VPN 以加载分组。</string>
     <string name="proxy_url_test_all">全部测速</string>
+    <string name="proxy_testing">正在测速…</string>
     <string name="proxy_delay_ms">%1$d 毫秒</string>
+    <string name="proxy_delay_timeout">超时</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">订阅管理</string>

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,12 +29,17 @@ import io.github.madeye.meow.ui.theme.meow
  *
  * The minimum width keeps rows from jittering as results stream in during a
  * group speed test.
+ *
+ * [timedOut] marks a node whose last probe failed, as opposed to one never
+ * probed at all: the former gets a "timeout" pill, the latter only a muted
+ * dash.
  */
 @Composable
 fun DelayBadge(
     delayMs: Int?,
     modifier: Modifier = Modifier,
     loading: Boolean = false,
+    timedOut: Boolean = false,
 ) {
     val colors = MaterialTheme.meow
     Box(
@@ -47,25 +53,24 @@ fun DelayBadge(
                 color = colors.accent,
             )
 
-            delayMs != null && delayMs > 0 -> {
-                val tint = when {
+            delayMs != null && delayMs > 0 -> DelayPill(
+                text = androidx.compose.ui.res.stringResource(
+                    io.github.madeye.meow.R.string.proxy_delay_ms,
+                    delayMs,
+                ),
+                tint = when {
                     delayMs < 200 -> colors.connected
                     delayMs < 500 -> colors.warning
                     else -> colors.danger
-                }
-                Text(
-                    text = androidx.compose.ui.res.stringResource(
-                        io.github.madeye.meow.R.string.proxy_delay_ms,
-                        delayMs,
-                    ),
-                    style = MaterialTheme.typography.labelMedium.merge(MeowTextStyles.monoDigits),
-                    color = tint,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier
-                        .background(tint.copy(alpha = 0.18f), CircleShape)
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                )
-            }
+                },
+            )
+
+            timedOut -> DelayPill(
+                text = androidx.compose.ui.res.stringResource(
+                    io.github.madeye.meow.R.string.proxy_delay_timeout,
+                ),
+                tint = colors.danger,
+            )
 
             else -> Icon(
                 imageVector = Icons.Outlined.RemoveCircleOutline,
@@ -75,6 +80,19 @@ fun DelayBadge(
             )
         }
     }
+}
+
+@Composable
+private fun DelayPill(text: String, tint: Color) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium.merge(MeowTextStyles.monoDigits),
+        color = tint,
+        textAlign = TextAlign.End,
+        modifier = Modifier
+            .background(tint.copy(alpha = 0.18f), CircleShape)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    )
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
@@ -88,6 +106,7 @@ private fun DelayBadgePreview() {
             DelayBadge(delayMs = 320)
             DelayBadge(delayMs = 812)
             DelayBadge(delayMs = null)
+            DelayBadge(delayMs = null, timedOut = true)
             DelayBadge(delayMs = null, loading = true)
         }
     }

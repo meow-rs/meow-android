@@ -256,6 +256,23 @@ class MeowApiTest {
     // -------------------------------------------------------------------------
 
     @Test
+    fun `proxies reads an url-test group's testUrl and leaves a selector's null`() = runTest {
+        enqueue(
+            """
+            {"proxies": {
+              "Auto":  {"type": "URLTest", "now": "a", "all": ["a"], "testUrl": "https://cp.cloudflare.com/"},
+              "Proxy": {"type": "Selector", "now": "a", "all": ["a"]}
+            }}
+            """.trimIndent(),
+        )
+
+        val groups = api.proxies().groups
+
+        assertEquals("https://cp.cloudflare.com/", groups.getValue("Auto").testUrl)
+        assertNull(groups.getValue("Proxy").testUrl)
+    }
+
+    @Test
     fun `testProxyDelay sends url and timeout and reads the delay`() = runTest {
         enqueue("""{"delay": 142}""")
 
@@ -296,6 +313,17 @@ class MeowApiTest {
         assertEquals("PUT", request.method)
         assertEquals("/proxies/Proxy", request.requestUrl!!.encodedPath)
         assertEquals("""{"name":"Tokyo 01"}""", request.body.readUtf8())
+    }
+
+    @Test
+    fun `unfixProxy DELETEs the group and accepts 204`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.unfixProxy("Auto Select")
+
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/proxies/Auto%20Select", request.requestUrl!!.encodedPath)
     }
 
     @Test

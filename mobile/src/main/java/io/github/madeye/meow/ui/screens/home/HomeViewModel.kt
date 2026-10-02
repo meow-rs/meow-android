@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.analytics.Analytics
+import io.github.madeye.meow.api.GroupDelayTester
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.api.MeowApiException
 import io.github.madeye.meow.api.RouteMode
@@ -13,7 +14,9 @@ import io.github.madeye.meow.preference.RouteModeStore
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.vpn.VpnStateRepository
 import java.io.IOException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +25,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,7 +37,7 @@ import timber.log.Timber
 data class ProxyNodeUi(
     val name: String,
     val type: String,
-    val delayMs: Int?,
+    val delay: NodeDelay,
     val selected: Boolean,
 )
 
@@ -42,6 +47,10 @@ data class ProxyGroupUi(
     val type: String,
     val now: String,
     val nodes: List<ProxyNodeUi>,
+    /** The group's own health-check URL, which its latency test probes with. */
+    val testUrl: String? = null,
+    /** Share of members tested while a latency test runs; `null` otherwise. */
+    val testProgress: Float? = null,
 )
 
 @Immutable
@@ -52,7 +61,6 @@ data class HomeUiState(
     val traffic: TrafficStats = TrafficStats(),
     val groups: List<ProxyGroupUi> = emptyList(),
     val expandedGroup: String? = null,
-    val testingGroup: String? = null,
     val routeMode: RouteMode = RouteMode.Rule,
 ) {
     val isConnected: Boolean get() = state == BaseService.State.Connected
@@ -72,7 +80,13 @@ class HomeViewModel(
 
     private val groups = MutableStateFlow<List<ProxyGroupUi>>(emptyList())
     private val expanded = MutableStateFlow<String?>(null)
-    private val testing = MutableStateFlow<String?>(null)
+
+    /** Running latency tests by group, laid over [groups] until each ends. */
+    private val groupTests = MutableStateFlow<Map<String, GroupTestProgress>>(emptyMap())
+
+    /** One job per group under test. Only touched on the main thread. */
+    private val testJobs = HashMap<String, Job>()
+    private val delayTester = GroupDelayTester(api)
 
     /** The user's persisted pick; `null` until they make one. */
     private val savedMode = MutableStateFlow<RouteMode?>(null)
@@ -96,8 +110,8 @@ class HomeViewModel(
         vpn.state,
         vpn.traffic,
         profiles.observeSelected(),
-        groups,
-        combine(expanded, testing, routeMode, ::LocalState),
+        combine(groups, groupTests) { list, tests -> list.withTests(tests) },
+        combine(expanded, routeMode, ::LocalState),
     ) { state, traffic, profile, groupList, local ->
         HomeUiState(
             state = state,
@@ -106,14 +120,12 @@ class HomeViewModel(
             traffic = traffic,
             groups = groupList,
             expandedGroup = local.expandedGroup,
-            testingGroup = local.testingGroup,
             routeMode = local.routeMode,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     private data class LocalState(
         val expandedGroup: String?,
-        val testingGroup: String?,
         val routeMode: RouteMode,
     )
 
@@ -215,23 +227,44 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Latency-tests every member of [group], filling each row in as its probe
+     * lands (see [GroupDelayTester]). A test already running for the group is
+     * restarted rather than joined; other groups' tests carry on.
+     */
     fun onTestGroup(group: String) {
-        viewModelScope.launch {
-            testing.value = group
+        val target = groups.value.firstOrNull { it.name == group } ?: return
+        testJobs.remove(group)?.cancel()
+        val members = target.nodes.map { it.name }
+        groupTests.update { it + (group to GroupTestProgress.start(members)) }
+        // Lazy so the job is registered before its body can reach `finally`.
+        val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            val self = coroutineContext.job
             try {
-                api.testGroupDelay(group)
-            } catch (e: MeowApiException) {
-                // Individual probes can time out; the reload below still shows
-                // whatever latencies did come back.
+                delayTester.test(group, target.type, members, target.testUrl).collect { result ->
+                    groupTests.update { tests ->
+                        val progress = tests[group] ?: return@update tests
+                        tests + (group to progress.withResult(result))
+                    }
+                }
+                // The engine kept every result as history (and an url-test
+                // group its new pick); reload before dropping the overlay so
+                // rows don't flash their pre-test values in between.
+                loadGroups().join()
             } finally {
-                testing.value = null
-                loadGroups()
+                // A superseded run must leave its successor's state alone.
+                if (testJobs[group] === self) {
+                    testJobs.remove(group)
+                    groupTests.update { it - group }
+                }
             }
         }
+        testJobs[group] = job
+        job.start()
     }
 
-    private fun loadGroups() {
-        viewModelScope.launch {
+    private fun loadGroups(): Job {
+        return viewModelScope.launch {
             // Read first: the mode decides whether GLOBAL is listed.
             loadRouteMode()
             groups.value = try {
@@ -241,6 +274,7 @@ class HomeViewModel(
                         name = group.name,
                         type = group.type,
                         now = group.now,
+                        testUrl = group.testUrl,
                         nodes = group.all.map { nodeName ->
                             val node = result.proxies[nodeName]
                             // Members can be groups themselves (every one of
@@ -249,8 +283,7 @@ class HomeViewModel(
                             ProxyNodeUi(
                                 name = nodeName,
                                 type = node?.type ?: member?.type.orEmpty(),
-                                delayMs = (node?.latestDelay ?: member?.history?.lastOrNull()?.delay)
-                                    ?.takeIf { it > 0 },
+                                delay = NodeDelay.fromHistory(node?.history ?: member?.history.orEmpty()),
                                 selected = nodeName == group.now,
                             )
                         },

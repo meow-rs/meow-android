@@ -146,7 +146,6 @@ fun HomeScreen(
                 ProxyGroupCard(
                     group = group,
                     expanded = state.expandedGroup == group.name,
-                    testing = state.testingGroup == group.name,
                     onToggleExpanded = { onToggleExpanded(group.name) },
                     onSelectNode = { node -> onSelectNode(group.name, node) },
                     onTest = { onTestGroup(group.name) },
@@ -295,7 +294,6 @@ private fun TrafficTile(
 private fun ProxyGroupCard(
     group: ProxyGroupUi,
     expanded: Boolean,
-    testing: Boolean,
     onToggleExpanded: () -> Unit,
     onSelectNode: (String) -> Unit,
     onTest: () -> Unit,
@@ -322,8 +320,22 @@ private fun ProxyGroupCard(
                     color = colors.mutedText,
                 )
             }
-            if (testing) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            val testProgress = group.testProgress
+            if (testProgress != null) {
+                // Fills as members report in; eased so a burst of results
+                // doesn't make it jump.
+                val shown by animateFloatAsState(targetValue = testProgress, label = "testProgress")
+                val testingLabel = stringResource(R.string.proxy_testing)
+                // The button's footprint, so the chevron doesn't shift.
+                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { shown },
+                        modifier = Modifier
+                            .size(18.dp)
+                            .semantics { contentDescription = testingLabel },
+                        strokeWidth = 2.dp,
+                    )
+                }
             } else {
                 IconButton(onClick = onTest) {
                     Icon(
@@ -383,6 +395,10 @@ private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit) {
                 )
             }
         }
-        DelayBadge(delayMs = node.delayMs)
+        DelayBadge(
+            delayMs = (node.delay as? NodeDelay.Measured)?.ms,
+            loading = node.delay == NodeDelay.Testing,
+            timedOut = node.delay == NodeDelay.TimedOut,
+        )
     }
 }

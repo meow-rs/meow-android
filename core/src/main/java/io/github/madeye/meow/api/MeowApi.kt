@@ -21,6 +21,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.Dispatcher
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -52,6 +53,12 @@ class MeowApi(
         const val DEFAULT_BASE_URL = "http://127.0.0.1:9090"
         const val DELAY_TEST_URL = "http://www.gstatic.com/generate_204"
 
+        /**
+         * Delay probes in flight at once. Each can hold its call open for the
+         * full probe timeout, so a large group is worked through in waves.
+         */
+        const val PROBE_CONCURRENCY = 8
+
         private val JSON_MEDIA = "application/json".toMediaType()
 
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
@@ -64,6 +71,16 @@ class MeowApi(
             // Keeps the /logs socket from being reaped while idle.
             .pingInterval(20, TimeUnit.SECONDS)
             .build()
+    }
+
+    /**
+     * Delay probes get their own dispatcher. OkHttp runs at most five calls per
+     * host by default, so sharing [client]'s would cap a group test below
+     * [PROBE_CONCURRENCY] and queue every other API call behind probes that
+     * can each take seconds to time out.
+     */
+    private val probeDispatcher by lazy {
+        Dispatcher().apply { maxRequestsPerHost = PROBE_CONCURRENCY }
     }
 
     // -------------------------------------------------------------------------
@@ -115,6 +132,19 @@ class MeowApi(
         execute(request, "selectProxy", okCodes = setOf(200, 204))
     }
 
+    /**
+     * Returns an url-test or fallback group to automatic selection, dropping a
+     * member pinned through [selectProxy]. Selectors have nothing to unpin and
+     * answer 400.
+     */
+    suspend fun unfixProxy(group: String) {
+        val request = Request.Builder()
+            .url(baseUrl.newBuilder().addPathSegment("proxies").addPathSegment(group).build())
+            .delete()
+            .build()
+        execute(request, "unfixProxy", okCodes = setOf(200, 204))
+    }
+
     suspend fun testProxyDelay(
         name: String,
         url: String = DELAY_TEST_URL,
@@ -125,7 +155,13 @@ class MeowApi(
             .addQueryParameter("url", url)
             .addQueryParameter("timeout", timeoutMs.toString())
             .build()
-        val body = execute(Request.Builder().url(requestUrl).build(), "testProxyDelay")
+        // The engine answers only once the probe ends, so the read has to
+        // outlast the probe's own timeout.
+        val scoped = client.newBuilder()
+            .dispatcher(probeDispatcher)
+            .readTimeout(timeoutMs + 5_000L, TimeUnit.MILLISECONDS)
+            .build()
+        val body = execute(Request.Builder().url(requestUrl).build(), "testProxyDelay", client = scoped)
         return decode("testProxyDelay") {
             json.parseToJsonElement(body).jsonObject["delay"]?.jsonPrimitive?.intOrNull ?: 0
         }

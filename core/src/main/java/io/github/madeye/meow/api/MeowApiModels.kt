@@ -78,6 +78,8 @@ data class ProxyGroup(
     val now: String,
     val all: List<String>,
     val history: List<ProxyHistory>,
+    /** Health-check URL of an url-test / fallback group; selectors report none. */
+    val testUrl: String? = null,
 )
 
 /** Parsed `GET /proxies`, split into selector groups and leaf proxies. */
@@ -145,6 +147,7 @@ data class ProxiesResult(
                         now = data.string("now"),
                         all = data.stringList("all"),
                         history = data.historyList(),
+                        testUrl = data.string("testUrl").ifEmpty { null },
                     )
                 } else {
                     proxies[name] = Proxy(

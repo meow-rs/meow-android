@@ -53,7 +53,9 @@
     <string name="proxy_groups_title">Proxy Groups</string>
     <string name="proxy_no_groups">No proxy groups found.\nConnect the VPN to load groups.</string>
     <string name="proxy_url_test_all">URL Test All</string>
+    <string name="proxy_testing">Testing latency…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">Timeout</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Subscriptions</string>
