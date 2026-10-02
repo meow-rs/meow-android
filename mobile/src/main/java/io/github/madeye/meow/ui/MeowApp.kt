@@ -471,9 +471,13 @@ private fun SubscribeRoute(
         SubscriptionDialog(
             initial = editing,
             onDismiss = { dialogOpen = false },
-            onConfirm = { name, url ->
+            onConfirm = { name, url, autoUpdate, intervalHours ->
                 dialogOpen = false
-                if (editing == null) viewModel.add(name, url) else viewModel.update(editing.id, name, url)
+                if (editing == null) {
+                    viewModel.add(name, url, autoUpdate, intervalHours)
+                } else {
+                    viewModel.update(editing.id, name, url, autoUpdate, intervalHours)
+                }
             },
             clipboardText = clipboard,
             onClipboardEmpty = { scope.launch { snackbarHost.showSnackbar(clipboardEmpty) } },

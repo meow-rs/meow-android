@@ -55,6 +55,12 @@
     <string name="subs_url">订阅链接</string>
     <string name="subs_paste">从剪贴板粘贴</string>
     <string name="subs_clipboard_empty">剪贴板为空</string>
+    <string name="subs_auto_update">自动更新</string>
+    <string name="subs_update_interval">更新间隔（小时）</string>
+    <string name="subs_update_interval_range">请输入 %1$d 到 %2$d 之间的数值</string>
+    <string name="subs_next_update">将在 %1$s 之后更新</string>
+    <string name="subs_next_update_due">下次更新：即将进行</string>
+    <string name="subs_auto_update_paused">已暂停：配置有本地修改。刷新或还原后恢复。</string>
     <string name="subs_add_from_url">从链接添加</string>
     <string name="subs_import_from_file">从文件导入</string>
     <string name="subs_export">导出</string>

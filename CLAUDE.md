@@ -98,6 +98,13 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 - **vpn/DailyTrafficRecorder.kt**, **vpn/SpeedSampleStore.kt**: per-day totals and
   the rolling speed window. Both process-scoped so tab switches don't reset them.
 - **repo/**: profiles/subscriptions, per-app proxy, traffic history, config validation.
+- **subscription/**: `SubscriptionService` downloads configs; `AutoUpdateSchedule` decides
+  when a URL subscription is due. `SubscriptionUpdateWorker` (in `:mobile`) is one hourly,
+  network-constrained unique periodic WorkManager job, enqueued from `App.onCreate` in the UI
+  process only (WorkManager is never initialised in `:vpn`), that refreshes due profiles
+  through `ProfileRepository.refresh` — the manual refresh path. Store a download with
+  `ProfileDao.storeFetched`, never `update(row)`: writing back the row read before the fetch
+  reverts whatever changed meanwhile, e.g. a profile switch (`selected` is per row).
 
 ### Compose UI (`mobile/src/main/java/io/github/madeye/meow/ui/`)
 

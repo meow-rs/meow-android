@@ -1,5 +1,6 @@
 package io.github.madeye.meow.database
 
+import androidx.annotation.VisibleForTesting
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -7,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import io.github.madeye.meow.Core
 
-@Database(entities = [ClashProfile::class, DailyTraffic::class], version = 5)
+@Database(entities = [ClashProfile::class, DailyTraffic::class], version = 6)
 abstract class PrivateDatabase : RoomDatabase() {
     companion object {
         // Every shipped schema step must have a migration here; the SQL
@@ -44,6 +45,20 @@ abstract class PrivateDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `sub_expire` INTEGER NOT NULL DEFAULT 0")
             }
         }
+        // Existing subscriptions get auto-update ON at the default interval,
+        // the same as a new one: a stale node list fails quietly, which is
+        // what the feature exists to prevent, and hand-edited configs stay
+        // safe because the worker skips them (AutoUpdateSchedule.isDue). The
+        // DEFAULTs must match ClashProfile's @ColumnInfo, which Room validates.
+        @VisibleForTesting
+        internal val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `clash_profile` ADD COLUMN `auto_update` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL(
+                    "ALTER TABLE `clash_profile` ADD COLUMN `update_interval_hours` INTEGER NOT NULL DEFAULT 24",
+                )
+            }
+        }
 
         private val instance by lazy {
             // The database was named mihomo.db before the app-wide
@@ -60,7 +75,7 @@ abstract class PrivateDatabase : RoomDatabase() {
             }
             Room.databaseBuilder(Core.deviceStorage, PrivateDatabase::class.java, "meow.db")
                 .allowMainThreadQueries()
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 // Only reached when no migration path exists (e.g. a downgrade).
                 .fallbackToDestructiveMigration()
                 .build()

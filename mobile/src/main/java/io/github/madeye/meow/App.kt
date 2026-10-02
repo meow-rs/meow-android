@@ -5,6 +5,7 @@ import android.app.Application
 import androidx.core.content.getSystemService
 import io.github.madeye.meow.database.PrivateDatabase
 import io.github.madeye.meow.editor.SoraTextMateBootstrap
+import io.github.madeye.meow.subscription.SubscriptionUpdateWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,6 +36,9 @@ class App : Application() {
         }
         // Sora Editor TextMate registries are process-global; populate once.
         SoraTextMateBootstrap.init(this)
+        // Below the process check on purpose: WorkManager is only initialised
+        // in the default process, which is also where the worker runs.
+        SubscriptionUpdateWorker.schedule(this)
     }
 
     private fun isMainProcess(): Boolean {

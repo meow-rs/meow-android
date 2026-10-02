@@ -3,6 +3,7 @@ package io.github.madeye.meow.repo
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
+import io.github.madeye.meow.database.storeFetched
 import io.github.madeye.meow.subscription.SubscriptionService
 import io.github.madeye.meow.vpn.ConfigReloader
 import kotlinx.coroutines.Dispatchers
@@ -53,20 +54,30 @@ class ProfileRepository(
             existing.url = url
             dao.update(existing)
             if (url.isNotEmpty()) {
-                dao.update(SubscriptionService.fetchSubscription(existing))
+                dao.storeFetched(SubscriptionService.fetchSubscription(existing))
             }
         }
+    }
+
+    /** Stores the background refresh schedule. Unlike [update], no re-fetch. */
+    suspend fun setAutoUpdate(id: Long, enabled: Boolean, intervalHours: Int) = withContext(Dispatchers.IO) {
+        dao.updateAutoUpdate(id, enabled, intervalHours)
     }
 
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) {
         dao.getById(id)?.let(dao::delete)
     }
 
-    suspend fun refresh(id: Long) = withContext(Dispatchers.IO) {
+    /**
+     * Re-downloads a subscription. With [onlyIfUnedited] a config the user
+     * edits while the fetch runs is kept and the download dropped: background
+     * updates must not discard edits, while a manual refresh asks to overwrite.
+     */
+    suspend fun refresh(id: Long, onlyIfUnedited: Boolean = false) = withContext(Dispatchers.IO) {
         reloader.applying {
             val profile = dao.getById(id) ?: return@applying
             if (profile.url.isEmpty()) return@applying
-            dao.update(SubscriptionService.fetchSubscription(profile))
+            dao.storeFetched(SubscriptionService.fetchSubscription(profile), onlyIfUnedited)
         }
     }
 

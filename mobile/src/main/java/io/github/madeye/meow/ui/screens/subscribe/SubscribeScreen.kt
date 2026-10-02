@@ -15,7 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
@@ -30,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,11 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
+import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.meow
@@ -319,12 +327,17 @@ private fun UsageBar(fraction: Float, color: Color) {
 fun SubscriptionDialog(
     initial: ProfileUi?,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, url: String) -> Unit,
+    onConfirm: (name: String, url: String, autoUpdate: Boolean, intervalHours: Int) -> Unit,
     clipboardText: () -> String?,
     onClipboardEmpty: () -> Unit,
 ) {
     var name by rememberSaveable(initial?.id) { mutableStateOf(initial?.name.orEmpty()) }
     var url by rememberSaveable(initial?.id) { mutableStateOf(initial?.url.orEmpty()) }
+    val storedHours = initial?.updateIntervalHours ?: AutoUpdateSchedule.DEFAULT_INTERVAL_HOURS
+    var autoUpdate by rememberSaveable(initial?.id) { mutableStateOf(initial?.autoUpdate ?: true) }
+    var intervalText by rememberSaveable(initial?.id) { mutableStateOf(storedHours.toString()) }
+    val intervalHours = AutoUpdateSchedule.parseIntervalHours(intervalText)
+    val now = remember { System.currentTimeMillis() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -334,7 +347,8 @@ fun SubscriptionDialog(
             )
         },
         text = {
-            Column {
+            // Scrolls so the schedule fields stay reachable above the keyboard.
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -363,12 +377,37 @@ fun SubscriptionDialog(
                         }
                     },
                 )
+                // A file import has no URL to refresh from, so editing one
+                // shows no schedule until a URL is entered.
+                if (initial == null || url.isNotBlank()) {
+                    // Saving a changed URL re-downloads, which restarts the
+                    // schedule, so the preview only holds for the same URL.
+                    val hint = initial?.takeIf { it.url == url.trim() }
+                        ?.let { scheduleHint(it, intervalHours, now) }
+                    Spacer(Modifier.height(12.dp))
+                    AutoUpdateFields(
+                        autoUpdate = autoUpdate,
+                        onAutoUpdateChange = { autoUpdate = it },
+                        intervalText = intervalText,
+                        onIntervalChange = { intervalText = it },
+                        intervalValid = intervalHours != null,
+                        hint = hint,
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name.trim(), url.trim()) },
-                enabled = url.isNotBlank(),
+                onClick = {
+                    onConfirm(
+                        name.trim(),
+                        url.trim(),
+                        autoUpdate,
+                        // Switched off with a half-typed interval: keep the stored one.
+                        intervalHours ?: storedHours,
+                    )
+                },
+                enabled = url.isNotBlank() && (intervalHours != null || !autoUpdate),
             ) {
                 Text(stringResource(if (initial == null) R.string.common_add else R.string.common_save))
             }
@@ -377,4 +416,75 @@ fun SubscriptionDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     )
+}
+
+@Composable
+private fun AutoUpdateFields(
+    autoUpdate: Boolean,
+    onAutoUpdateChange: (Boolean) -> Unit,
+    intervalText: String,
+    onIntervalChange: (String) -> Unit,
+    intervalValid: Boolean,
+    hint: String?,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = autoUpdate, role = Role.Switch, onValueChange = onAutoUpdateChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.subs_auto_update),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        // The whole row is the toggle target; a clickable switch inside it
+        // would be a second, smaller one.
+        Switch(checked = autoUpdate, onCheckedChange = null)
+    }
+    if (autoUpdate) {
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = intervalText,
+            onValueChange = { text -> onIntervalChange(text.filter(Char::isDigit)) },
+            label = { Text(stringResource(R.string.subs_update_interval)) },
+            singleLine = true,
+            isError = !intervalValid,
+            supportingText = when {
+                !intervalValid -> {
+                    {
+                        Text(
+                            stringResource(
+                                R.string.subs_update_interval_range,
+                                AutoUpdateSchedule.MIN_INTERVAL_HOURS,
+                                AutoUpdateSchedule.MAX_INTERVAL_HOURS,
+                            ),
+                        )
+                    }
+                }
+                hint != null -> {
+                    { Text(hint) }
+                }
+                else -> null
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/**
+ * When the worker will pick this profile up with [intervalHours]. The worker
+ * runs hourly and Doze can defer it, hence "after" rather than "at".
+ */
+@Composable
+private fun scheduleHint(profile: ProfileUi, intervalHours: Int?, now: Long): String? {
+    if (intervalHours == null) return null
+    if (profile.hasLocalEdits) return stringResource(R.string.subs_auto_update_paused)
+    val dueAt = AutoUpdateSchedule.dueAt(profile.lastUpdated, intervalHours, now)
+    return if (dueAt <= now) {
+        stringResource(R.string.subs_next_update_due)
+    } else {
+        stringResource(R.string.subs_next_update, Formatters.timestamp(dueAt))
+    }
 }

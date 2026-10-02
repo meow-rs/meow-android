@@ -65,6 +65,12 @@
     <string name="subs_url">Subscription URL</string>
     <string name="subs_paste">Paste from clipboard</string>
     <string name="subs_clipboard_empty">Clipboard is empty</string>
+    <string name="subs_auto_update">Auto-update</string>
+    <string name="subs_update_interval">Update interval (hours)</string>
+    <string name="subs_update_interval_range">Enter a value from %1$d to %2$d</string>
+    <string name="subs_next_update">Next update after %1$s</string>
+    <string name="subs_next_update_due">Next update: due now</string>
+    <string name="subs_auto_update_paused">Paused: the config has local edits. Refresh or revert it to resume.</string>
     <string name="subs_add_from_url">Add from URL</string>
     <string name="subs_import_from_file">Import from file</string>
     <string name="subs_export">Export</string>

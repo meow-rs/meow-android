@@ -1,6 +1,7 @@
 package io.github.madeye.meow.database
 
 import androidx.room.*
+import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,11 @@ data class ClashProfile(
     @ColumnInfo(name = "yaml_backup") var yamlBackup: String = "",
     /** Provider-reported plan usage as of the last successful fetch; see [SubscriptionUserInfo]. */
     @Embedded(prefix = "sub_") var userInfo: SubscriptionUserInfo = SubscriptionUserInfo.NONE,
+    // Background refresh schedule, see AutoUpdateSchedule. File imports carry
+    // the defaults too but are never refreshed: they have no URL.
+    @ColumnInfo(name = "auto_update", defaultValue = "1") var autoUpdate: Boolean = true,
+    @ColumnInfo(name = "update_interval_hours", defaultValue = "24")
+    var updateIntervalHours: Int = AutoUpdateSchedule.DEFAULT_INTERVAL_HOURS,
 )
 
 @Dao
@@ -74,4 +80,49 @@ interface ProfileDao {
 
     @Query("UPDATE clash_profile SET yaml_content = yaml_backup WHERE id = :id")
     fun revertYamlContent(id: Long)
+
+    @Query(
+        "UPDATE clash_profile SET auto_update = :enabled, update_interval_hours = :intervalHours WHERE id = :id",
+    )
+    fun updateAutoUpdate(id: Long, enabled: Boolean, intervalHours: Int)
+
+    /**
+     * Stores a download, writing only the columns a fetch produces. The fetch
+     * can take a minute, and writing back the whole row read before it would
+     * undo whatever changed meanwhile: a profile switch (`selected` is per
+     * row, so two rows would end up selected), the selected proxy, traffic,
+     * the name or the auto-update schedule. Use [storeFetched].
+     *
+     * With [onlyIfUnedited] nothing is written if the config has local edits
+     * by now, checked in the same statement.
+     */
+    @Query(
+        "UPDATE clash_profile SET yaml_content = :yaml, yaml_backup = :yaml, last_updated = :lastUpdated, " +
+            "sub_upload = :upload, sub_download = :download, sub_total = :total, sub_expire = :expire " +
+            "WHERE id = :id AND (NOT :onlyIfUnedited OR yaml_content = yaml_backup)",
+    )
+    fun updateFetched(
+        id: Long,
+        yaml: String,
+        lastUpdated: Long,
+        upload: Long,
+        download: Long,
+        total: Long,
+        expire: Long,
+        onlyIfUnedited: Boolean,
+    )
+}
+
+/** [ProfileDao.updateFetched] for a profile returned by `SubscriptionService.fetchSubscription`. */
+fun ProfileDao.storeFetched(fetched: ClashProfile, onlyIfUnedited: Boolean = false) = with(fetched) {
+    updateFetched(
+        id,
+        yamlContent,
+        lastUpdated,
+        userInfo.upload,
+        userInfo.download,
+        userInfo.total,
+        userInfo.expire,
+        onlyIfUnedited,
+    )
 }

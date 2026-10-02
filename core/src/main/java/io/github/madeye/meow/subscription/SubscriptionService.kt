@@ -2,6 +2,7 @@ package io.github.madeye.meow.subscription
 
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
+import io.github.madeye.meow.database.storeFetched
 import io.github.madeye.meow.vpn.ConfigReloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
@@ -96,7 +97,7 @@ object SubscriptionService {
             for (profile in profiles) {
                 try {
                     val updated = fetchSubscription(profile)
-                    PrivateDatabase.profileDao.update(updated)
+                    PrivateDatabase.profileDao.storeFetched(updated)
                 } catch (_: Exception) { }
             }
         }

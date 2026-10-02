@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.ProfileRepository
+import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,9 @@ data class ProfileUi(
     val hasYaml: Boolean,
     val hasBackup: Boolean,
     val userInfo: SubscriptionUserInfo,
+    val autoUpdate: Boolean,
+    val updateIntervalHours: Int,
+    val hasLocalEdits: Boolean,
 )
 
 @Immutable
@@ -78,19 +82,35 @@ class SubscribeViewModel(
                         hasYaml = it.yamlContent.isNotEmpty(),
                         hasBackup = it.yamlBackup.isNotEmpty(),
                         userInfo = it.userInfo,
+                        autoUpdate = it.autoUpdate,
+                        updateIntervalHours = it.updateIntervalHours,
+                        hasLocalEdits = AutoUpdateSchedule.hasLocalEdits(it),
                     )
                 },
                 busy = isBusy,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SubscribeUiState())
 
-    fun add(name: String, url: String) = withBusy {
-        profiles.add(name.ifBlank { url }, url)
+    fun add(
+        name: String,
+        url: String,
+        autoUpdate: Boolean = true,
+        intervalHours: Int = AutoUpdateSchedule.DEFAULT_INTERVAL_HOURS,
+    ) = withBusy {
+        val added = profiles.add(name.ifBlank { url }, url)
+        profiles.setAutoUpdate(added.id, autoUpdate, intervalHours)
         analytics.subscriptionAdd()
     }
 
-    fun update(id: Long, name: String, url: String) = withBusy {
-        profiles.update(id, name, url)
+    fun update(id: Long, name: String, url: String, autoUpdate: Boolean, intervalHours: Int) = withBusy {
+        val before = profiles.getById(id)
+        profiles.setAutoUpdate(id, autoUpdate, intervalHours)
+        // Saving normally re-downloads the config, but not when only the
+        // schedule changed: switching auto-update is not a request for fresh
+        // nodes, and the download would discard any YAML edits.
+        val scheduleOnly = before != null && name == before.name && url == before.url &&
+            (autoUpdate != before.autoUpdate || intervalHours != before.updateIntervalHours)
+        if (!scheduleOnly) profiles.update(id, name, url)
         analytics.subscriptionEdit()
     }
 
