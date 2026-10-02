@@ -16,10 +16,26 @@
             android:value="${analyticsEnabled}" />
         <activity
             android:name="io.github.madeye.meow.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
+            <!-- singleTask: a link tapped in a browser or chat app must reach
+                 the one running instance (onNewIntent), not stack a second
+                 copy of the app into the caller's task. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- One-tap subscription import: clash://install-config?url=…, and
+                 the clashmeta:// spelling some panels emit. Scoped to the
+                 install-config host so other clash:// links stay with whichever
+                 client handles them. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="clash" />
+                <data android:scheme="clashmeta" />
+                <data android:host="install-config" />
             </intent-filter>
         </activity>
     </application>

@@ -73,6 +73,11 @@
     <string name="subs_refresh_failed">Refresh failed: %1$s</string>
     <string name="subs_imported">Imported \"%1$s\"</string>
     <string name="subs_import_failed">Import failed: %1$s</string>
+    <string name="subs_link_title">Add subscription from link?</string>
+    <string name="subs_link_warning">Only add subscriptions you trust: the config decides where your traffic goes.</string>
+    <string name="subs_link_unsupported">Unsupported link</string>
+    <string name="subs_link_missing_url">The link has no subscription URL</string>
+    <string name="subs_link_bad_url">Only http and https subscription URLs can be added</string>
     <string name="subs_export_saved">Config exported</string>
     <string name="subs_export_failed">Export failed: %1$s</string>
 

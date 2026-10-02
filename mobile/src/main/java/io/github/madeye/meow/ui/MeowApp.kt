@@ -71,11 +71,14 @@ import io.github.madeye.meow.ui.screens.rules.RulesScreen
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsScreen
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
+import io.github.madeye.meow.ui.screens.subscribe.InstallConfigDialog
+import io.github.madeye.meow.ui.screens.subscribe.InstallConfigLink
 import io.github.madeye.meow.ui.screens.subscribe.ProfileUi
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeEvent
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeScreen
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
+import io.github.madeye.meow.ui.screens.subscribe.messageRes
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
@@ -90,10 +93,16 @@ import kotlinx.coroutines.launch
  * Root of the Compose UI: four tabs plus the pushed detail screens.
  *
  * @param autoConnect set by the e2e harness via `--ez auto_connect true`.
+ * @param installLink an install-config link the app was opened with, until the
+ *   user has answered it; [onInstallLinkHandled] clears it.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun MeowApp(autoConnect: Boolean = false) {
+fun MeowApp(
+    autoConnect: Boolean = false,
+    installLink: InstallConfigLink? = null,
+    onInstallLinkHandled: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val snackbarHost = remember { SnackbarHostState() }
 
@@ -108,6 +117,8 @@ fun MeowApp(autoConnect: Boolean = false) {
             navController = navController,
             snackbarHost = snackbarHost,
             autoConnect = autoConnect,
+            installLink = installLink,
+            onInstallLinkHandled = onInstallLinkHandled,
         )
     }
 }
@@ -117,6 +128,8 @@ private fun MeowNavHost(
     navController: NavHostController,
     snackbarHost: SnackbarHostState,
     autoConnect: Boolean,
+    installLink: InstallConfigLink?,
+    onInstallLinkHandled: () -> Unit,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val onTab = TABS.any { tab ->
@@ -132,6 +145,8 @@ private fun MeowNavHost(
         composable<Dest.Subscribe> {
             SubscribeRoute(
                 snackbarHost = snackbarHost,
+                installLink = installLink,
+                onInstallLinkHandled = onInstallLinkHandled,
                 onEditYaml = { navController.navigate(Dest.YamlEditor(it)) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
@@ -160,6 +175,19 @@ private fun MeowNavHost(
         composable<Dest.Rules> { RulesRoute(onBack = navController::popBackStack) }
         composable<Dest.Logs> { LogsRoute(onBack = navController::popBackStack) }
     }
+
+    // A link is answered on the Subscribe tab, where the new subscription then
+    // shows up. If that tab is already open it is left alone, even under the
+    // YAML editor (only reachable from it): switching tabs recreates the editor
+    // and would drop unsaved edits, so the prompt waits until the user is back
+    // on the list.
+    LaunchedEffect(installLink) {
+        if (installLink == null) return@LaunchedEffect
+        val current = navController.currentDestination
+        val onSubscribe = current?.hasRoute(Dest.Subscribe::class) == true ||
+            current?.hasRoute(Dest.YamlEditor::class) == true
+        if (!onSubscribe) navController.navigateToTab(Dest.Subscribe)
+    }
 }
 
 @Composable
@@ -172,15 +200,7 @@ private fun BottomBar(navController: NavHostController, visible: Boolean) {
                 ?.any { it.hasRoute(tab.dest::class) } == true
             NavigationBarItem(
                 selected = selected,
-                onClick = {
-                    navController.navigate(tab.dest) {
-                        // Restores each tab's saved scroll/search state, the
-                        // equivalent of Flutter's IndexedStack.
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                onClick = { navController.navigateToTab(tab.dest) },
                 icon = { Icon(tab.icon, contentDescription = null) },
                 label = { Text(stringResource(tab.label)) },
                 modifier = Modifier.testTag(tab.testTag),
@@ -196,6 +216,16 @@ private fun BottomBar(navController: NavHostController, visible: Boolean) {
                 ),
             )
         }
+    }
+}
+
+private fun NavHostController.navigateToTab(dest: Dest) {
+    navigate(dest) {
+        // Restores each tab's saved scroll/search state, the equivalent of
+        // Flutter's IndexedStack.
+        popUpTo(graph.startDestinationId) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 
@@ -269,6 +299,8 @@ private fun startVpnService(context: android.content.Context) {
 @Composable
 private fun SubscribeRoute(
     snackbarHost: SnackbarHostState,
+    installLink: InstallConfigLink?,
+    onInstallLinkHandled: () -> Unit,
     onEditYaml: (Long) -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -292,6 +324,8 @@ private fun SubscribeRoute(
     val importFailedFmt = stringResource(R.string.subs_import_failed)
     val updatedFmt = stringResource(R.string.subs_updated)
     val refreshFailedFmt = stringResource(R.string.subs_refresh_failed)
+    val linkRejected = (installLink as? InstallConfigLink.Invalid)
+        ?.let { stringResource(it.reason.messageRes()) }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -333,6 +367,15 @@ private fun SubscribeRoute(
             }
             snackbarHost.showSnackbar(message)
         }
+    }
+
+    // A rejected link has nothing to confirm: say why and drop it. The snackbar
+    // runs in [scope] because clearing the link restarts this effect, which
+    // would cancel it mid-display.
+    LaunchedEffect(linkRejected) {
+        if (linkRejected == null) return@LaunchedEffect
+        onInstallLinkHandled()
+        scope.launch { snackbarHost.showSnackbar(linkRejected) }
     }
 
     MeowScaffold(
@@ -393,6 +436,18 @@ private fun SubscribeRoute(
             },
             clipboardText = clipboard,
             onClipboardEmpty = { scope.launch { snackbarHost.showSnackbar(clipboardEmpty) } },
+        )
+    }
+    if (installLink is InstallConfigLink.Valid) {
+        // Same path as "Add from URL", so the busy overlay and failure
+        // snackbar behave identically.
+        InstallConfigDialog(
+            link = installLink,
+            onDismiss = onInstallLinkHandled,
+            onConfirm = {
+                onInstallLinkHandled()
+                viewModel.add(installLink.name, installLink.url)
+            },
         )
     }
     SnackbarHost(snackbarHost)

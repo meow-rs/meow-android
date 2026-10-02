@@ -63,6 +63,11 @@
     <string name="subs_refresh_failed">刷新失败：%1$s</string>
     <string name="subs_imported">已导入 \"%1$s\"</string>
     <string name="subs_import_failed">导入失败：%1$s</string>
+    <string name="subs_link_title">从外部链接添加订阅？</string>
+    <string name="subs_link_warning">请只添加你信任的订阅：配置决定了你的流量去向。</string>
+    <string name="subs_link_unsupported">不支持的链接</string>
+    <string name="subs_link_missing_url">该链接未包含订阅地址</string>
+    <string name="subs_link_bad_url">只能添加 http 或 https 订阅链接</string>
     <string name="subs_export_saved">配置已导出</string>
     <string name="subs_export_failed">导出失败：%1$s</string>
 
