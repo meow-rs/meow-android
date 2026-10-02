@@ -118,8 +118,8 @@
     <string name="connections_close_all_confirm">关闭所有活跃连接？</string>
     <string name="connections_recent_clear">清除</string>
     <string name="connections_recent_clear_confirm">清除最近请求？</string>
-    <string name="connections_closed_at">已关闭 %1$s</string>
-    <string name="connections_filter">按主机过滤…</string>
+    <string name="connections_last_seen">最后活跃 %1$s</string>
+    <string name="connections_filter">按主机或 IP 过滤…</string>
 
     <!-- Rules -->
     <string name="rules_title">规则</string>

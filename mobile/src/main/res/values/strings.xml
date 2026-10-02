@@ -128,8 +128,8 @@
     <string name="connections_close_all_confirm">Close all active connections?</string>
     <string name="connections_recent_clear">Clear</string>
     <string name="connections_recent_clear_confirm">Clear recent requests?</string>
-    <string name="connections_closed_at">Closed %1$s</string>
-    <string name="connections_filter">Filter by host…</string>
+    <string name="connections_last_seen">Last seen %1$s</string>
+    <string name="connections_filter">Filter by host or IP…</string>
 
     <!-- Rules -->
     <string name="rules_title">Rules</string>

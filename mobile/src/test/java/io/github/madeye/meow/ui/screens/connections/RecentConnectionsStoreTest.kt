@@ -20,7 +20,7 @@ class RecentConnectionsStoreTest {
     }
 
     @Test
-    fun `a vanished connection keeps the last seen byte counts`() {
+    fun `a vanished connection keeps the bytes and time it was last seen with`() {
         store.onSnapshot(listOf(conn("a", upload = 1)))
         now = 2_000
         store.onSnapshot(listOf(conn("a", upload = 40, download = 9)))
@@ -31,8 +31,18 @@ class RecentConnectionsStoreTest {
         assertEquals(1, recent.size)
         assertEquals(40, recent[0].connection.upload)
         assertEquals(9, recent[0].connection.download)
-        assertEquals(3_500L, recent[0].closedAtMillis)
+        assertEquals(2_000L, recent[0].lastSeenAtMillis)
         assertTrue(store.lists.value.active.isEmpty())
+    }
+
+    @Test
+    fun `a gap between polls does not stretch the last seen time`() {
+        // The screen is left with "a" open and revisited ten minutes later.
+        store.onSnapshot(listOf(conn("a")))
+        now = 601_000
+        store.onSnapshot(emptyList())
+
+        assertEquals(1_000L, store.lists.value.recent.single().lastSeenAtMillis)
     }
 
     @Test
@@ -65,27 +75,61 @@ class RecentConnectionsStoreTest {
 
     @Test
     fun `a snapshot fetched before a local close cannot restore it`() {
-        now = 100
         store.onSnapshot(listOf(conn("a"), conn("b")))
-        now = 200
-        store.applyLocal(listOf(conn("b")))
-        now = 300
-        store.onSnapshot(listOf(conn("a", upload = 99), conn("b")), observedAt = 150)
+        val inFlight = store.snapshotTicket()
+        store.closeLocal("a")
+        store.onSnapshot(listOf(conn("a", upload = 99), conn("b")), inFlight)
 
         assertEquals(listOf("b"), store.lists.value.active.map { it.id })
         assertEquals(listOf("a"), store.lists.value.recent.map { it.connection.id })
         assertEquals(0, store.lists.value.recent[0].connection.upload)
 
-        store.onSnapshot(listOf(conn("b")), observedAt = 300)
+        store.onSnapshot(listOf(conn("b")))
         assertEquals(listOf("a"), store.lists.value.recent.map { it.connection.id })
+    }
+
+    @Test
+    fun `a wall clock that steps backwards does not freeze polling`() {
+        now = 10_000
+        store.onSnapshot(listOf(conn("a"), conn("b")))
+        store.closeLocal("a")
+        now = 1_000 // NTP or the user set the clock back
+        store.onSnapshot(listOf(conn("b"), conn("c")))
+
+        assertEquals(listOf("b", "c"), store.lists.value.active.map { it.id })
+    }
+
+    @Test
+    fun `closing an unknown id does not discard an in-flight snapshot`() {
+        val inFlight = store.snapshotTicket()
+        store.closeLocal("gone")
+        store.onSnapshot(listOf(conn("a")), inFlight)
+
+        assertEquals(listOf("a"), store.lists.value.active.map { it.id })
+    }
+
+    @Test
+    fun `a local close files the state from the last poll`() {
+        store.onSnapshot(listOf(conn("a", upload = 3), conn("b")))
+        now = 5_000
+        store.closeLocal("a")
+        now = 6_000
+        store.onSnapshot(emptyList())
+
+        // Neither row was observed after the 1_000 poll; the tap is not a sighting.
+        assertEquals(
+            listOf("b" to 1_000L, "a" to 1_000L),
+            store.lists.value.recent.map { it.connection.id to it.lastSeenAtMillis },
+        )
+        assertEquals(3, store.lists.value.recent[1].connection.upload)
     }
 
     @Test
     fun `a fresh snapshot after a failed close puts the connection back`() {
         store.onSnapshot(listOf(conn("a")))
-        store.applyLocal(emptyList())
+        store.closeAllLocal()
         now = 5_000
-        store.onSnapshot(listOf(conn("a", upload = 4)), observedAt = 5_000)
+        store.onSnapshot(listOf(conn("a", upload = 4)))
 
         assertEquals(listOf("a"), store.lists.value.active.map { it.id })
         assertTrue(store.lists.value.recent.isEmpty())
@@ -94,8 +138,9 @@ class RecentConnectionsStoreTest {
     @Test
     fun `closing twice does not duplicate the row`() {
         store.onSnapshot(listOf(conn("a")))
-        store.applyLocal(emptyList())
-        store.applyLocal(emptyList())
+        store.closeAllLocal()
+        store.closeAllLocal()
+        store.closeLocal("a")
 
         assertEquals(1, store.lists.value.recent.size)
     }
@@ -147,7 +192,7 @@ class ConnectionsUiStateTest {
                 connection("c", host = "other.test"),
             ),
             recent = listOf(
-                RecentConnection(connection("d", host = "one.example"), closedAtMillis = 1),
+                RecentConnection(connection("d", host = "one.example"), lastSeenAtMillis = 1),
             ),
             query = "example",
         )

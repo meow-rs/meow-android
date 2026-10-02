@@ -8,12 +8,13 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * One connection that was present in an earlier poll and missing from a later one.
  *
- * [closedAtMillis] is when this store noticed it was gone, not an engine timestamp:
- * `/connections` does not report a close time.
+ * The row is the last snapshot that still listed the flow: [connection]'s byte
+ * counts and [lastSeenAtMillis] both date from that poll. `/connections` does not
+ * report a close time, so the flow closed somewhere after [lastSeenAtMillis].
  */
 data class RecentConnection(
     val connection: Connection,
-    val closedAtMillis: Long,
+    val lastSeenAtMillis: Long,
 )
 
 data class ConnectionLists(
@@ -32,13 +33,14 @@ data class ConnectionLists(
  * Polling itself still runs only while that screen is open.
  *
  * A flow that starts and ends between two polls, or entirely while the screen is
- * closed, is never seen. Close time is when a poll first noticed the flow was
- * gone, which can be the next visit. Several flows that vanish in the same poll
- * are ordered by start time, newest first — the poll cannot tell which of them
- * closed last.
+ * closed, is never seen. A flow that was open when the screen was left and gone
+ * on the next visit is filed with the state it was last seen in, so the gap does
+ * not stretch its duration. Several flows that vanish in the same poll are
+ * ordered by start time, newest first — the poll cannot tell which closed last.
  *
- * A snapshot whose fetch started before [applyLocal] is dropped, so an in-flight
- * poll cannot undo a close the user just tapped.
+ * A snapshot fetched across a local close ([closeLocal], [closeAllLocal]) is
+ * dropped, so an in-flight poll cannot undo a close the user just tapped. This is
+ * ordered by a counter rather than the wall clock, which can step backwards.
  */
 class RecentConnectionsStore(
     private val capacity: Int = CAPACITY,
@@ -52,33 +54,42 @@ class RecentConnectionsStore(
     private val _lists = MutableStateFlow(ConnectionLists())
     val lists: StateFlow<ConnectionLists> = _lists.asStateFlow()
 
-    /** Last successfully applied active set, in snapshot order. */
+    /** Last active set, in snapshot order. */
     private var activeById: Map<String, Connection> = emptyMap()
 
-    /** Fetch-start time of the newest local edit. Older snapshots are stale. */
-    private var lastMutationAt: Long = Long.MIN_VALUE
+    /** When a poll last observed [activeById]; local closes do not refresh it. */
+    private var activeSeenAt: Long = 0
 
-    internal fun currentTimeMillis(): Long = clock()
+    /** Bumped by every local close; a snapshot taken under an older value is stale. */
+    private var localEdits: Long = 0
 
-    /**
-     * @param observedAt when the fetch that produced [activeNow] started. Defaults
-     *   to "now", which is always applied.
-     */
-    fun onSnapshot(activeNow: List<Connection>, observedAt: Long = clock()) {
+    /** Take before fetching a snapshot and hand back to [onSnapshot]. */
+    fun snapshotTicket(): Long = synchronized(lock) { localEdits }
+
+    fun onSnapshot(activeNow: List<Connection>, ticket: Long = snapshotTicket()) {
         synchronized(lock) {
-            if (observedAt < lastMutationAt) return
+            if (ticket != localEdits) return
+            val seenAt = clock()
+            // Vanished rows are stamped with the previous poll's time, so publish first.
             publish(activeNow)
+            activeSeenAt = seenAt
         }
     }
 
-    /**
-     * Optimistic edit (the user closed a connection, or all of them). Beats any
-     * snapshot whose fetch started earlier.
-     */
-    fun applyLocal(activeNow: List<Connection>) {
+    /** Optimistic close of one flow; beats any snapshot already in flight. */
+    fun closeLocal(id: String) {
         synchronized(lock) {
-            lastMutationAt = clock()
-            publish(activeNow)
+            if (id !in activeById) return
+            localEdits++
+            publish(activeById.values.filter { it.id != id })
+        }
+    }
+
+    /** Optimistic close of every flow; beats any snapshot already in flight. */
+    fun closeAllLocal() {
+        synchronized(lock) {
+            localEdits++
+            publish(emptyList())
         }
     }
 
@@ -99,10 +110,9 @@ class RecentConnectionsStore(
             nextRecent = nextRecent.filterNot { it.connection.id in nowIds }
         }
         if (closed.isNotEmpty()) {
-            val closedAt = clock()
             val stamped = closed
                 .sortedByDescending { it.start }
-                .map { RecentConnection(connection = it, closedAtMillis = closedAt) }
+                .map { RecentConnection(connection = it, lastSeenAtMillis = activeSeenAt) }
             nextRecent = (stamped + nextRecent).take(capacity)
         }
         activeById = activeNow.associateBy { it.id }

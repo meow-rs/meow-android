@@ -94,15 +94,15 @@ class ConnectionsViewModel(
      */
     private val polling = flow<Unit> {
         while (true) {
-            val observedAt = recentConnections.currentTimeMillis()
+            val ticket = recentConnections.snapshotTicket()
             try {
-                recentConnections.onSnapshot(api.connections().connections, observedAt)
+                recentConnections.onSnapshot(api.connections().connections, ticket)
             } catch (e: MeowApiException) {
                 if (e is MeowApiException.Unreachable) {
                     // The controller is gone (VPN stopped). The flows from the
                     // last snapshot are done; file them under Recent. A later
                     // successful poll puts back anything still open.
-                    recentConnections.onSnapshot(emptyList(), observedAt)
+                    recentConnections.onSnapshot(emptyList(), ticket)
                 }
             }
             delay(POLL_INTERVAL_MS)
@@ -131,17 +131,14 @@ class ConnectionsViewModel(
 
     fun close(id: String) {
         viewModelScope.launch {
-            val current = recentConnections.lists.value.active
-            if (current.any { it.id == id }) {
-                recentConnections.applyLocal(current.filterNot { it.id == id })
-            }
+            recentConnections.closeLocal(id)
             runCatching { api.closeConnection(id) }
         }
     }
 
     fun closeAll() {
         viewModelScope.launch {
-            recentConnections.applyLocal(emptyList())
+            recentConnections.closeAllLocal()
             runCatching { api.closeAllConnections() }
         }
     }
@@ -171,10 +168,7 @@ fun ConnectionsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(
-                top = contentPadding.calculateTopPadding(),
-                bottom = contentPadding.calculateBottomPadding(),
-            ),
+            .padding(top = contentPadding.calculateTopPadding()),
     ) {
         OutlinedTextField(
             value = state.query,
@@ -210,9 +204,16 @@ fun ConnectionsScreen(
         Spacer(Modifier.height(8.dp))
 
         val showingRecent = state.tab == ConnectionsTab.Recent
+        // The bottom inset goes inside the list, as on the other screens, so rows
+        // scroll under the transparent navigation bar instead of stopping above it.
+        val listPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            bottom = contentPadding.calculateBottomPadding() + 16.dp,
+        )
         val empty = if (showingRecent) state.visibleRecent.isEmpty() else state.visibleConnections.isEmpty()
         if (empty) {
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = stringResource(
                         if (showingRecent) R.string.connections_recent_empty else R.string.connections_empty,
@@ -223,8 +224,7 @@ fun ConnectionsScreen(
             }
         } else if (showingRecent) {
             LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                contentPadding = listPadding,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.visibleRecent, key = { it.connection.id }) { recent ->
@@ -232,19 +232,18 @@ fun ConnectionsScreen(
                         connection = recent.connection,
                         elapsed = Formatters.elapsedSince(
                             recent.connection.start,
-                            Instant.ofEpochMilli(recent.closedAtMillis),
+                            Instant.ofEpochMilli(recent.lastSeenAtMillis),
                         ),
                         footer = stringResource(
-                            R.string.connections_closed_at,
-                            Formatters.timestamp(recent.closedAtMillis),
+                            R.string.connections_last_seen,
+                            Formatters.timestamp(recent.lastSeenAtMillis),
                         ),
                     )
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                contentPadding = listPadding,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.visibleConnections, key = { it.id }) { connection ->
