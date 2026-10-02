@@ -1,10 +1,12 @@
 package io.github.madeye.meow.bg
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Network
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import androidx.core.content.ContextCompat
 import io.github.madeye.meow.Core
 import io.github.madeye.meow.net.DefaultNetworkListener
 import io.github.madeye.meow.preference.DataStore
@@ -22,6 +24,23 @@ class VpnService : BaseVpnService(), BaseService.Interface {
         private const val PRIVATE_VLAN4_ROUTER = "172.19.0.2"
         private const val PRIVATE_VLAN6_CLIENT = "fdfe:dcba:9876::1"
         private const val PRIVATE_VLAN6_ROUTER = "fdfe:dcba:9876::2"
+
+        /**
+         * Starts the VPN. The caller must already hold VPN consent
+         * ([android.net.VpnService.prepare] returned null); without it the
+         * service just stops itself again.
+         *
+         * startForegroundService rather than startService, so callers that
+         * are not on screen (a Quick Settings tile, the service restarting
+         * itself) work too: an app holding VPN consent is exempt from the
+         * background foreground-service start restriction, and the service
+         * answers the call with startForeground() on every path. A background
+         * caller with no such exemption gets an IllegalStateException
+         * (ForegroundServiceStartNotAllowedException on Android 12+).
+         */
+        fun start(context: Context) {
+            ContextCompat.startForegroundService(context, Intent(context, VpnService::class.java))
+        }
     }
 
     inner class NullConnectionException : NullPointerException(), BaseService.ExpectedException {
@@ -30,8 +49,8 @@ class VpnService : BaseVpnService(), BaseService.Interface {
 
     override val data = BaseService.Data(this)
     override val tag: String get() = "MeowVpnService"
-    override fun createNotification(profileName: String): ServiceNotification =
-        ServiceNotification(this, profileName, "service-vpn")
+    override fun createNotification(): ServiceNotification =
+        ServiceNotification(this, "service-vpn")
 
     private var conn: ParcelFileDescriptor? = null
     private var active = false

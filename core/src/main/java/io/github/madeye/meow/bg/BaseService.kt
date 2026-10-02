@@ -57,6 +57,7 @@ object BaseService {
             if (state == s && msg == null) return
             binder.stateChanged(s, msg)
             state = s
+            notification?.onStateChanged(s)
         }
     }
 
@@ -155,7 +156,7 @@ object BaseService {
     interface Interface {
         val data: Data
         val tag: String
-        fun createNotification(profileName: String): ServiceNotification
+        fun createNotification(): ServiceNotification
 
         fun onBind(intent: Intent): IBinder? =
             if (intent.action == Action.SERVICE) data.binder else null
@@ -199,9 +200,19 @@ object BaseService {
 
         suspend fun startProcesses()
 
+        /** Starts this service again, e.g. on reload; see [VpnService.start]. */
         fun startRunner() {
             this as Context
-            startService(Intent(this, javaClass))
+            try {
+                ContextCompat.startForegroundService(this, Intent(this, javaClass))
+            } catch (e: IllegalStateException) {
+                // A refused restart leaves the VPN stopped; crashing :vpn over
+                // it would not bring it back either. Nothing will start behind
+                // the notification stopRunner kept for the restart, so drop it.
+                Timber.w(e, "restart refused")
+                data.notification?.destroy()
+                data.notification = null
+            }
         }
 
         fun killProcesses(scope: CoroutineScope) {
@@ -212,6 +223,7 @@ object BaseService {
         fun stopRunner(restart: Boolean = false, msg: String? = null) {
             if (data.state == State.Stopping) return
             data.changeState(State.Stopping)
+            if (restart) data.notification?.showConnecting()
             GlobalScope.launch(Dispatchers.Main.immediate) {
                 data.connectingJob?.cancelAndJoin()
                 this@Interface as Service
@@ -222,6 +234,16 @@ object BaseService {
                         unregisterReceiver(data.closeReceiver)
                         data.closeReceiverRegistered = false
                     }
+                }
+                // A restart keeps the notification, and so the foreground:
+                // dropping it would flash it away and leave the next start to
+                // promote the service anew, which Android 12+ may refuse while
+                // the app is in the background. Otherwise it is torn down here
+                // rather than in the block above, which can suspend: a start
+                // arriving meanwhile is answered with this notification (see
+                // onStartCommand) and then ignored, so it must still be
+                // removed. Nothing suspends from here to Stopped.
+                if (!restart) {
                     data.notification?.destroy()
                     data.notification = null
                 }
@@ -234,15 +256,24 @@ object BaseService {
 
         fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
             val data = data
+            // Starts arrive through startForegroundService (see
+            // VpnService.start), whose watchdog kills :vpn unless
+            // startForeground() follows within seconds — so answer it before
+            // anything can bail out, including the redundant-start and
+            // no-profile returns below and the Room lookup in between. After a
+            // restart the notification is still up and this only refreshes it.
+            val notification = data.notification
+                ?: createNotification().also { data.notification = it }
+            notification.startForeground()
             if (data.state != State.Stopped) return Service.START_NOT_STICKY
 
             val profile = Core.currentProfile
             this as Context
             if (profile == null) {
-                data.notification = createNotification("")
                 stopRunner(false, "No profile selected")
                 return Service.START_NOT_STICKY
             }
+            notification.setProfileName(profile.name)
 
             data.meowInstance = MeowInstance(profile)
 
@@ -255,7 +286,6 @@ object BaseService {
                 data.closeReceiverRegistered = true
             }
 
-            data.notification = createNotification(profile.name)
             data.changeState(State.Connecting)
             data.connectingJob = GlobalScope.launch(Dispatchers.Main.immediate) {
                 try {

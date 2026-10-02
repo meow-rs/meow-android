@@ -26,4 +26,9 @@ object DataStore {
         get() = prefs.getString("perAppPackages", "[]") ?: "[]"
         set(value) = prefs.edit().putString("perAppPackages", value).apply()
 
+    /** The UI asks for POST_NOTIFICATIONS once, ever; see `rememberNotificationPermissionRequest`. */
+    var notificationPermissionAsked: Boolean
+        get() = prefs.getBoolean("notificationPermissionAsked", false)
+        set(value) = prefs.edit().putBoolean("notificationPermissionAsked", value).apply()
+
 }

@@ -1,7 +1,6 @@
 package io.github.madeye.meow.ui
 
 import android.app.Activity
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -88,6 +87,7 @@ import io.github.madeye.meow.ui.screens.yaml.rememberSoraEditorHandle
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.readText
 import io.github.madeye.meow.ui.util.rememberClipboardText
+import io.github.madeye.meow.ui.util.rememberNotificationPermissionRequest
 import io.github.madeye.meow.ui.util.writeText
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -279,16 +279,24 @@ private fun HomeRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val askForNotifications = rememberNotificationPermissionRequest()
+
+    fun startVpn() {
+        startVpnService(context)
+        // After the start, never before: the VPN must not wait on this answer.
+        askForNotifications()
+    }
+
     val vpnPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) startVpnService(context)
+        if (result.resultCode == Activity.RESULT_OK) startVpn()
     }
 
     fun connect() {
         viewModel.onConnectRequested()
         val intent = android.net.VpnService.prepare(context)
-        if (intent == null) startVpnService(context) else vpnPermission.launch(intent)
+        if (intent == null) startVpn() else vpnPermission.launch(intent)
     }
 
     // The :vpn process can be killed while backgrounded, leaving stale state.
@@ -324,12 +332,9 @@ private fun HomeRoute(
 }
 
 private fun startVpnService(context: android.content.Context) {
-    // Deliberately startService, not startForegroundService: nothing in the
-    // service ever calls startForeground(), so the foreground variant arms a
-    // watchdog that is never answered and ANRs :vpn ~10s later. This is only
-    // ever called from the visible Activity, so the background-start
-    // restriction does not apply.
-    context.startService(Intent(context, io.github.madeye.meow.bg.VpnService::class.java))
+    // startForegroundService under the hood: the service answers its watchdog
+    // with startForeground() on every onStartCommand path.
+    io.github.madeye.meow.bg.VpnService.start(context)
 }
 
 @Composable

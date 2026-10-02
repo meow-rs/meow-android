@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">VPN status</string>
+    <string name="notification_connecting">Connecting…</string>
+    <string name="notification_stop">Stop</string>
     <string name="profile_empty">No profile selected</string>
     <string name="service_failed">Service failed</string>
     <string name="reboot_required">Reboot required</string>

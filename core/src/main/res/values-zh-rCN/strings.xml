@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">VPN 状态</string>
+    <string name="notification_connecting">连接中…</string>
+    <string name="notification_stop">停止</string>
     <string name="profile_empty">未选择配置文件</string>
     <string name="service_failed">服务启动失败</string>
     <string name="reboot_required">需要重启设备</string>
