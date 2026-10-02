@@ -1,0 +1,87 @@
+name: APK
+
+# Installable test build for phones: the R8-minified release variant for
+# arm64-v8a, so R8 keep-rule regressions surface before a release is cut.
+# It is NOT a release: releases are still built and signed locally (#60).
+# This APK is signed with a throwaway key generated per run, so its signature
+# differs from the published release and from every other run's. Installing it
+# means uninstalling any other Meow build first.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+    paths:
+      - .github/workflows/apk.yml
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-ndk
+            core/src/main/rust/meow-android-ffi/target
+          key: cargo-${{ runner.os }}-arm64-release-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-arm64-release-
+
+      - name: Install Android NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;28.2.13676358" "ndk;27.0.12077973"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Install cargo-ndk
+        run: command -v cargo-ndk || cargo install cargo-ndk
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
+      # No KEYSTORE_PATH, so AGP leaves the release APK unsigned.
+      - name: Build release APK (arm64-v8a)
+        run: ./gradlew :mobile:assembleRelease -PTARGET_ABI=arm64 -PCARGO_PROFILE=release
+
+      - name: Sign with a throwaway key
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/ci.keystore" -storepass android -keypass android \
+            -alias ci -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=Meow CI test build"
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          apk="meow-${GITHUB_SHA::7}-arm64-v8a.apk"
+          "$bt/zipalign" -f 4 mobile/build/outputs/apk/release/mobile-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" sign --ks "$RUNNER_TEMP/ci.keystore" --ks-pass pass:android --ks-key-alias ci \
+            --out "$apk" "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" verify "$apk"
+          ls -l "$apk"
+          echo "APK=$apk" >> "$GITHUB_ENV"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-arm64-v8a-apk
+          path: ${{ env.APK }}
+          retention-days: 14
+          # An APK is already a zip.
+          compression-level: 0

@@ -12,6 +12,8 @@ An iOS port is in public beta — see [madeye/meow-ios](https://github.com/madey
 [<img src="https://img.shields.io/badge/Download_from-GitHub-333?style=for-the-badge&logo=github&logoColor=white" alt="Download from GitHub" height="80">](https://github.com/madeye/meow/releases/latest)
 [<img src="https://img.shields.io/badge/iOS-TestFlight_Beta-0070F5?style=for-the-badge&logo=apple&logoColor=white" alt="Join the iOS TestFlight public beta" height="80">](https://testflight.apple.com/join/nnDAn7ZH)
 
+Untested builds of the latest `main` (arm64-v8a) are attached as the `meow-arm64-v8a-apk` artifact of each [APK workflow run](https://github.com/meow-rs/meow-android/actions/workflows/apk.yml). Each one is signed with a throwaway key, so uninstall any other Meow build before installing it.
+
 ## Architecture
 
 ```
@@ -75,7 +77,7 @@ export JAVA_HOME=/path/to/jdk17
 ./gradlew :mobile:assembleDebug -PTARGET_ABI=arm64 -PCARGO_PROFILE=release
 ```
 
-The APK is at `mobile/build/outputs/apk/debug/mobile-arm64-v8a-debug.apk`.
+The APK is at `mobile/build/outputs/apk/debug/mobile-debug.apk`.
 
 ### E2E Test
 
