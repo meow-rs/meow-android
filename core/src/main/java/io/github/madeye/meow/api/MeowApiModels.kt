@@ -84,19 +84,37 @@ data class ProxyGroup(
 data class ProxiesResult(
     val groups: Map<String, ProxyGroup>,
     val proxies: Map<String, Proxy>,
+    /**
+     * Group names in the profile's `proxy-groups:` order. Empty when the
+     * engine could not report it, which sorts every group by name.
+     */
+    val groupOrder: List<String> = emptyList(),
 ) {
     /**
-     * User-selectable groups, sorted case-insensitively by name.
+     * User-selectable groups, in the order the profile declares them.
      *
-     * Mirrors meow-ios's `ProxyGroupModel.build`: hides the top-level `GLOBAL`
-     * aggregator, and imposes an order because the engine's `/proxies` map has
-     * none (Go and Rust both iterate maps non-deterministically, so an
-     * unsorted list reshuffles on every refresh).
+     * Hides the top-level `GLOBAL` aggregator like meow-ios's
+     * `ProxyGroupModel.build`. The `/proxies` map has no order of its own (Go
+     * and Rust both iterate maps non-deterministically, so an unsorted list
+     * reshuffles on every refresh), hence [groupOrder]: the first group of a
+     * profile is usually its main selector, and that is where users look for
+     * it. Groups the profile does not declare follow by name, so the list is
+     * stable even when [groupOrder] is empty.
      */
     val selectableGroups: List<ProxyGroup>
-        get() = groups.values
-            .filter { it.name != GLOBAL_GROUP && it.type in GROUP_TYPES }
-            .sortedBy { it.name.lowercase() }
+        get() {
+            val rank = groupOrder.distinct().withIndex().associate { (index, name) -> name to index }
+            return groups.values
+                .filter { it.name != GLOBAL_GROUP && it.type in GROUP_TYPES }
+                .sortedWith(
+                    compareBy<ProxyGroup>(
+                        { rank[it.name] ?: Int.MAX_VALUE },
+                        { it.name.lowercase() },
+                        // Names differing only in case must not swap places between refreshes.
+                        { it.name },
+                    ),
+                )
+        }
 
     /**
      * The groups to list under [mode]. In global mode every flow goes
@@ -150,6 +168,10 @@ data class Rule(
 
 @Serializable
 internal data class RulesResponse(val rules: List<Rule> = emptyList())
+
+/** One entry of `GET /api/proxy-groups`; only the name is read, for ordering. */
+@Serializable
+internal data class ConfiguredGroup(val name: String = "")
 
 @Serializable
 data class ConnectionMeta(

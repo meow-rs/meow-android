@@ -2,8 +2,12 @@ package io.github.madeye.meow.api
 
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.QueueDispatcher
+import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -20,6 +24,10 @@ class MeowApiTest {
     @Before
     fun setUp() {
         server = MockWebServer()
+        // proxies() follows up with a group-order request that most tests
+        // don't queue; answer it with a 404 at once rather than stalling
+        // until the client's read timeout.
+        server.dispatcher = QueueDispatcher().apply { setFailFast(true) }
         server.start()
         api = MeowApi(baseUrl = server.url("/"))
     }
@@ -32,6 +40,28 @@ class MeowApiTest {
     private fun enqueue(body: String, code: Int = 200) {
         server.enqueue(MockResponse().setResponseCode(code).setBody(body))
     }
+
+    /**
+     * Answers `/proxies` and `/api/proxy-groups` by path, so a test holds
+     * whichever order [MeowApi.proxies] fetches them in.
+     */
+    private fun serveProxies(proxies: String, proxyGroups: MockResponse) {
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse =
+                when (request.requestUrl?.encodedPath) {
+                    "/proxies" -> MockResponse().setBody(proxies)
+                    "/api/proxy-groups" -> proxyGroups
+                    else -> MockResponse().setResponseCode(404)
+                }
+        }
+    }
+
+    /** `GET /api/proxy-groups` as the engine renders it: an array in `proxy-groups:` order. */
+    private fun configuredGroups(vararg names: String) = MockResponse().setBody(
+        names.joinToString(prefix = "[", postfix = "]") { name ->
+            """{"name": "$name", "type": "select", "proxies": ["HK 01"], "now": "HK 01", "url": null, "interval": null, "tolerance": null}"""
+        },
+    )
 
     // -------------------------------------------------------------------------
     // /proxies — the heterogeneous map, discriminated by `type` value
@@ -94,6 +124,113 @@ class MeowApiTest {
         assertEquals(listOf("Proxy"), result.visibleGroups(RouteMode.Direct).map { it.name })
         // Mode not known yet (e.g. /configs failed): never guess global.
         assertEquals(listOf("Proxy"), result.visibleGroups(null).map { it.name })
+    }
+
+    // -------------------------------------------------------------------------
+    // Group order — /api/proxy-groups carries the profile's `proxy-groups:` order
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `groups follow the profile order from proxy-groups`() = runTest {
+        serveProxies(GROUPED_PROXIES, configuredGroups("Proxy", "Streaming", "Auto"))
+
+        val result = api.proxies()
+
+        assertEquals(listOf("Proxy", "Streaming", "Auto"), result.selectableGroups.map { it.name })
+        assertEquals(
+            setOf("/proxies", "/api/proxy-groups"),
+            List(server.requestCount) { server.takeRequest().requestUrl!!.encodedPath }.toSet(),
+        )
+    }
+
+    @Test
+    fun `groups the profile does not declare follow by name`() = runTest {
+        // "zeta" and "Auto" are live but undeclared; "Gone" is declared but no
+        // longer live (a reload landed between the two fetches).
+        serveProxies(
+            """
+            {"proxies": {
+              "zeta":      {"type": "Selector", "now": "HK 01", "all": ["HK 01"]},
+              "Auto":      {"type": "URLTest",  "now": "HK 01", "all": ["HK 01"]},
+              "Proxy":     {"type": "Selector", "now": "Auto",  "all": ["Auto", "HK 01"]},
+              "Streaming": {"type": "Selector", "now": "Proxy", "all": ["Proxy"]},
+              "HK 01":     {"type": "Shadowsocks"}
+            }}
+            """.trimIndent(),
+            configuredGroups("Gone", "Streaming", "Proxy"),
+        )
+
+        val names = api.proxies().selectableGroups.map { it.name }
+
+        assertEquals(listOf("Streaming", "Proxy", "Auto", "zeta"), names)
+    }
+
+    @Test
+    fun `GLOBAL leads in global mode and hides otherwise whatever the profile order`() = runTest {
+        // A profile may declare GLOBAL itself, anywhere in its list.
+        serveProxies(GROUPED_PROXIES, configuredGroups("Streaming", "GLOBAL", "Proxy", "Auto"))
+
+        val result = api.proxies()
+
+        assertEquals(
+            listOf("GLOBAL", "Streaming", "Proxy", "Auto"),
+            result.visibleGroups(RouteMode.Global).map { it.name },
+        )
+        for (mode in listOf(RouteMode.Rule, RouteMode.Direct, null)) {
+            assertEquals(
+                "mode $mode",
+                listOf("Streaming", "Proxy", "Auto"),
+                result.visibleGroups(mode).map { it.name },
+            )
+        }
+    }
+
+    @Test
+    fun `groups fall back to name order when proxy-groups fails`() = runTest {
+        val failures = mapOf(
+            "404" to MockResponse().setResponseCode(404),
+            "500" to MockResponse().setResponseCode(500),
+            "dropped connection" to MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST),
+            // Not wrapped as Unreachable: the body read itself throws.
+            "truncated body" to configuredGroups("Proxy", "Streaming", "Auto")
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY),
+        )
+        for ((label, failure) in failures) {
+            serveProxies(GROUPED_PROXIES, failure)
+
+            val result = api.proxies()
+
+            assertEquals(label, listOf("Auto", "Proxy", "Streaming"), result.selectableGroups.map { it.name })
+            assertEquals(label, setOf("HK 01", "SG 02", "DIRECT"), result.proxies.keys)
+        }
+    }
+
+    @Test
+    fun `groups fall back to name order on an unexpected proxy-groups body`() = runTest {
+        val bodies = listOf(
+            "not json",
+            """{"message": "Resource not found"}""",
+            """["Proxy", "Auto"]""",
+            """[{"type": "select"}, {"name": null}]""",
+            "[]",
+        )
+        for (body in bodies) {
+            serveProxies(GROUPED_PROXIES, MockResponse().setBody(body))
+
+            val names = api.proxies().selectableGroups.map { it.name }
+
+            assertEquals(body, listOf("Auto", "Proxy", "Streaming"), names)
+        }
+    }
+
+    @Test
+    fun `names differing only in case keep one order`() {
+        fun group(name: String) = ProxyGroup(name, "Selector", now = "", all = emptyList(), history = emptyList())
+        val one = ProxiesResult(mapOf("b" to group("b"), "B" to group("B")), emptyMap())
+        val other = ProxiesResult(mapOf("B" to group("B"), "b" to group("b")), emptyMap())
+
+        assertEquals(listOf("B", "b"), one.selectableGroups.map { it.name })
+        assertEquals(one.selectableGroups, other.selectableGroups)
     }
 
     @Test
@@ -274,5 +411,20 @@ class MeowApiTest {
 
         assertEquals(0, proxy.latestDelay)
         assertNull(proxy.history.firstOrNull())
+    }
+
+    private companion object {
+        /** `/proxies` for a profile declaring Proxy, Streaming, Auto, plus the auto-created GLOBAL. */
+        val GROUPED_PROXIES = """
+            {"proxies": {
+              "Auto":      {"type": "URLTest",  "now": "HK 01", "all": ["HK 01", "SG 02"]},
+              "GLOBAL":    {"type": "Selector", "now": "Proxy", "all": ["Auto", "DIRECT", "Proxy", "Streaming"]},
+              "Proxy":     {"type": "Selector", "now": "Auto",  "all": ["Auto", "HK 01", "SG 02"]},
+              "Streaming": {"type": "Selector", "now": "Proxy", "all": ["Proxy", "DIRECT"]},
+              "HK 01":     {"type": "Shadowsocks"},
+              "SG 02":     {"type": "Trojan"},
+              "DIRECT":    {"type": "Direct"}
+            }}
+        """.trimIndent()
     }
 }

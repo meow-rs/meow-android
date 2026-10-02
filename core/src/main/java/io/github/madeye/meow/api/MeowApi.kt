@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
@@ -29,6 +30,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import timber.log.Timber
 
 /**
  * Client for the embedded engine's Clash-compatible controller API.
@@ -68,10 +70,38 @@ class MeowApi(
     // Proxies
     // -------------------------------------------------------------------------
 
+    /** `/proxies`, plus the profile's group order from [proxyGroupOrder]. */
     suspend fun proxies(): ProxiesResult {
         val body = get("/proxies", operation = "proxies")
-        return decode("proxies") { ProxiesResult.parse(json.parseToJsonElement(body).jsonObject) }
+        val result = decode("proxies") { ProxiesResult.parse(json.parseToJsonElement(body).jsonObject) }
+        return result.copy(groupOrder = proxyGroupOrder())
     }
+
+    /**
+     * Group names in `proxy-groups:` order. `/proxies` is a map and has lost
+     * that order; `/api/proxy-groups` lists the engine's parsed copy of the
+     * profile instead. Re-read on every call rather than cached: a config
+     * reload changes it without telling this client, and it is one loopback
+     * round trip.
+     *
+     * Best effort: the order is cosmetic, so a failure here sorts the groups
+     * by name instead of failing a group list that is otherwise complete.
+     */
+    private suspend fun proxyGroupOrder(): List<String> =
+        try {
+            val body = get("/api/proxy-groups", operation = "proxyGroups")
+            decode("proxyGroups") {
+                json.decodeFromString(ListSerializer(ConfiguredGroup.serializer()), body)
+                    .map { it.name }
+                    .filter { it.isNotEmpty() }
+            }
+        } catch (e: IOException) {
+            // IOException rather than MeowApiException: a body that breaks off
+            // mid-read throws a bare one. Logged because the only symptom,
+            // groups sorted by name, looks deliberate on screen.
+            Timber.w(e, "loading proxy group order failed; sorting groups by name")
+            emptyList()
+        }
 
     suspend fun selectProxy(group: String, name: String) {
         val payload = json.encodeToString(
