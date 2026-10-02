@@ -15,6 +15,9 @@ import io.github.madeye.meow.aidl.IMeowServiceCallback
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.utils.Action
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 
 object BaseService {
@@ -26,10 +29,25 @@ object BaseService {
         Stopped,
     }
 
+    private val _localState = MutableStateFlow(State.Stopped)
+
+    /**
+     * The state of the service in *this* process, observable without binding.
+     * Only `:vpn` hosts the service, so only code running there can use it:
+     * the Quick Settings tile is declared in `:vpn` for exactly this. Any
+     * other process must go through the binder
+     * ([io.github.madeye.meow.aidl.MeowConnection]).
+     */
+    val localState: StateFlow<State> = _localState.asStateFlow()
+
     interface ExpectedException
 
     class Data internal constructor(private val service: Interface) {
         @Volatile var state = State.Stopped
+            set(value) {
+                field = value
+                _localState.value = value
+            }
         @Volatile var meowInstance: MeowInstance? = null
         var notification: ServiceNotification? = null
         var closeReceiverRegistered = false

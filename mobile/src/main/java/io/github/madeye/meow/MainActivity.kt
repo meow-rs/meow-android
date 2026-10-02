@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * The app's only Activity.
+ * The app's only UI Activity (the Quick Settings tile's TileConnectActivity
+ * draws nothing).
  *
  * Was a `FlutterActivity` hosting a MethodChannel bridge; the Compose UI runs
  * in this process and calls the same Kotlin directly, so the channels are gone.

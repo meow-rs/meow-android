@@ -21,6 +21,10 @@
             <!-- singleTask: a link tapped in a browser or chat app must reach
                  the one running instance (onNewIntent), not stack a second
                  copy of the app into the caller's task. -->
+            <!-- Long-pressing the Quick Settings tile opens the app. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -38,6 +42,34 @@
                 <data android:host="install-config" />
             </intent-filter>
         </activity>
+
+        <!-- Quick Settings VPN toggle. It runs in :vpn, beside the service it
+             toggles, to read the service state in-process; see VpnTileService.
+             Only the system can bind it (BIND_QUICK_SETTINGS_TILE). -->
+        <service
+            android:name="io.github.madeye.meow.tile.VpnTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_tile"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:process=":vpn">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <!-- Finishes a tile start that needs an Activity (VPN consent, or a
+             refused background start). Not exported: only the tile's
+             PendingIntent may launch it. Own task, out of recents, so it
+             leaves nothing behind. -->
+        <activity
+            android:name="io.github.madeye.meow.tile.TileConnectActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 
 </manifest>

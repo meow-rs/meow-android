@@ -42,6 +42,8 @@
     <string name="home_upload">Upload</string>
     <string name="home_download">Download</string>
     <string name="home_vpn_toggle">Toggle VPN</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
     <string name="home_route_mode">Route Mode</string>
     <string name="route_mode_rule">Rule</string>
     <string name="route_mode_global">Global</string>

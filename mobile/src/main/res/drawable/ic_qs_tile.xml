@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quick Settings tile icon: a cat face with cut-out eyes and nose. SystemUI
+     tints tile icons per state, so only the shape (alpha) matters. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M3.5,3L8.6,7.3C10.3,6.7 13.7,6.7 15.4,7.3L20.5,3V12.5C20.5,17.2 16.7,21 12,21C7.3,21 3.5,17.2 3.5,12.5Z M7.4,13a1.4,1.4 0,1 0,2.8 0a1.4,1.4 0,1 0,-2.8 0Z M13.8,13a1.4,1.4 0,1 0,2.8 0a1.4,1.4 0,1 0,-2.8 0Z M10.8,16h2.4l-1.2,1.4Z" />
+</vector>
