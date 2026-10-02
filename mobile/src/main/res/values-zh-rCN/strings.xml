@@ -5,7 +5,7 @@
     <!-- Tabs -->
     <string name="tab_home">首页</string>
     <string name="tab_subscribe">订阅</string>
-    <string name="tab_traffic">流量</string>
+    <string name="tab_utility">工具</string>
     <string name="tab_settings">设置</string>
 
     <!-- Common -->
@@ -99,6 +99,7 @@
     <string name="yaml_reverted">已还原</string>
 
     <!-- Traffic -->
+    <string name="utility_title">工具</string>
     <string name="traffic_title">流量</string>
     <string name="traffic_data_usage">流量统计</string>
     <string name="traffic_today">今日</string>

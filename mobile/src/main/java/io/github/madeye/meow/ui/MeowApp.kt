@@ -81,6 +81,7 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscribeScreen
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
+import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
@@ -188,15 +189,18 @@ private fun MeowNavHost(
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
-        composable<Dest.Traffic> {
-            TrafficRoute { BottomBar(navController, onTab) }
+        composable<Dest.Utility> {
+            UtilityRoute(
+                onTraffic = { navController.navigate(Dest.Traffic) },
+                onConnections = { navController.navigate(Dest.Connections) },
+                onLogs = { navController.navigate(Dest.Logs) },
+                bottomBar = { BottomBar(navController, onTab) },
+            )
         }
         composable<Dest.Settings> {
             SettingsRoute(
                 onPerAppProxy = { navController.navigate(Dest.PerAppProxy) },
-                onConnections = { navController.navigate(Dest.Connections) },
                 onRules = { navController.navigate(Dest.Rules) },
-                onLogs = { navController.navigate(Dest.Logs) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
@@ -208,6 +212,7 @@ private fun MeowNavHost(
                 onBack = navController::popBackStack,
             )
         }
+        composable<Dest.Traffic> { TrafficRoute(onBack = navController::popBackStack) }
         composable<Dest.Connections> { ConnectionsRoute(onBack = navController::popBackStack) }
         composable<Dest.Rules> { RulesRoute(onBack = navController::popBackStack) }
         composable<Dest.Logs> { LogsRoute(onBack = navController::popBackStack) }
@@ -510,12 +515,35 @@ private fun SubscribeRoute(
 }
 
 @Composable
-private fun TrafficRoute(bottomBar: @Composable () -> Unit) {
+private fun UtilityRoute(
+    onTraffic: () -> Unit,
+    onConnections: () -> Unit,
+    onLogs: () -> Unit,
+    bottomBar: @Composable () -> Unit,
+) {
+    val vpnState by AppGraph.vpn.state.collectAsStateWithLifecycle()
+
+    MeowScaffold(title = stringResource(R.string.utility_title), bottomBar = bottomBar) { padding ->
+        UtilityScreen(
+            engineOnline = vpnState == BaseService.State.Connected,
+            contentPadding = padding,
+            onTraffic = onTraffic,
+            onConnections = onConnections,
+            onLogs = onLogs,
+        )
+    }
+}
+
+@Composable
+private fun TrafficRoute(onBack: () -> Unit) {
     val viewModel: io.github.madeye.meow.ui.screens.traffic.TrafficViewModel =
         viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    MeowScaffold(title = stringResource(R.string.traffic_title), bottomBar = bottomBar) { padding ->
+    MeowScaffold(
+        title = stringResource(R.string.traffic_title),
+        navigationIcon = { BackButton(onBack) },
+    ) { padding ->
         io.github.madeye.meow.ui.screens.traffic.TrafficScreen(
             state = state,
             contentPadding = padding,
@@ -527,9 +555,7 @@ private fun TrafficRoute(bottomBar: @Composable () -> Unit) {
 @Composable
 private fun SettingsRoute(
     onPerAppProxy: () -> Unit,
-    onConnections: () -> Unit,
     onRules: () -> Unit,
-    onLogs: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = AppGraph.viewModelFactory)
@@ -540,9 +566,7 @@ private fun SettingsRoute(
             state = state,
             contentPadding = padding,
             onPerAppProxy = onPerAppProxy,
-            onConnections = onConnections,
             onRules = onRules,
-            onLogs = onLogs,
             onShowExitIpChange = viewModel::onShowExitIpChange,
         )
     }

@@ -51,10 +51,11 @@ Network
   - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
     reconnects), proxy group & node selection, connection status
   - Subscribe: Add/edit/remove subscriptions, YAML editor, import/export config
-  - Traffic: Real-time speed chart, session upload/download stats
-  - Connections / Logs / Rules: Live views powered by the REST API
-  - Settings: Version, network config, per-app VPN proxy/bypass, connectivity
-    diagnostics, about
+  - Utility: Traffic (real-time speed chart, session upload/download stats,
+    daily history), plus live Connections and Logs views powered by the
+    REST API, grouped as on the iOS app
+  - Settings: Version, live Rules view, network config, per-app VPN
+    proxy/bypass, connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN)
 - **E2E Tests**: Automated with ssserver + Android emulator (SS and HTTP-proxy harnesses)
 
@@ -97,9 +98,9 @@ core/                           Android library module
   src/main/java/.../repo/       Profiles, per-app proxy, traffic history
 mobile/                         Android app module (Compose UI host)
   src/main/java/.../ui/theme/   Brand tokens shared with the iOS app
-  src/main/java/.../ui/screens/ Home, Subscribe, Traffic, Settings,
-                                Connections, Logs, Rules, Per-app proxy,
-                                YAML editor
+  src/main/java/.../ui/screens/ Home, Subscribe, Utility, Settings,
+                                Traffic, Connections, Logs, Rules,
+                                Per-app proxy, YAML editor
   src/main/res/values{,-zh-rCN} Localization (en, zh_CN)
 test-e2e.sh                     End-to-end test script (Shadowsocks)
 test-e2e-http.sh                End-to-end test script (HTTP proxy)

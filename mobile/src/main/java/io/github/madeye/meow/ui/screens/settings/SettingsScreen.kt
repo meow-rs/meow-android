@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,9 +48,7 @@ fun SettingsScreen(
     state: SettingsUiState,
     contentPadding: PaddingValues,
     onPerAppProxy: () -> Unit,
-    onConnections: () -> Unit,
     onRules: () -> Unit,
-    onLogs: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,31 +82,14 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(8.dp))
-        // Connections / Rules / Logs all read the engine's controller API, so
-        // they are only reachable while it is listening. meow-ios groups the
-        // same three screens this way.
+        // Rules reads the engine's controller API, so it is only reachable
+        // while it is listening. Connections and Logs moved to the Utility tab.
         SectionHeader(stringResource(R.string.settings_engine_section))
         GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
-            NavRow(
-                title = stringResource(R.string.connections_title),
-                icon = Icons.Filled.SwapHoriz,
-                onClick = onConnections,
-                enabled = state.engineOnline,
-                subtitle = offlineHint.takeUnless { state.engineOnline },
-            )
-            HorizontalDivider(color = MaterialTheme.meow.border)
             NavRow(
                 title = stringResource(R.string.rules_title),
                 icon = Icons.AutoMirrored.Filled.List,
                 onClick = onRules,
-                enabled = state.engineOnline,
-                subtitle = offlineHint.takeUnless { state.engineOnline },
-            )
-            HorizontalDivider(color = MaterialTheme.meow.border)
-            NavRow(
-                title = stringResource(R.string.logs_title),
-                icon = Icons.Filled.Article,
-                onClick = onLogs,
                 enabled = state.engineOnline,
                 subtitle = offlineHint.takeUnless { state.engineOnline },
             )

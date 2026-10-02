@@ -15,7 +15,7 @@
     <!-- Tabs -->
     <string name="tab_home">Home</string>
     <string name="tab_subscribe">Subscribe</string>
-    <string name="tab_traffic">Traffic</string>
+    <string name="tab_utility">Utility</string>
     <string name="tab_settings">Settings</string>
 
     <!-- Common -->
@@ -109,6 +109,7 @@
     <string name="yaml_reverted">Reverted to original</string>
 
     <!-- Traffic -->
+    <string name="utility_title">Utility</string>
     <string name="traffic_title">Traffic</string>
     <string name="traffic_data_usage">Data Usage</string>
     <string name="traffic_today">Today</string>

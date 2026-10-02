@@ -70,7 +70,7 @@ object AppGraph {
     fun init(context: Context) {
         appContext = context.applicationContext
         // Touching this here starts the speed-sample collector, so the chart has
-        // history even if the user never opens the Traffic tab before connecting.
+        // history even if the user never opens the Traffic screen before connecting.
         speedSamples
     }
 
