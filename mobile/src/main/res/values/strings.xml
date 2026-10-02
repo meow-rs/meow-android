@@ -170,6 +170,17 @@
         <item quantity="other">%1$d rules</item>
     </plurals>
 
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">Search domain, IP or upstream…</string>
+    <string name="dns_empty_title">No DNS results</string>
+    <string name="dns_empty_description">Cached lookups appear when the engine resolves domains.</string>
+    <string name="dns_search_empty">No results for “%1$s”</string>
+    <string name="dns_unknown_upstream">Unknown</string>
+    <string name="dns_ttl">TTL %1$d s</string>
+    <string name="dns_load_error">Failed to load DNS results</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Per-App Proxy</string>
     <string name="perapp_desc">Select which apps use the VPN</string>

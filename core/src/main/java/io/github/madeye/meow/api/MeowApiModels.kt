@@ -172,6 +172,20 @@ data class Rule(
 @Serializable
 internal data class RulesResponse(val rules: List<Rule> = emptyList())
 
+/**
+ * One cached lookup from `GET /dns/results`: the engine's live DNS cache,
+ * sorted by name. [ttl] is the seconds left before the entry expires, not the
+ * record's original TTL; [fromServer] is the upstream that answered, absent for
+ * entries the engine seeded itself.
+ */
+@Serializable
+data class DnsResult(
+    val name: String = "",
+    val ips: List<String> = emptyList(),
+    @SerialName("from_server") val fromServer: String? = null,
+    val ttl: Long = 0,
+)
+
 /** One entry of `GET /api/proxy-groups`; only the name is read, for ordering. */
 @Serializable
 internal data class ConfiguredGroup(val name: String = "")

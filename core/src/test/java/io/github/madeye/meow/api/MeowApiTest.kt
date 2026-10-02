@@ -374,6 +374,36 @@ class MeowApiTest {
     }
 
     @Test
+    fun `dnsResults sends limit and trimmed search and maps from_server`() = runTest {
+        enqueue(
+            """
+            [{"name": "dns.google", "ips": ["8.8.8.8", "8.8.4.4"], "from_server": "8.8.8.8", "ttl": 297},
+             {"name": "seeded.example", "ips": ["192.0.2.1"], "ttl": 30}]
+            """.trimIndent(),
+        )
+
+        val results = api.dnsResults(search = "  google ")
+
+        val url = server.takeRequest().requestUrl!!
+        assertEquals("/dns/results", url.encodedPath)
+        assertEquals("256", url.queryParameter("limit"))
+        assertEquals("google", url.queryParameter("search"))
+        assertEquals(listOf("8.8.8.8", "8.8.4.4"), results[0].ips)
+        assertEquals("8.8.8.8", results[0].fromServer)
+        assertEquals(297L, results[0].ttl)
+        assertNull(results[1].fromServer)
+    }
+
+    @Test
+    fun `dnsResults omits a blank search`() = runTest {
+        enqueue("[]")
+
+        assertTrue(api.dnsResults(search = "   ").isEmpty())
+
+        assertNull(server.takeRequest().requestUrl!!.queryParameter("search"))
+    }
+
+    @Test
     fun `configs maps kebab-case engine keys`() = runTest {
         enqueue("""{"mode": "global", "allow-lan": true, "log-level": "debug", "mixed-port": 7891}""")
 

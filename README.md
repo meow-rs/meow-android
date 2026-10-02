@@ -46,14 +46,14 @@ Network
   in-process and upstream lookups bypass the tunnel via protected sockets
 - **Socket Protection**: Per-socket `VpnService.protect(fd)` via JNI callback
 - **REST API**: Embedded external controller (`127.0.0.1:9090`) drives the
-  live connections, logs, rules, and traffic views
+  live connections, logs, rules, DNS cache, and traffic views
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
   - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
     reconnects), proxy group & node selection, connection status
   - Subscribe: Add/edit/remove subscriptions, YAML editor, import/export config
   - Utility: Traffic (real-time speed chart, session upload/download stats,
-    daily history), plus live Connections and Logs views powered by the
-    REST API, grouped as on the iOS app
+    daily history), plus live Connections, Logs and DNS-cache views powered
+    by the REST API, grouped as on the iOS app
   - Settings: Version, live Rules view, network config, per-app VPN
     proxy/bypass, connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN)
@@ -99,7 +99,7 @@ core/                           Android library module
 mobile/                         Android app module (Compose UI host)
   src/main/java/.../ui/theme/   Brand tokens shared with the iOS app
   src/main/java/.../ui/screens/ Home, Subscribe, Utility, Settings,
-                                Traffic, Connections, Logs, Rules,
+                                Traffic, Connections, Logs, DNS, Rules,
                                 Per-app proxy, YAML editor
   src/main/res/values{,-zh-rCN} Localization (en, zh_CN)
 test-e2e.sh                     End-to-end test script (Shadowsocks)

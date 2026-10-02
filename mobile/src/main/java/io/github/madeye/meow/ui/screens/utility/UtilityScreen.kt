@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -26,9 +27,9 @@ import io.github.madeye.meow.ui.theme.meow
  * The Utility tab, modelled on meow-ios's: one card of entry points to the
  * monitoring screens.
  *
- * Traffic reads the app's own history, so it is always open. Connections and
- * Logs read the engine's controller API, so — as when they lived in Settings —
- * they are only reachable while it is listening.
+ * Traffic reads the app's own history, so it is always open. Connections,
+ * Logs and DNS read the engine's controller API, so — as when the first two
+ * lived in Settings — they are only reachable while it is listening.
  */
 @Composable
 fun UtilityScreen(
@@ -37,6 +38,7 @@ fun UtilityScreen(
     onTraffic: () -> Unit,
     onConnections: () -> Unit,
     onLogs: () -> Unit,
+    onDns: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val offlineHint = stringResource(R.string.settings_engine_offline)
@@ -73,6 +75,15 @@ fun UtilityScreen(
                 icon = Icons.AutoMirrored.Filled.Article,
                 onClick = onLogs,
                 modifier = Modifier.testTag("utility_logs"),
+                enabled = engineOnline,
+                subtitle = offlineHint.takeUnless { engineOnline },
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.dns_title),
+                icon = Icons.Filled.Language,
+                onClick = onDns,
+                modifier = Modifier.testTag("utility_dns"),
                 enabled = engineOnline,
                 subtitle = offlineHint.takeUnless { engineOnline },
             )

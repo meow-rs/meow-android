@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  * Navigation destinations.
  *
  * Four tabs. The third, Utility, follows meow-ios's Utility tab: it pushes
- * the monitoring screens (Traffic / Connections / Logs). Rules is still
- * pushed from Settings.
+ * the monitoring screens (Traffic / Connections / Logs / DNS). Rules is
+ * still pushed from Settings.
  */
 sealed interface Dest {
     @Serializable data object Home : Dest
@@ -37,6 +37,8 @@ sealed interface Dest {
     @Serializable data object Rules : Dest
 
     @Serializable data object Logs : Dest
+
+    @Serializable data object Dns : Dest
 }
 
 data class TabDestination(

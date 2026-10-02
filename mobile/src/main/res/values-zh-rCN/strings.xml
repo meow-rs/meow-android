@@ -159,6 +159,17 @@
         <item quantity="other">%1$d 条规则</item>
     </plurals>
 
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">搜索域名、IP 或上游…</string>
+    <string name="dns_empty_title">暂无 DNS 结果</string>
+    <string name="dns_empty_description">引擎解析域名后，缓存记录会显示在此处。</string>
+    <string name="dns_search_empty">没有与“%1$s”匹配的结果</string>
+    <string name="dns_unknown_upstream">未知</string>
+    <string name="dns_ttl">TTL %1$d 秒</string>
+    <string name="dns_load_error">加载 DNS 结果失败</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">分应用代理</string>
     <string name="perapp_desc">选择哪些应用使用 VPN</string>

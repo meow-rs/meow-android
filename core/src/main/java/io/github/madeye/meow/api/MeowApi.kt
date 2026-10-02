@@ -59,6 +59,9 @@ class MeowApi(
          */
         const val PROBE_CONCURRENCY = 8
 
+        /** Same page size as meow-ios's DNS screen (and the engine's default). */
+        const val DNS_RESULTS_LIMIT = 256
+
         private val JSON_MEDIA = "application/json".toMediaType()
 
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
@@ -244,6 +247,27 @@ class MeowApi(
     /** Switches routing for new flows; open connections keep their route. */
     suspend fun setMode(mode: RouteMode) {
         patchConfigs(JsonObject(mapOf("mode" to kotlinx.serialization.json.JsonPrimitive(mode.wire))))
+    }
+
+    // -------------------------------------------------------------------------
+    // DNS
+    // -------------------------------------------------------------------------
+
+    /**
+     * The engine's DNS cache. [search] is matched by the engine, against the
+     * name, the answer IPs and the upstream, case-insensitively; [limit] caps
+     * the entries returned (the engine clamps it to 1024).
+     */
+    suspend fun dnsResults(search: String? = null, limit: Int = DNS_RESULTS_LIMIT): List<DnsResult> {
+        val url = baseUrl.newBuilder()
+            .addPathSegment("dns").addPathSegment("results")
+            .addQueryParameter("limit", limit.toString())
+            .apply { if (!search.isNullOrBlank()) addQueryParameter("search", search.trim()) }
+            .build()
+        val body = execute(Request.Builder().url(url).build(), "dnsResults")
+        return decode("dnsResults") {
+            json.decodeFromString(ListSerializer(DnsResult.serializer()), body)
+        }
     }
 
     // -------------------------------------------------------------------------

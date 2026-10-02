@@ -17,6 +17,7 @@ import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
 import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
+import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
 import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
@@ -105,6 +106,7 @@ object AppGraph {
 
                 ConnectionsViewModel::class.java -> ConnectionsViewModel(api, recentConnections)
                 RulesViewModel::class.java -> RulesViewModel(api)
+                DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
                 LogsViewModel::class.java -> LogsViewModel(api)
 
                 else -> error("unknown ViewModel: ${modelClass.name}")
