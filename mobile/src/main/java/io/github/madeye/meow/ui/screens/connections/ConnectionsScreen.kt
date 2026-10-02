@@ -14,12 +14,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +47,7 @@ import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
+import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,63 +58,100 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class ConnectionsTab { Active, Recent }
+
 data class ConnectionsUiState(
     val connections: List<Connection> = emptyList(),
+    val recent: List<RecentConnection> = emptyList(),
     val query: String = "",
+    val tab: ConnectionsTab = ConnectionsTab.Active,
 ) {
-    val visible: List<Connection>
-        get() = if (query.isBlank()) {
-            connections
-        } else {
-            connections.filter { it.metadata.host.contains(query, ignoreCase = true) }
-        }
+    val visibleConnections: List<Connection>
+        get() = connections.filter { it.matches(query) }
+
+    val visibleRecent: List<RecentConnection>
+        get() = recent.filter { it.connection.matches(query) }
 }
 
-class ConnectionsViewModel(private val api: MeowApi) : ViewModel() {
+private fun Connection.matches(query: String): Boolean {
+    if (query.isBlank()) return true
+    return metadata.host.contains(query, ignoreCase = true) ||
+        metadata.destinationIP.contains(query, ignoreCase = true)
+}
 
-    private val connections = MutableStateFlow<List<Connection>>(emptyList())
+class ConnectionsViewModel(
+    private val api: MeowApi,
+    private val recentConnections: RecentConnectionsStore,
+) : ViewModel() {
+
     private val query = MutableStateFlow("")
+    private val tab = MutableStateFlow(ConnectionsTab.Active)
 
     /**
      * Polls the engine only while collected, so it starts and stops with
      * [uiState]'s subscription instead of running for the ViewModel's lifetime.
+     * Diffing lives in [recentConnections], which outlives this ViewModel.
      */
     private val polling = flow<Unit> {
         while (true) {
-            connections.value = try {
-                api.connections().connections
+            val observedAt = recentConnections.currentTimeMillis()
+            try {
+                recentConnections.onSnapshot(api.connections().connections, observedAt)
             } catch (e: MeowApiException) {
-                emptyList()
+                if (e is MeowApiException.Unreachable) {
+                    // The controller is gone (VPN stopped). The flows from the
+                    // last snapshot are done; file them under Recent. A later
+                    // successful poll puts back anything still open.
+                    recentConnections.onSnapshot(emptyList(), observedAt)
+                }
             }
             delay(POLL_INTERVAL_MS)
         }
     }.onStart { emit(Unit) }
 
     val uiState: StateFlow<ConnectionsUiState> =
-        combine(connections, query, polling) { list, search, _ -> ConnectionsUiState(list, search) }
-            .stateIn(
-                viewModelScope,
-                // Polling stops when the screen leaves the composition, rather
-                // than running forever as the Flutter version's timer did.
-                SharingStarted.WhileSubscribed(5_000),
-                ConnectionsUiState(),
+        combine(recentConnections.lists, query, tab, polling) { lists, search, selected, _ ->
+            ConnectionsUiState(
+                connections = lists.active,
+                recent = lists.recent,
+                query = search,
+                tab = selected,
             )
+        }.stateIn(
+            viewModelScope,
+            // Polling stops when the screen leaves the composition, rather
+            // than running forever as the Flutter version's timer did.
+            SharingStarted.WhileSubscribed(5_000),
+            initialValue(),
+        )
 
     fun onQueryChange(value: String) { query.value = value }
 
+    fun onTabChange(value: ConnectionsTab) { tab.value = value }
+
     fun close(id: String) {
         viewModelScope.launch {
-            // Drop it locally straight away; the next poll confirms.
-            connections.value = connections.value.filterNot { it.id == id }
+            val current = recentConnections.lists.value.active
+            if (current.any { it.id == id }) {
+                recentConnections.applyLocal(current.filterNot { it.id == id })
+            }
             runCatching { api.closeConnection(id) }
         }
     }
 
     fun closeAll() {
         viewModelScope.launch {
-            connections.value = emptyList()
+            recentConnections.applyLocal(emptyList())
             runCatching { api.closeAllConnections() }
         }
+    }
+
+    fun clearRecent() { recentConnections.clearRecent() }
+
+    /** So the first frame already shows history kept by the process-scoped store. */
+    private fun initialValue(): ConnectionsUiState {
+        val lists = recentConnections.lists.value
+        return ConnectionsUiState(connections = lists.active, recent = lists.recent)
     }
 
     private companion object {
@@ -121,13 +164,17 @@ fun ConnectionsScreen(
     state: ConnectionsUiState,
     contentPadding: PaddingValues,
     onQueryChange: (String) -> Unit,
+    onTabChange: (ConnectionsTab) -> Unit,
     onClose: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = contentPadding.calculateTopPadding()),
+            .padding(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding(),
+            ),
     ) {
         OutlinedTextField(
             value = state.query,
@@ -137,26 +184,75 @@ fun ConnectionsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         )
         Spacer(Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        ) {
+            ConnectionsTab.entries.forEachIndexed { index, tab ->
+                val count = when (tab) {
+                    ConnectionsTab.Active -> state.connections.size
+                    ConnectionsTab.Recent -> state.recent.size
+                }
+                SegmentedButton(
+                    selected = state.tab == tab,
+                    onClick = { if (state.tab != tab) onTabChange(tab) },
+                    shape = SegmentedButtonDefaults.itemShape(index, ConnectionsTab.entries.size),
+                    modifier = Modifier.testTag(
+                        when (tab) {
+                            ConnectionsTab.Active -> "connections_tab_active"
+                            ConnectionsTab.Recent -> "connections_tab_recent"
+                        },
+                    ),
+                ) {
+                    Text(tabLabel(tab, count), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
 
-        if (state.visible.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val showingRecent = state.tab == ConnectionsTab.Recent
+        val empty = if (showingRecent) state.visibleRecent.isEmpty() else state.visibleConnections.isEmpty()
+        if (empty) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = stringResource(R.string.connections_empty),
+                    text = stringResource(
+                        if (showingRecent) R.string.connections_recent_empty else R.string.connections_empty,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.meow.mutedText,
                 )
             }
-        } else {
+        } else if (showingRecent) {
             LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = contentPadding.calculateBottomPadding() + 16.dp,
-                ),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.visible, key = { it.id }) { connection ->
-                    ConnectionCard(connection = connection, onClose = { onClose(connection.id) })
+                items(state.visibleRecent, key = { it.connection.id }) { recent ->
+                    ConnectionCard(
+                        connection = recent.connection,
+                        elapsed = Formatters.elapsedSince(
+                            recent.connection.start,
+                            Instant.ofEpochMilli(recent.closedAtMillis),
+                        ),
+                        footer = stringResource(
+                            R.string.connections_closed_at,
+                            Formatters.timestamp(recent.closedAtMillis),
+                        ),
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.visibleConnections, key = { it.id }) { connection ->
+                    ConnectionCard(
+                        connection = connection,
+                        elapsed = Formatters.elapsedSince(connection.start),
+                        onClose = { onClose(connection.id) },
+                    )
                 }
             }
         }
@@ -164,7 +260,23 @@ fun ConnectionsScreen(
 }
 
 @Composable
-private fun ConnectionCard(connection: Connection, onClose: () -> Unit) {
+private fun tabLabel(tab: ConnectionsTab, count: Int): String {
+    val name = stringResource(
+        when (tab) {
+            ConnectionsTab.Active -> R.string.connections_tab_active
+            ConnectionsTab.Recent -> R.string.connections_tab_recent
+        },
+    )
+    return if (count == 0) name else "$name ($count)"
+}
+
+@Composable
+private fun ConnectionCard(
+    connection: Connection,
+    elapsed: String,
+    footer: String? = null,
+    onClose: (() -> Unit)? = null,
+) {
     val colors = MaterialTheme.meow
     val host = connection.metadata.host.ifEmpty { connection.metadata.destinationIP }
 
@@ -190,42 +302,85 @@ private fun ConnectionCard(connection: Connection, onClose: () -> Unit) {
                     text = buildString {
                         append("↑ ${Formatters.bytes(connection.upload)}")
                         append("  ↓ ${Formatters.bytes(connection.download)}")
-                        val elapsed = Formatters.elapsedSince(connection.start)
                         if (elapsed.isNotEmpty()) append("  $elapsed")
                     },
                     style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
                     color = colors.mutedText,
                 )
+                if (!footer.isNullOrEmpty()) {
+                    Text(
+                        text = footer,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.mutedText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            IconButton(onClick = onClose) {
-                Icon(Icons.Filled.Close, contentDescription = null, tint = colors.danger)
+            if (onClose != null) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, contentDescription = null, tint = colors.danger)
+                }
             }
         }
     }
 }
 
 @Composable
-fun ConnectionsActions(hasConnections: Boolean, onCloseAll: () -> Unit) {
-    var confirm by remember { mutableStateOf(false) }
-    if (hasConnections) {
-        IconButton(onClick = { confirm = true }) {
-            Icon(
-                Icons.Filled.DeleteSweep,
-                contentDescription = stringResource(R.string.connections_close_all),
-            )
+fun ConnectionsActions(
+    tab: ConnectionsTab,
+    hasConnections: Boolean,
+    hasRecent: Boolean,
+    onCloseAll: () -> Unit,
+    onClearRecent: () -> Unit,
+) {
+    var confirmCloseAll by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
+    when (tab) {
+        ConnectionsTab.Active -> if (hasConnections) {
+            IconButton(onClick = { confirmCloseAll = true }) {
+                Icon(
+                    Icons.Filled.DeleteSweep,
+                    contentDescription = stringResource(R.string.connections_close_all),
+                )
+            }
+        }
+        ConnectionsTab.Recent -> if (hasRecent) {
+            IconButton(onClick = { confirmClear = true }) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.connections_recent_clear),
+                )
+            }
         }
     }
-    if (confirm) {
+    if (confirmCloseAll) {
         AlertDialog(
-            onDismissRequest = { confirm = false },
+            onDismissRequest = { confirmCloseAll = false },
             title = { Text(stringResource(R.string.connections_close_all_confirm)) },
             confirmButton = {
-                TextButton(onClick = { confirm = false; onCloseAll() }) {
+                TextButton(onClick = { confirmCloseAll = false; onCloseAll() }) {
                     Text(stringResource(R.string.connections_close_all))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirm = false }) {
+                TextButton(onClick = { confirmCloseAll = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text(stringResource(R.string.connections_recent_clear_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { confirmClear = false; onClearRecent() }) {
+                    Text(stringResource(R.string.connections_recent_clear))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },

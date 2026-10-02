@@ -550,8 +550,11 @@ private fun ConnectionsRoute(onBack: () -> Unit) {
         navigationIcon = { BackButton(onBack) },
         actions = {
             ConnectionsActions(
+                tab = state.tab,
                 hasConnections = state.connections.isNotEmpty(),
+                hasRecent = state.recent.isNotEmpty(),
                 onCloseAll = viewModel::closeAll,
+                onClearRecent = viewModel::clearRecent,
             )
         },
     ) { padding ->
@@ -559,6 +562,7 @@ private fun ConnectionsRoute(onBack: () -> Unit) {
             state = state,
             contentPadding = padding,
             onQueryChange = viewModel::onQueryChange,
+            onTabChange = viewModel::onTabChange,
             onClose = viewModel::close,
         )
     }

@@ -14,6 +14,7 @@ import io.github.madeye.meow.repo.PerAppRepository
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
+import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
@@ -44,6 +45,9 @@ object AppGraph {
     val api: MeowApi by lazy { MeowApi() }
     val vpn: VpnStateRepository by lazy { VpnStateRepository() }
     val speedSamples: SpeedSampleStore by lazy { SpeedSampleStore(vpn, scope) }
+
+    /** Survives leaving the Connections screen; see [RecentConnectionsStore]. */
+    val recentConnections: RecentConnectionsStore by lazy { RecentConnectionsStore() }
     val profiles: ProfileRepository by lazy { ProfileRepository() }
     val trafficHistory: TrafficHistoryRepository by lazy { TrafficHistoryRepository() }
     val perApp: PerAppRepository by lazy { PerAppRepository() }
@@ -82,7 +86,7 @@ object AppGraph {
                 YamlEditorViewModel::class.java ->
                     YamlEditorViewModel(extras.createSavedStateHandle(), profiles, configValidator, analytics)
 
-                ConnectionsViewModel::class.java -> ConnectionsViewModel(api)
+                ConnectionsViewModel::class.java -> ConnectionsViewModel(api, recentConnections)
                 RulesViewModel::class.java -> RulesViewModel(api)
                 LogsViewModel::class.java -> LogsViewModel(api)
 

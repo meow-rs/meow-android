@@ -120,9 +120,15 @@
 
     <!-- Connections -->
     <string name="connections_title">Connections</string>
+    <string name="connections_tab_active">Active</string>
+    <string name="connections_tab_recent">Recent</string>
     <string name="connections_empty">No active connections</string>
+    <string name="connections_recent_empty">No recent requests</string>
     <string name="connections_close_all">Close All</string>
     <string name="connections_close_all_confirm">Close all active connections?</string>
+    <string name="connections_recent_clear">Clear</string>
+    <string name="connections_recent_clear_confirm">Clear recent requests?</string>
+    <string name="connections_closed_at">Closed %1$s</string>
     <string name="connections_filter">Filter by host…</string>
 
     <!-- Rules -->
