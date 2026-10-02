@@ -31,9 +31,12 @@ object DataStore {
         get() = prefs.getBoolean("notificationPermissionAsked", false)
         set(value) = prefs.edit().putBoolean("notificationPermissionAsked", value).apply()
 
-    /** Home's exit-IP card. Off means the lookup services are never contacted. */
+    /**
+     * Home's exit-IP card. Opt-in: every lookup shows the user's public IP to
+     * a third-party service. Off means the lookup services are never contacted.
+     */
     var showExitIp: Boolean
-        get() = prefs.getBoolean("showExitIp", true)
+        get() = prefs.getBoolean("showExitIp", false)
         set(value) = prefs.edit().putBoolean("showExitIp", value).apply()
 
 }
