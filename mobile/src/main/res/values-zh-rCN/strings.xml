@@ -38,6 +38,12 @@
     <string name="route_mode_rule">规则</string>
     <string name="route_mode_global">全局</string>
     <string name="route_mode_direct">直连</string>
+    <string name="home_exit_ip">出口 IP</string>
+    <string name="home_exit_ip_checking">检测中…</string>
+    <string name="home_exit_ip_failed">检测失败</string>
+    <string name="home_exit_ip_retry">点击重试</string>
+    <string name="home_exit_ip_refresh">刷新出口 IP</string>
+    <string name="home_exit_ip_bypassed">分应用代理未让 Meow 走 VPN，此为直连 IP</string>
 
     <!-- Proxy groups -->
     <string name="proxy_groups_title">代理分组</string>
@@ -118,6 +124,8 @@
     <string name="settings_network">网络</string>
     <string name="settings_dns_server">DNS 服务器</string>
     <string name="settings_dns_builtin">通过隧道走纯 TCP</string>
+    <string name="settings_show_exit_ip">显示出口 IP</string>
+    <string name="settings_show_exit_ip_desc">在首页通过 ip.sb、ipwho.is 或 ipinfo.io 查询公网 IP</string>
     <string name="settings_about">关于</string>
     <string name="settings_source_code">源代码</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

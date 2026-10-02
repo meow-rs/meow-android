@@ -7,6 +7,8 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
+import io.github.madeye.meow.net.ExitIpLookup
+import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.InstalledAppsRepository
@@ -15,7 +17,9 @@ import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
 import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
+import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
+import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
@@ -59,6 +63,10 @@ object AppGraph {
     val routeModes: RouteModeStore get() = RouteModeStore.default
     val configReloader: ConfigReloader get() = ConfigReloader.default
 
+    /** Settings flips it; Home's exit-IP card follows. */
+    val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
+    val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         // Touching this here starts the speed-sample collector, so the chart has
@@ -73,6 +81,13 @@ object AppGraph {
                 HomeViewModel::class.java ->
                     HomeViewModel(vpn, profiles, api, analytics, routeModes)
 
+                ExitIpViewModel::class.java -> ExitIpViewModel(
+                    lookup = exitIpLookup::lookup,
+                    vpnState = vpn.state,
+                    enabled = showExitIp.enabled,
+                    routedViaVpn = appContext::defaultNetworkIsVpn,
+                )
+
                 SubscribeViewModel::class.java ->
                     SubscribeViewModel(profiles, configValidator, analytics)
 
@@ -80,7 +95,7 @@ object AppGraph {
                     TrafficViewModel(vpn, trafficHistory, speedSamples)
 
                 SettingsViewModel::class.java ->
-                    SettingsViewModel(appVersions, vpn)
+                    SettingsViewModel(appVersions, vpn, showExitIp)
 
                 PerAppProxyViewModel::class.java ->
                     PerAppProxyViewModel(perApp, installedApps, analytics)

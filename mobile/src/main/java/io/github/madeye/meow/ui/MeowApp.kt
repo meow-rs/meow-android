@@ -61,6 +61,7 @@ import io.github.madeye.meow.ui.nav.TABS
 import io.github.madeye.meow.ui.screens.connections.ConnectionsActions
 import io.github.madeye.meow.ui.screens.connections.ConnectionsScreen
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
+import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeScreen
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsActions
@@ -277,6 +278,8 @@ private fun HomeRoute(
 ) {
     val viewModel: HomeViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val exitIp: ExitIpViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val exitIpState by exitIp.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val askForNotifications = rememberNotificationPermissionRequest()
@@ -302,6 +305,12 @@ private fun HomeRoute(
     // The :vpn process can be killed while backgrounded, leaving stale state.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
 
+    // The node and route-mode pickers live on this screen, so the exit-IP
+    // card only has to hear about switches while it is composed.
+    LaunchedEffect(viewModel, exitIp) {
+        viewModel.routeChanged.collect { exitIp.onRouteChanged() }
+    }
+
     // Preserves the harness contract: launch with auto_connect and the VPN
     // starts once the service reports it has settled.
     var autoConnectHandled by rememberSaveable { mutableStateOf(false) }
@@ -326,6 +335,8 @@ private fun HomeRoute(
             onSelectNode = viewModel::onSelectNode,
             onTestGroup = viewModel::onTestGroup,
             onSelectRouteMode = viewModel::onSelectRouteMode,
+            exitIp = exitIpState,
+            onRefreshExitIp = exitIp::refresh,
         )
     }
     SnackbarHost(snackbarHost)
@@ -532,6 +543,7 @@ private fun SettingsRoute(
             onConnections = onConnections,
             onRules = onRules,
             onLogs = onLogs,
+            onShowExitIpChange = viewModel::onShowExitIpChange,
         )
     }
 }

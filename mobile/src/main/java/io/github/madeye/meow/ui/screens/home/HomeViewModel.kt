@@ -18,9 +18,12 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -95,6 +98,11 @@ class HomeViewModel(
     private val engineMode = MutableStateFlow<RouteMode?>(null)
     private val modeSwitch = Mutex()
 
+    private val _routeChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** A node or route-mode switch reached the running engine (Home's exit-IP card re-checks). */
+    val routeChanged: SharedFlow<Unit> = _routeChanged.asSharedFlow()
+
     /** The engine is the truth while it runs; otherwise, what the next start will use. */
     private val routeMode: Flow<RouteMode> = combine(
         engineMode,
@@ -168,6 +176,7 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 api.selectProxy(group, node)
+                _routeChanged.tryEmit(Unit)
                 analytics.proxyNodeSelect(node)
                 // Persist the pick so it can be replayed on the next connect.
                 profiles.getSelected()?.let { profiles.saveSelectedProxy(it.id, node) }
@@ -222,6 +231,7 @@ class HomeViewModel(
             } catch (e: MeowApiException) {
                 Timber.w(e, "closing connections after a route mode switch failed")
             }
+            _routeChanged.tryEmit(Unit)
             // GLOBAL is only listed in global mode.
             loadGroups()
         }

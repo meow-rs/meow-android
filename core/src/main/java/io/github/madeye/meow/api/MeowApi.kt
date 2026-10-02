@@ -368,7 +368,7 @@ val MeowJson: Json = Json {
 private class StreamClosed(code: Int, reason: String) :
     IOException("websocket closed ($code${if (reason.isEmpty()) "" else ": $reason"})")
 
-private suspend fun Call.await(): Response = suspendCancellableCoroutine { cont ->
+internal suspend fun Call.await(): Response = suspendCancellableCoroutine { cont ->
     enqueue(object : Callback {
         override fun onResponse(call: Call, response: Response) {
             // A response delivered after cancellation would otherwise leak

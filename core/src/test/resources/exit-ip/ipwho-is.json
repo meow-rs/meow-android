@@ -1,0 +1,38 @@
+{
+    "ip": "203.0.113.7",
+    "success": true,
+    "type": "IPv4",
+    "continent": "Europe",
+    "continent_code": "EU",
+    "country": "Finland",
+    "country_code": "FI",
+    "region": "Uusimaa",
+    "region_code": "18",
+    "city": "Helsinki",
+    "latitude": 60.1695173,
+    "longitude": 24.9354499,
+    "is_eu": true,
+    "postal": "00761",
+    "calling_code": "358",
+    "capital": "Helsinki",
+    "borders": "NO,RU,SE",
+    "flag": {
+        "img": "https://cdn.ipwhois.io/flags/fi.svg",
+        "emoji": "🇫🇮",
+        "emoji_unicode": "U+1F1EB U+1F1EE"
+    },
+    "connection": {
+        "asn": 24940,
+        "org": "Hetzner Online GmbH",
+        "isp": "Hetzner Online GmbH",
+        "domain": "hetzner.com"
+    },
+    "timezone": {
+        "id": "Europe/Helsinki",
+        "abbr": "EEST",
+        "is_dst": true,
+        "offset": 10800,
+        "utc": "+03:00"
+    },
+    "readme": "https://ipwhois.io/docs"
+}

@@ -96,5 +96,6 @@ dependencies {
     implementation(libs.sora.editor.textmate)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.compose.ui.test.junit4)
 }

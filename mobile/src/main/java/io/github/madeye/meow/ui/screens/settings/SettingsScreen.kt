@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,16 +23,20 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
@@ -48,6 +53,7 @@ fun SettingsScreen(
     onConnections: () -> Unit,
     onRules: () -> Unit,
     onLogs: () -> Unit,
+    onShowExitIpChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unavailable = stringResource(R.string.settings_version_unavailable)
@@ -125,6 +131,17 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_dns_server),
                 value = stringResource(R.string.settings_dns_builtin),
             )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            // The subtitle names the services: every check sends them the
+            // user's address.
+            SwitchRow(
+                icon = Icons.Filled.Public,
+                title = stringResource(R.string.settings_show_exit_ip),
+                subtitle = stringResource(R.string.settings_show_exit_ip_desc),
+                checked = state.showExitIp,
+                onCheckedChange = onShowExitIpChange,
+                modifier = Modifier.testTag("settings_show_exit_ip"),
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -136,6 +153,48 @@ fun SettingsScreen(
                 value = stringResource(R.string.settings_source_url),
             )
         }
+    }
+}
+
+/** [NavRow]'s rhythm with a switch in place of the chevron; the whole row toggles. */
+@Composable
+private fun SwitchRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.meow
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .background(colors.accent.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.accent,
+                modifier = Modifier.size(17.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.bodyMedium)
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = colors.mutedText)
+        }
+        // Null: the row's toggleable owns the click and the semantics.
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

@@ -69,6 +69,8 @@ fun HomeScreen(
     onSelectNode: (String, String) -> Unit,
     onTestGroup: (String) -> Unit,
     onSelectRouteMode: (RouteMode) -> Unit,
+    exitIp: ExitIpUiState,
+    onRefreshExitIp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -107,6 +109,10 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+
+        if (exitIp != ExitIpUiState.Hidden) {
+            item { ExitIpCard(state = exitIp, onRefresh = onRefreshExitIp) }
         }
 
         item {

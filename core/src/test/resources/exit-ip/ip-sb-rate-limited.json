@@ -1,0 +1,5 @@
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please reduce your request frequency and try again later.",
+  "support": "For higher rate limits and commercial support, please visit https://ip.sb/pricing/"
+}

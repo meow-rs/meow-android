@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.bg.BaseService
+import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.ui.util.AppVersions
 import io.github.madeye.meow.vpn.VpnStateRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,11 +21,13 @@ data class SettingsUiState(
     val engineVersion: String = "",
     /** The engine-backed screens can only load while the tunnel is up. */
     val engineOnline: Boolean = false,
+    val showExitIp: Boolean = false,
 )
 
 class SettingsViewModel(
     private val versions: AppVersions,
     vpn: VpnStateRepository,
+    private val exitIp: ExitIpPreference,
 ) : ViewModel() {
 
     private val versionPair = MutableStateFlow("" to "")
@@ -32,11 +35,19 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = combine(
         versionPair,
         vpn.state.map { it == BaseService.State.Connected },
-    ) { (app, engine), online ->
-        SettingsUiState(appVersion = app, engineVersion = engine, engineOnline = online)
+        exitIp.enabled,
+    ) { (app, engine), online, showExitIp ->
+        SettingsUiState(
+            appVersion = app,
+            engineVersion = engine,
+            engineOnline = online,
+            showExitIp = showExitIp == true,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     init {
         viewModelScope.launch { versionPair.value = versions.read() }
     }
+
+    fun onShowExitIpChange(show: Boolean) = exitIp.set(show)
 }
