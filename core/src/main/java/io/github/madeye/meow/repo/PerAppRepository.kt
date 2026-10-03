@@ -62,10 +62,12 @@ class PerAppRepository(
         try {
             store.save(config.mode.key, config.packages)
         } catch (e: IOException) {
-            // The file is the authority for :vpn; failing it degrades back to
-            // the stale-prefs path this used to be — worth a warning, but the
-            // visible save still lands via the prefs below.
-            Timber.w(e, "per-app config file write failed; :vpn may see stale selection")
+            // The file outranks prefs on every read (here and in :vpn), so a
+            // write failure would leave the stale file shadowing the fresh
+            // prefs below — an invisible revert of the user's edit. Drop the
+            // file instead: readers then land on the just-written prefs.
+            Timber.w(e, "per-app config file write failed; falling back to prefs")
+            store.clear()
         }
         DataStore.perAppMode = config.mode.key
         DataStore.perAppPackages =

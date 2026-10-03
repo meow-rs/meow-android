@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Immutable
 data class PerAppUiState(
@@ -59,12 +60,20 @@ class PerAppProxyViewModel(
     private val scanningDomestic = MutableStateFlow(false)
     private var saving = false
 
+    /**
+     * Packages the user deselected while a domestic scan is in flight. The
+     * scan merges by union, so without this a mid-scan uncheck of a matched
+     * app would be silently reverted — and counted in the snackbar — when
+     * the scan lands.
+     */
+    private val scanDeselected = mutableSetOf<String>()
+
     /** One-shot scan outcomes for the route to snackbar. */
     sealed interface DomesticScanEvent {
         /**
          * [matched] packages looked Chinese; [added] of them were newly
-         * unioned in; [skippedUid] matched but were left unselected because
-         * they are system apps on a shared UID.
+         * unioned in; [skippedUid] were refused by the shared-UID gate —
+         * packages the user deselected mid-scan count as neither.
          */
         data class Finished(val matched: Int, val added: Int, val skippedUid: Int) :
             DomesticScanEvent
@@ -97,21 +106,31 @@ class PerAppProxyViewModel(
 
     init {
         viewModelScope.launch {
-            config.value = perApp.load()
-            apps.value = installedApps.load()
-            // Packages uninstalled since the last save have no row to toggle
-            // and deselect-all can't reach them — prune so they don't inflate
-            // the count; the cleaned set lands on the next save. The baseline
-            // is every package PM knows, not the picker list: disabled and
-            // archived apps are transient, not uninstalled. An empty baseline
-            // means the enumeration failed, not that everything vanished.
-            val installed = installedApps.installedPackageNames()
-            if (installed.isNotEmpty()) {
-                config.value = config.value.copy(
-                    packages = config.value.packages intersect installed,
-                )
+            try {
+                config.value = perApp.load()
+                apps.value = installedApps.load()
+                // Packages uninstalled since the last save have no row to
+                // toggle and deselect-all can't reach them — prune so they
+                // don't inflate the count; the cleaned set lands on the next
+                // save. The baseline is every package PM knows, not the
+                // picker list: disabled and archived apps are transient, not
+                // uninstalled. An empty baseline means the enumeration
+                // failed, not that everything vanished.
+                val installed = installedApps.installedPackageNames()
+                if (installed.isNotEmpty()) {
+                    config.value = config.value.copy(
+                        packages = config.value.packages intersect installed,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Whatever survives shows as an empty picker; the alternative
+                // is an uncaught-coroutine crash on the main thread.
+                Timber.w(e, "per-app init failed")
+            } finally {
+                loading.value = false
             }
-            loading.value = false
         }
     }
 
@@ -125,8 +144,12 @@ class PerAppProxyViewModel(
 
     fun onToggleApp(packageName: String) {
         val current = config.value.packages
+        val removing = packageName in current
+        if (scanningDomestic.value) {
+            if (removing) scanDeselected += packageName else scanDeselected -= packageName
+        }
         config.value = config.value.copy(
-            packages = if (packageName in current) current - packageName else current + packageName,
+            packages = if (removing) current - packageName else current + packageName,
         )
     }
 
@@ -137,15 +160,18 @@ class PerAppProxyViewModel(
      * apps get in — gated there on a private UID.)
      */
     fun onSelectAllVisible(visible: List<InstalledApp>) {
+        val adding = visible.filter { !it.isSystem }.map { it.packageName }
+        if (scanningDomestic.value) scanDeselected -= adding.toSet()
         config.value = config.value.copy(
-            packages = config.value.packages +
-                visible.filter { !it.isSystem }.map { it.packageName },
+            packages = config.value.packages + adding,
         )
     }
 
     fun onDeselectAllVisible(visible: List<InstalledApp>) {
+        val removing = visible.map { it.packageName }.toSet()
+        if (scanningDomestic.value) scanDeselected += removing
         config.value = config.value.copy(
-            packages = config.value.packages - visible.map { it.packageName }.toSet(),
+            packages = config.value.packages - removing,
         )
     }
 
@@ -160,13 +186,15 @@ class PerAppProxyViewModel(
      * apps sharing a UID are same-signature suites, benign by comparison.)
      * Like select-all this never removes a manual pick; in bypass mode it
      * exempts domestic apps from the tunnel, in proxy mode it extends the
-     * tunnel to them. Scope snapshots at launch; the selection itself is
-     * union-merged at completion so mid-scan manual toggles survive.
+     * tunnel to them. Scope snapshots at launch; the merge keeps every
+     * manual change made mid-scan: additions ride the union, removals are
+     * recorded in [scanDeselected] and subtracted back out of it.
      */
     fun onSelectDomestic() {
         if (scanningDomestic.value) return
         viewModelScope.launch {
             scanningDomestic.value = true
+            scanDeselected.clear()
             try {
                 // The `in config` clause mirrors visibleApps' escape rule so
                 // hand-picked system apps still count toward `matched` even
@@ -182,13 +210,18 @@ class PerAppProxyViewModel(
                 val (uidShared, uidPrivate) = domestic.partition { pkg ->
                     byName[pkg]?.let { it.isSystem && it.sharesUid } != false
                 }
-                val added = uidPrivate - config.value.packages
+                // Mid-scan unchecks win over the union: a matched app the
+                // user just deselected is neither re-added nor reported.
+                val added = uidPrivate - config.value.packages - scanDeselected
                 config.value = config.value.copy(
-                    packages = config.value.packages + uidPrivate,
+                    packages = config.value.packages + uidPrivate - scanDeselected,
                 )
                 // Already hand-picked shared-UID matches weren't "skipped" —
-                // the user opted in, so the report counts only new refusals.
-                val skipped = uidShared.count { it !in config.value.packages }
+                // the user opted in — and neither were apps the user just
+                // deselected, so the report counts only new refusals.
+                val skipped = uidShared.count {
+                    it !in config.value.packages && it !in scanDeselected
+                }
                 domesticResult.tryEmit(
                     DomesticScanEvent.Finished(domestic.size, added.size, skipped),
                 )
@@ -216,6 +249,10 @@ class PerAppProxyViewModel(
                 perApp.save(config.value)
                 analytics.perAppProxySave(config.value.mode.key)
                 onSaved()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "per-app save failed")
             } finally {
                 saving = false
             }

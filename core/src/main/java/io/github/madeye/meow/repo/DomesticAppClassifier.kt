@@ -1,7 +1,6 @@
 package io.github.madeye.meow.repo
 
 import android.content.Context
-import android.content.pm.ComponentInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -13,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 
 /**
  * Bulk "is this app domestic" verdicts for the per-app proxy picker.
@@ -65,6 +65,8 @@ class DomesticAppClassifier(
                 // would otherwise evict — and persist the eviction of —
                 // valid verdicts for packages it simply didn't ask about.
                 val domestic = mutableSetOf<String>()
+                var failures = 0
+                var firstFailure: Exception? = null
                 for (pkg in packageNames) {
                     ensureActive()
                     try {
@@ -72,7 +74,19 @@ class DomesticAppClassifier(
                     } catch (e: Exception) {
                         // Uninstalls mid-scan, dead-system binder errors,
                         // OEM quirks — all mean "unknown", not "crash".
+                        // Tallied so a systemic failure (e.g. the component
+                        // path breaking for every package) isn't invisible.
+                        failures++
+                        if (firstFailure == null) firstFailure = e
                     }
+                }
+                if (failures > 0) {
+                    Timber.w(
+                        firstFailure,
+                        "domestic scan: %d/%d packages failed to classify",
+                        failures,
+                        packageNames.size,
+                    )
                 }
                 try {
                     saveCache()
@@ -132,16 +146,26 @@ class DomesticAppClassifier(
      * actually lives. Skipped namespaces are excluded so e.g. a foreign game
      * embedding the Vivox voice SDK isn't caught by the `com.vivo` prefix.
      */
-    private fun hasChineseComponent(info: PackageInfo): Boolean {
-        val components = sequenceOf(
-            info.activities, info.services, info.receivers, info.providers,
-        ).filterNotNull().flatMap { it.asSequence() }.map(ComponentInfo::name)
-        val appLevel = sequenceOf(
-            info.applicationInfo?.className,
-            if (Build.VERSION.SDK_INT >= 28) info.applicationInfo?.appComponentFactory else null,
-        ).filterNotNull() +
-            (info.instrumentation?.asSequence()?.map { it.name } ?: emptySequence())
-        return (components + appLevel).any(ChinaPackageMatcher::isChineseComponent)
+    private fun hasChineseComponent(info: PackageInfo): Boolean =
+        componentNames(info).any(ChinaPackageMatcher::isChineseComponent)
+
+    /**
+     * Iterated explicitly rather than `sequenceOf(activities, services, …)
+     * .flatMap { it.asSequence() }`: feeding four platform-typed arrays into
+     * a `sequenceOf` vararg made the desugared flatMap lambda expect `Void[]`
+     * and throw `ClassCastException` for every package that had components —
+     * invisible on the JVM but fatal to this whole signal on-device.
+     */
+    private fun componentNames(info: PackageInfo): Sequence<String> = sequence {
+        for (ci in info.activities.orEmpty()) yield(ci.name)
+        for (ci in info.services.orEmpty()) yield(ci.name)
+        for (ci in info.receivers.orEmpty()) yield(ci.name)
+        for (ci in info.providers.orEmpty()) yield(ci.name)
+        for (inst in info.instrumentation.orEmpty()) yield(inst.name)
+        info.applicationInfo?.className?.let { yield(it) }
+        if (Build.VERSION.SDK_INT >= 28) {
+            info.applicationInfo?.appComponentFactory?.let { yield(it) }
+        }
     }
 
     @Suppress("DEPRECATION") // int flag constants remain the documented input to PackageInfoFlags.of()
@@ -164,7 +188,12 @@ class DomesticAppClassifier(
         } else {
             packageManager.getPackageInfo(packageName, flags)
         }
+    } catch (_: PackageManager.NameNotFoundException) {
+        // Uninstalled (or uninstalled-for-user) between the enumeration
+        // snapshot and the query — expected during a scan, not a signal.
+        null
     } catch (e: Exception) {
+        Timber.w(e, "packageInfo(%s, components=%b) failed", packageName, components)
         null
     }
 
@@ -197,7 +226,7 @@ class DomesticAppClassifier(
 
     private companion object {
         /** Bump when SKIP_PREFIXES / CN_PREFIXES / CN_STORES change. */
-        const val CACHE_VERSION = 2
+        const val CACHE_VERSION = 3
 
         val CN_STORES = setOf(
             "com.xiaomi.market",              // 小米应用商店

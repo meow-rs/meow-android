@@ -20,7 +20,9 @@ class AppVersions(private val context: Context) {
         val app = try {
             val info = context.packageManager.getPackageInfo(context.packageName, 0)
             "${info.versionName} (${info.versionCodeCompat()})"
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (e: Exception) {
+            // Dead-system binder failures too — a blank version beats an
+            // uncaught-coroutine crash in SettingsViewModel's launch.
             ""
         }
         // Comes from the linked Rust library, so it is readable whether or not

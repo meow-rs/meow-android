@@ -52,7 +52,14 @@ object ChinaPackageMatcher {
         "com.iqiyi.i18n",            // 爱奇艺国际版 — trips "com.iqiyi"
         "com.bilibili.app.in",       // bilibili intl — trips "com.bilibili"
         "com.didiglobal.passenger",  // DiDi international
+        "com.didiglobal.driver", "com.didiglobal.food", // DiDi driver/food intl — same trap
         "com.miHoYo.GenshinImpact",  // Genshin global (CN build is com.miHoYo.Yuanshen)
+        // Honkai 3rd has a package per overseas region; the dot-boundary
+        // skip can't wildcard them (bh3oversea_vn is not a bh3oversea.* child).
+        "com.miHoYo.bh3oversea", "com.miHoYo.bh3oversea_vn", "com.miHoYo.bh3global",
+        "com.miHoYo.bh3rdJP", "com.miHoYo.bh3tw", "com.miHoYo.bh3korea",
+        "com.miHoYo.tot.glb",        // Tears of Themis global — same trap
+        "com.taptap.global",         // TapTap international — trips "com.taptap"
         // Collisions of unanchored prefixes, observed as false positives:
         "com.mxtech.videoplayer",    // MX Player, trips "com.mx" (Maxthon)
         "com.stubhub",               // trips "com.stub" (packer stub)
@@ -78,14 +85,16 @@ object ChinaPackageMatcher {
         "tv.danmaku", "com.bilibili",
         "com.xiaomi", "com.miui", "com.huawei", "com.hihonor",
         "com.vivo", "com.oppo", "com.coloros", "com.iqoo", "com.oplus",
-        "andes.oplus", "com.heytap", "com.oneplus", "com.realme",
+        // ("andes.oplus" dropped: no such reversed domain, and com.oplus
+        // already covers the real com.oplus.andes* push packages.)
+        "com.heytap", "com.oneplus", "com.realme",
         "com.meizu", "com.gionee", "com.nubia", "cn.nubia",
         "com.smartisan", "com.lenovo", "zte.com", "com.yulong", "com.tcl",
         // CN services / apps
         "com.meituan", "com.sankuai", "com.dianping", "me.ele",
         "com.xunmeng", // com.xunmeng.pinduoduo = 拼多多
         "com.jingdong",
-        "com.didichuxing", "com.didiglobal", "sdu.didi",
+        "com.didichuxing", "com.didiglobal", "com.sdu.didi", // 滴滴 com.sdu.didi.psnger
         "com.xunlei", "com.immomo", "com.zhihu", "com.ximalaya",
         "com.qiyi", "com.iqiyi", "com.youku", "com.hupu", "com.gotokeep",
         "com.smzdm", "com.lalamove", "com.coolapk", "com.wandoujia",

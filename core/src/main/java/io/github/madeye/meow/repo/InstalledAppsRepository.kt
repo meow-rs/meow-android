@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 data class InstalledApp(
     val packageName: String,
@@ -33,12 +34,21 @@ class InstalledAppsRepository(private val context: Context) {
     private val packageManager: PackageManager get() = context.packageManager
 
     suspend fun load(): List<InstalledApp> = withContext(Dispatchers.IO) {
-        val infos = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        val infos = try {
+            packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        } catch (e: Exception) {
+            // DeadObjectException, OEM SecurityExceptions — an empty picker
+            // beats a crash on the caller's uncaught coroutine.
+            Timber.w(e, "installed-app enumeration failed")
+            return@withContext emptyList()
+        }
         // UID sharing must be judged against every package PM knows —
         // including disabled, archived, and keep-data-uninstalled siblings
         // (a shared UID routes as a unit whenever a sibling exists again,
         // so the narrow picker enumeration alone would undercount and a
-        // wrongly-"private" UID fails in the unsafe direction).
+        // wrongly-"private" UID fails in the unsafe direction). A failed or
+        // incomplete census therefore reports every UID as shared: that only
+        // suppresses auto-selection of system apps, never enables it.
         val uidCounts = installedPackages(includeUninstalled = true)
             .mapNotNull { it.applicationInfo?.uid }
             .groupingBy { it }
@@ -50,9 +60,16 @@ class InstalledAppsRepository(private val context: Context) {
             .map { info ->
                 InstalledApp(
                     packageName = info.packageName,
-                    label = packageManager.getApplicationLabel(info).toString(),
+                    label = try {
+                        packageManager.getApplicationLabel(info).toString()
+                    } catch (e: Exception) {
+                        info.packageName
+                    },
                     isSystem = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                    sharesUid = uidCounts.getValue(info.uid) > 1,
+                    // A uid missing from the census means the package vanished
+                    // between the two enumerations — treat it as shared, which
+                    // is the direction that can't sneak siblings into the tunnel.
+                    sharesUid = uidCounts[info.uid]?.let { it > 1 } ?: true,
                 )
             }
             .sortedBy { it.label.lowercase() }
@@ -87,11 +104,18 @@ class InstalledAppsRepository(private val context: Context) {
         if (Build.VERSION.SDK_INT >= 35) {
             flags = flags or PackageManager.MATCH_ARCHIVED_PACKAGES
         }
-        return if (Build.VERSION.SDK_INT >= 33) {
-            packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(flags))
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getInstalledPackages(flags.toInt())
+        return try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(flags))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstalledPackages(flags.toInt())
+            }
+        } catch (e: Exception) {
+            // Callers read an empty result as "enumeration unavailable":
+            // ghost pruning is skipped and every uid counts as shared.
+            Timber.w(e, "installed-package census failed")
+            emptyList()
         }
     }
 
@@ -99,7 +123,7 @@ class InstalledAppsRepository(private val context: Context) {
     suspend fun icon(packageName: String): Drawable? = withContext(Dispatchers.IO) {
         try {
             packageManager.getApplicationIcon(packageName)
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (e: Exception) {
             null
         }
     }

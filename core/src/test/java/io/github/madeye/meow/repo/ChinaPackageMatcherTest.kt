@@ -53,6 +53,7 @@ class ChinaPackageMatcherTest {
             "com.lianjia.beike",            // 贝壳
             "com.huaxiaozhu.rider",         // 花小猪
             "com.didapinche.booking",       // 嘀嗒
+            "com.sdu.didi.psnger",          // 滴滴出行
             "com.taptap",                   // TapTap
             "com.cmbchina",                 // 掌上生活
             "com.citiccard.mobilebank",     // 中信动卡空间
@@ -114,7 +115,18 @@ class ChinaPackageMatcherTest {
             "com.iqiyi.i18n",                 // 爱奇艺国际版
             "com.bilibili.app.in",            // bilibili 国际版
             "com.didiglobal.passenger",       // DiDi 国际版
+            "com.didiglobal.driver",          // DiDi 国际版司机端
+            "com.didiglobal.driver.au",       // 澳洲变体 — 由 .driver 点边界覆盖
+            "com.didiglobal.food",            // DiDi Food
             "com.miHoYo.GenshinImpact",       // 原神国际服
+            "com.miHoYo.bh3oversea",          // 崩坏3国际服（SEA）
+            "com.miHoYo.bh3oversea_vn",       // 崩坏3越南服 — 非 bh3oversea.* 子域，须单列
+            "com.miHoYo.bh3global",           // 崩坏3 Global 服
+            "com.miHoYo.bh3rdJP",             // 崩坏3日服
+            "com.miHoYo.bh3tw",               // 崩坏3台服
+            "com.miHoYo.bh3korea",            // 崩坏3韩服
+            "com.miHoYo.tot.glb",             // 未定事件簿国际服
+            "com.taptap.global",              // TapTap 国际版
         ).forEach { pkg -> assertTrue("$pkg should be skipped", ChinaPackageMatcher.isSkipped(pkg)) }
     }
 
@@ -135,7 +147,17 @@ class ChinaPackageMatcherTest {
             "com.iqiyi.i18n",
             "com.bilibili.app.in",
             "com.didiglobal.passenger",
+            "com.didiglobal.driver",
+            "com.didiglobal.food",
             "com.miHoYo.GenshinImpact",
+            "com.miHoYo.bh3oversea",
+            "com.miHoYo.bh3oversea_vn",
+            "com.miHoYo.bh3global",
+            "com.miHoYo.bh3rdJP",
+            "com.miHoYo.bh3tw",
+            "com.miHoYo.bh3korea",
+            "com.miHoYo.tot.glb",
+            "com.taptap.global",
         ).forEach { pkg ->
             assertTrue("$pkg must trip a CN prefix for its skip to matter",
                 ChinaPackageMatcher.isChineseName(pkg))

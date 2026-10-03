@@ -59,4 +59,19 @@ class PerAppConfigStoreTest {
         assertEquals("proxy", stored?.mode)
         assertTrue(stored?.packages?.isEmpty() == true)
     }
+
+    @Test
+    fun `clear drops the file and any tmp leftover`() {
+        // The write-failure path relies on this: with the stale file gone,
+        // the just-written SharedPreferences keys become the source again.
+        val store = PerAppConfigStore(storeFile())
+        store.save("bypass", setOf("a.b.c"))
+        File(tmp.root, "per_app.tmp").writeText("leftover")
+
+        store.clear()
+
+        assertNull(store.load())
+        assertFalse(storeFile().exists())
+        assertFalse(File(tmp.root, "per_app.tmp").exists())
+    }
 }

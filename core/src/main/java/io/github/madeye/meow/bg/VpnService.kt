@@ -125,7 +125,9 @@ class VpnService : BaseVpnService(), BaseService.Interface {
                 // All apps except selected go through VPN.
                 for (pkg in perAppPackages) {
                     try { builder.addDisallowedApplication(pkg) }
-                    catch (_: PackageManager.NameNotFoundException) { }
+                    // Vanished packages plus OEM RuntimeExceptions — one bad
+                    // entry must not abort the whole establish.
+                    catch (_: Exception) { }
                 }
             }
             else -> {
@@ -133,7 +135,7 @@ class VpnService : BaseVpnService(), BaseService.Interface {
                 // land here too, matching PerAppMode.from's default.
                 for (pkg in perAppPackages) {
                     try { builder.addAllowedApplication(pkg) }
-                    catch (_: PackageManager.NameNotFoundException) { }
+                    catch (_: Exception) { }
                 }
             }
         }
