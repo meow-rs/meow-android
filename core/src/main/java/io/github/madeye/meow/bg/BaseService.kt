@@ -277,13 +277,26 @@ object BaseService {
             // Starts arrive through startForegroundService (see
             // VpnService.start), whose watchdog kills :vpn unless
             // startForeground() follows within seconds — so answer it before
-            // anything can bail out, including the redundant-start and
-            // no-profile returns below and the Room lookup in between. After a
-            // restart the notification is still up and this only refreshes it.
+            // anything can bail out, including the redundant-start,
+            // null-intent and no-profile returns below and the Room lookup in
+            // between. After a restart the notification is still up and this
+            // only refreshes it.
             val notification = data.notification
                 ?: createNotification().also { data.notification = it }
             notification.startForeground()
             if (data.state != State.Stopped) return Service.START_NOT_STICKY
+            // Every real start carries an intent: VpnService.start's, or the
+            // system's always-on one. A null intent is the system re-creating
+            // :vpn after its process died, which it does despite
+            // START_NOT_STICKY while the UI is still bound. Connecting on it
+            // would turn a VPN the user just stopped back on whenever the stop
+            // is what killed :vpn, so it only takes the notification down.
+            if (intent == null) {
+                notification.destroy()
+                data.notification = null
+                (this as Service).stopSelf(startId)
+                return Service.START_NOT_STICKY
+            }
 
             val profile = Core.currentProfile
             this as Context

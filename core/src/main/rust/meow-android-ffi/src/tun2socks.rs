@@ -115,9 +115,13 @@ pub fn stop() {
     if tokio::runtime::Handle::try_current().is_ok() {
         return;
     }
+    // `timeout()` registers with the current runtime's timer, and a JNI
+    // thread is only inside one within `block_on` — so build it there. Built
+    // as the argument it panicked ("no reactor running") on every stop, and
+    // a panic cannot unwind out of a JNI entry point: :vpn aborted.
     let rt = crate::get_runtime();
     if rt
-        .block_on(tokio::time::timeout(TUN2SOCKS_STOP_TIMEOUT, handle))
+        .block_on(async move { tokio::time::timeout(TUN2SOCKS_STOP_TIMEOUT, handle).await })
         .is_err()
     {
         logging::bridge_log("tun2socks: stop timed out waiting for shutdown");
@@ -744,4 +748,28 @@ fn ipv4_header_checksum(h: &[u8]) -> u16 {
         s = (s & 0xFFFF) + (s >> 16);
     }
     !s as u16
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `stop()` runs on JNI threads, which are outside the runtime.
+    #[test]
+    fn stop_from_a_non_runtime_thread_waits_for_the_session() {
+        let finished = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&finished);
+        let handle = crate::get_runtime().spawn(async move {
+            while !TUN2SOCKS_STOP_REQUESTED.load(Ordering::SeqCst) {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+            flag.store(true, Ordering::SeqCst);
+        });
+        *TUN2SOCKS_TASK.lock() = Some(handle);
+
+        stop();
+
+        assert!(finished.load(Ordering::SeqCst));
+        TUN2SOCKS_STOP_REQUESTED.store(false, Ordering::SeqCst);
+    }
 }
