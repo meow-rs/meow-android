@@ -532,10 +532,10 @@ private fun UtilityRoute(
         UtilityScreen(
             engineOnline = vpnState == BaseService.State.Connected,
             contentPadding = padding,
-            onTraffic = onTraffic,
             onConnections = onConnections,
-            onLogs = onLogs,
             onDns = onDns,
+            onTraffic = onTraffic,
+            onLogs = onLogs,
         )
     }
 }

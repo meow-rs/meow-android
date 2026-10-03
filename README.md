@@ -51,9 +51,9 @@ Network
   - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
     reconnects), proxy group & node selection, connection status
   - Subscribe: Add/edit/remove subscriptions, YAML editor, import/export config
-  - Utility: Traffic (real-time speed chart, session upload/download stats,
-    daily history), plus live Connections, Logs and DNS-cache views powered
-    by the REST API, grouped as on the iOS app
+  - Utility: live Connections and DNS-cache views powered by the REST API,
+    Traffic (real-time speed chart, session upload/download stats, daily
+    history) and Logs, grouped as on the iOS app
   - Settings: Version, live Rules view, network config, per-app VPN
     proxy/bypass, connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN)

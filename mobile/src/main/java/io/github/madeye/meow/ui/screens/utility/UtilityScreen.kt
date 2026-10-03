@@ -25,20 +25,20 @@ import io.github.madeye.meow.ui.theme.meow
 
 /**
  * The Utility tab, modelled on meow-ios's: one card of entry points to the
- * monitoring screens.
+ * monitoring screens, most-used first.
  *
  * Traffic reads the app's own history, so it is always open. Connections,
- * Logs and DNS read the engine's controller API, so — as when the first two
- * lived in Settings — they are only reachable while it is listening.
+ * DNS and Logs read the engine's controller API, so — as when Connections and
+ * Logs lived in Settings — they are only reachable while it is listening.
  */
 @Composable
 fun UtilityScreen(
     engineOnline: Boolean,
     contentPadding: PaddingValues,
-    onTraffic: () -> Unit,
     onConnections: () -> Unit,
-    onLogs: () -> Unit,
     onDns: () -> Unit,
+    onTraffic: () -> Unit,
+    onLogs: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val offlineHint = stringResource(R.string.settings_engine_offline)
@@ -55,13 +55,6 @@ fun UtilityScreen(
     ) {
         GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
             NavRow(
-                title = stringResource(R.string.traffic_title),
-                icon = Icons.AutoMirrored.Filled.ShowChart,
-                onClick = onTraffic,
-                modifier = Modifier.testTag("utility_traffic"),
-            )
-            HorizontalDivider(color = MaterialTheme.meow.border)
-            NavRow(
                 title = stringResource(R.string.connections_title),
                 icon = Icons.Filled.SwapHoriz,
                 onClick = onConnections,
@@ -71,19 +64,26 @@ fun UtilityScreen(
             )
             HorizontalDivider(color = MaterialTheme.meow.border)
             NavRow(
-                title = stringResource(R.string.logs_title),
-                icon = Icons.AutoMirrored.Filled.Article,
-                onClick = onLogs,
-                modifier = Modifier.testTag("utility_logs"),
+                title = stringResource(R.string.dns_title),
+                icon = Icons.Filled.Language,
+                onClick = onDns,
+                modifier = Modifier.testTag("utility_dns"),
                 enabled = engineOnline,
                 subtitle = offlineHint.takeUnless { engineOnline },
             )
             HorizontalDivider(color = MaterialTheme.meow.border)
             NavRow(
-                title = stringResource(R.string.dns_title),
-                icon = Icons.Filled.Language,
-                onClick = onDns,
-                modifier = Modifier.testTag("utility_dns"),
+                title = stringResource(R.string.traffic_title),
+                icon = Icons.AutoMirrored.Filled.ShowChart,
+                onClick = onTraffic,
+                modifier = Modifier.testTag("utility_traffic"),
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.logs_title),
+                icon = Icons.AutoMirrored.Filled.Article,
+                onClick = onLogs,
+                modifier = Modifier.testTag("utility_logs"),
                 enabled = engineOnline,
                 subtitle = offlineHint.takeUnless { engineOnline },
             )
