@@ -55,14 +55,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Android Lint
-        run: ./gradlew :mobile:lintDebug -PTARGET_ABI=x86_64 -PCARGO_PROFILE=debug
+        run: ./gradlew :mobile:lintDebug :core:lintDebug -PTARGET_ABI=x86_64 -PCARGO_PROFILE=debug
 
       - name: Upload lint report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
-          path: mobile/build/reports/lint-results-debug.html
+          path: |
+            mobile/build/reports/lint-results-debug.html
+            core/build/reports/lint-results-debug.html
           if-no-files-found: ignore
 
   rust-lint:

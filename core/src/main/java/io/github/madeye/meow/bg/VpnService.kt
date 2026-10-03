@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import io.github.madeye.meow.Core
 import io.github.madeye.meow.net.DefaultNetworkListener
 import io.github.madeye.meow.preference.DataStore
+import io.github.madeye.meow.preference.PerAppConfigStore
 import org.json.JSONArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -100,12 +101,16 @@ class VpnService : BaseVpnService(), BaseService.Interface {
             .addRoute("0.0.0.0", 0)
             .addRoute("::", 0)
 
-        // Per-app VPN routing
-        val perAppPackages: Set<String> = try {
+        // Per-app VPN routing — the file store is authoritative: this process
+        // caches SharedPreferences for its whole lifetime, so edits saved
+        // after the first establish would never reach the next one.
+        val perApp = PerAppConfigStore.default.load()
+        val perAppPackages: Set<String> = perApp?.packages ?: try {
             JSONArray(DataStore.perAppPackages).let { arr ->
                 (0 until arr.length()).map { arr.getString(it) }.toSet()
             }
         } catch (_: Exception) { emptySet() }
+        val perAppMode = perApp?.mode ?: DataStore.perAppMode
 
         // Note: we deliberately do NOT add the meow package to
         // `addDisallowedApplication` here. The engine and tun2socks run in
@@ -115,19 +120,22 @@ class VpnService : BaseVpnService(), BaseService.Interface {
         // the whole app's uid would also exempt traffic users may want to
         // intercept (e.g. a built-in browser preview) and would shadow the
         // protect path the rest of the stack is designed around.
-        if (perAppPackages.isNotEmpty()) when (DataStore.perAppMode) {
-            "proxy" -> {
-                // Only selected apps go through VPN.
+        if (perAppPackages.isNotEmpty()) when (perAppMode) {
+            "bypass" -> {
+                // All apps except selected go through VPN.
                 for (pkg in perAppPackages) {
-                    try { builder.addAllowedApplication(pkg) }
-                    catch (_: PackageManager.NameNotFoundException) { }
+                    try { builder.addDisallowedApplication(pkg) }
+                    // Vanished packages plus OEM RuntimeExceptions — one bad
+                    // entry must not abort the whole establish.
+                    catch (_: Exception) { }
                 }
             }
             else -> {
-                // "bypass" — all apps except selected go through VPN.
+                // "proxy" — only selected apps go through VPN. Unknown keys
+                // land here too, matching PerAppMode.from's default.
                 for (pkg in perAppPackages) {
-                    try { builder.addDisallowedApplication(pkg) }
-                    catch (_: PackageManager.NameNotFoundException) { }
+                    try { builder.addAllowedApplication(pkg) }
+                    catch (_: Exception) { }
                 }
             }
         }

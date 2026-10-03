@@ -27,9 +27,16 @@ class RouteModeStore(private val file: File) {
 
     fun save(mode: RouteMode) {
         // Write-then-rename so a concurrent load never sees a torn value.
+        // File.renameTo, not Files.move: java.nio.file only exists at API 26+
+        // (the desugar flavor in use doesn't cover it), while renameTo lowers
+        // to rename(2) — already an atomic replace for a same-directory move.
+        // copyTo is the fallback for a filesystem that refuses the rename.
         val tmp = File(file.path + ".tmp")
         tmp.writeText(mode.wire)
-        if (!tmp.renameTo(file)) throw IOException("cannot replace $file")
+        if (!tmp.renameTo(file)) {
+            tmp.copyTo(file, overwrite = true)
+            tmp.delete()
+        }
     }
 
     companion object {

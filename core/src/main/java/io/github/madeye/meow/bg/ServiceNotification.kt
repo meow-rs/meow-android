@@ -72,7 +72,9 @@ class ServiceNotification(
         // :core cannot name :mobile's MainActivity. The launcher intent finds
         // it and, like the launcher, brings an existing task forward.
         .setContentIntent(
-            service.packageManager.getLaunchIntentForPackage(service.packageName)?.let {
+            runCatching {
+                service.packageManager.getLaunchIntentForPackage(service.packageName)
+            }.getOrNull()?.let {
                 PendingIntent.getActivity(service, 0, it, PendingIntent.FLAG_IMMUTABLE)
             },
         )

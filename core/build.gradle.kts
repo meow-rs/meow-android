@@ -139,11 +139,14 @@ cargo {
             ).forEach { (triple, cmakeAbi) ->
                 val wrapper = layout.buildDirectory.file("cmakeToolchains/$triple.cmake").get().asFile
                 wrapper.parentFile.mkdirs()
+                // invariantSeparatorsPath: CMake parses "\U" etc. as
+                // escapes — a backslashed Windows absolutePath is a
+                // syntax error on a fresh configure.
                 wrapper.writeText(
                     """
                     set(ANDROID_ABI $cmakeAbi)
                     set(ANDROID_PLATFORM android-$cmakeMinSdk)
-                    include("${ndkToolchainFile.absolutePath}")
+                    include("${ndkToolchainFile.invariantSeparatorsPath}")
                     """.trimIndent() + "\n"
                 )
                 spec.environment("CMAKE_TOOLCHAIN_FILE_$triple", wrapper.absolutePath)
