@@ -13,12 +13,15 @@ AVD="${AVD:-pixel8_meow}"
 APK="${APK:-$SCRIPT_DIR/mobile/build/outputs/apk/debug/mobile-debug.apk}"
 SSSERVER="${SSSERVER:-ssserver}"
 V2RAY_PLUGIN="${V2RAY_PLUGIN:-v2ray-plugin}"
-PKG="io.github.madeye.meow"
+PKG="${PKG:-io.github.madeye.meow}"
+MAIN_ACTIVITY="${MAIN_ACTIVITY:-$PKG/.MainActivity}"
 
 SS_ADDR="0.0.0.0:8388"
 SS_PASSWORD="testpassword123"
 SS_METHOD="aes-256-gcm"
-SS_HOST_FROM_EMU="10.0.2.2"
+# Address the device uses to reach this host: 10.0.2.2 on the emulator's
+# NAT, the host's LAN IP on a physical device.
+SS_HOST_FROM_EMU="${SS_HOST_FROM_EMU:-10.0.2.2}"
 SS_PORT=8388
 SUB_PORT="${SUB_PORT:-8080}"
 
@@ -89,8 +92,8 @@ wait_for_boot() {
 
 screenshot() {
     local name="$1"
-    "$ADB" shell screencap -p /sdcard/screen_${name}.png 2>/dev/null || true
-    "$ADB" pull /sdcard/screen_${name}.png "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
+    "$ADB" shell screencap -p //sdcard/screen_${name}.png 2>/dev/null || true
+    "$ADB" pull //sdcard/screen_${name}.png "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
     info "  Screenshot saved: screen_${name}.png"
 }
 
@@ -185,6 +188,16 @@ install_apk() {
         if "$ADB" install -g "$APK"; then
             return 0
         fi
+        # MIUI/HyperOS rejects adb installs (INSTALL_FAILED_USER_RESTRICTED);
+        # rooted devices sidestep via `pm install` as root.
+        if "$ADB" shell "su -c id" 2>/dev/null | grep -q "uid=0"; then
+            # `//` escapes Git Bash path conversion — the remote arg must
+            # reach adb as a literal /data/... path, not a Windows one.
+            if "$ADB" push "$APK" //data/local/tmp/e2e.apk >/dev/null 2>&1 &&
+               "$ADB" shell "su -c 'pm install -r -g /data/local/tmp/e2e.apk; rm -f /data/local/tmp/e2e.apk'" | grep -q Success; then
+                return 0
+            fi
+        fi
         info "APK install attempt $attempt failed; restarting adb and retrying ..."
         "$ADB" kill-server >/dev/null 2>&1 || true
         "$ADB" start-server >/dev/null 2>&1 || true
@@ -202,7 +215,7 @@ info "APK installed."
 # Step 6: Configure subscription
 info "Step 6: Configuring subscription..."
 info "  Launching app to initialize databases..."
-"$ADB" shell am start -W -n "$PKG/.MainActivity"
+"$ADB" shell am start -W -n "$MAIN_ACTIVITY"
 # Wait for Application.onCreate to actually create the Room database rather than
 # assuming a fixed delay: `am start -W` reports "timeout" on a slow emulator and
 # returns before the app has finished starting, and force-stopping too early
@@ -266,10 +279,10 @@ done
 # whole e2e doubles as a migration test — the VPN can only come up if the
 # app found the profile through the rename path. (test-e2e-http.sh injects
 # meow.db directly, covering the fresh-install path.)
-"$ADB" push /tmp/meow.db /data/local/tmp/meow.db
+"$ADB" push /tmp/meow.db //data/local/tmp/meow.db
 "$ADB" shell "cat /data/local/tmp/meow.db | run-as $PKG sh -c 'cat > databases/mihomo.db'"
 "$ADB" shell "run-as $PKG rm -f databases/mihomo.db-wal databases/mihomo.db-shm databases/meow.db databases/meow.db-wal databases/meow.db-shm"
-"$ADB" shell rm -f /data/local/tmp/meow.db
+"$ADB" shell rm -f //data/local/tmp/meow.db
 info "  Subscription configuration done."
 
 # Step 7: Enable VPN
@@ -277,7 +290,7 @@ ensure_emulator
 info "Step 7: Enabling VPN..."
 
 # Launch app with auto_connect=true intent extra — triggers VPN start once service reports Stopped
-"$ADB" shell am start -W -n "$PKG/.MainActivity" --ez auto_connect true
+"$ADB" shell am start -W -n "$MAIN_ACTIVITY" --ez auto_connect true
 
 # Wait for the Compose UI to render its first frame.
 #
@@ -293,9 +306,9 @@ UI_READY=false
 for i in $(seq 1 30); do
     # Delete first: /sdcard survives uninstall, so a failed dump would leave the
     # previous run's XML in place and we would match a screen from minutes ago.
-    "$ADB" shell rm -f /sdcard/ui_dump.xml >/dev/null 2>&1 || true
-    "$ADB" shell uiautomator dump /sdcard/ui_dump.xml >/dev/null 2>&1 || true
-    UI_CHECK=$("$ADB" shell cat /sdcard/ui_dump.xml 2>/dev/null || true)
+    "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+    "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+    UI_CHECK=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
     if echo "$UI_CHECK" | grep -q 'resource-id="home_root"'; then
         UI_READY=true
         info "  Compose UI loaded (attempt $i)"
@@ -322,10 +335,10 @@ VPN_ACCEPTED=false
 try_dismiss_vpn_dialog() {
     # Clear both copies first. Neither /sdcard nor /tmp is cleaned between runs,
     # so a failed dump would otherwise leave us deciding based on a stale screen.
-    "$ADB" shell rm -f /sdcard/ui_dump.xml >/dev/null 2>&1 || true
+    "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
     rm -f /tmp/ui_dump.xml
-    "$ADB" shell uiautomator dump /sdcard/ui_dump.xml >/dev/null 2>&1 || true
-    "$ADB" pull /sdcard/ui_dump.xml /tmp/ui_dump.xml >/dev/null 2>&1 || true
+    "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+    "$ADB" pull //sdcard/ui_dump.xml /tmp/ui_dump.xml >/dev/null 2>&1 || true
     local ui_xml
     ui_xml=$(cat /tmp/ui_dump.xml 2>/dev/null || true)
 
