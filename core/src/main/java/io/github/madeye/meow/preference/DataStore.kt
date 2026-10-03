@@ -26,6 +26,11 @@ object DataStore {
         get() = prefs.getString("perAppPackages", "[]") ?: "[]"
         set(value) = prefs.edit().putString("perAppPackages", value).apply()
 
+    /** `DomesticAppClassifier`'s per-package verdict cache, JSON. UI-process only. */
+    var domesticAppCache: String
+        get() = prefs.getString("domesticAppCache", "") ?: ""
+        set(value) = prefs.edit().putString("domesticAppCache", value).apply()
+
     /** The UI asks for POST_NOTIFICATIONS once, ever; see `rememberNotificationPermissionRequest`. */
     var notificationPermissionAsked: Boolean
         get() = prefs.getBoolean("notificationPermissionAsked", false)

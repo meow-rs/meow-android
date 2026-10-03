@@ -18,8 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -27,10 +27,12 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -43,13 +45,13 @@ import io.github.madeye.meow.R
 import io.github.madeye.meow.repo.InstalledApp
 import io.github.madeye.meow.repo.PerAppMode
 import io.github.madeye.meow.ui.theme.meow
+import kotlinx.coroutines.delay
 
 @Composable
 fun PerAppProxyScreen(
     state: PerAppUiState,
     contentPadding: PaddingValues,
     onQueryChange: (String) -> Unit,
-    onToggleSystemApps: () -> Unit,
     onModeChange: (PerAppMode) -> Unit,
     onToggleApp: (String) -> Unit,
     iconLoader: suspend (String) -> android.graphics.drawable.Drawable?,
@@ -94,14 +96,20 @@ fun PerAppProxyScreen(
                 text = if (state.selected.isEmpty()) {
                     stringResource(R.string.perapp_disabled_hint)
                 } else {
-                    pluralStringResource(
-                        R.plurals.perapp_selected,
-                        state.selected.size,
-                        state.selected.size,
-                    ) + " · " + stringResource(R.string.perapp_restart_required)
+                    stringResource(
+                        R.string.perapp_status,
+                        pluralStringResource(
+                            R.plurals.perapp_selected,
+                            state.selected.size,
+                            state.selected.size,
+                        ),
+                        stringResource(R.string.perapp_restart_required),
+                    )
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.meow.mutedText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -112,29 +120,47 @@ fun PerAppProxyScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-
-            Spacer(Modifier.height(8.dp))
-            FilterChip(
-                selected = state.showSystemApps,
-                onClick = onToggleSystemApps,
-                label = { Text(stringResource(R.string.perapp_show_system)) },
-            )
         }
 
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = contentPadding.calculateBottomPadding() + 16.dp,
-            ),
-        ) {
-            items(visible, key = { it.packageName }) { app ->
-                AppRow(
-                    app = app,
-                    checked = app.packageName in state.selected,
-                    onToggle = { onToggleApp(app.packageName) },
-                    iconLoader = iconLoader,
+        Box {
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp,
+                ),
+            ) {
+                items(visible, key = { it.packageName }) { app ->
+                    AppRow(
+                        app = app,
+                        checked = app.packageName in state.selected,
+                        onToggle = { onToggleApp(app.packageName) },
+                        iconLoader = iconLoader,
+                    )
+                }
+            }
+            // Overlaid rather than in the Column flow: an in-flow indicator
+            // shifts the whole list 12dp when it appears and again when it
+            // disappears. Also gated on both edges — a cache-hit scan ends in
+            // well under SCAN_SHOW_DELAY_MS, so the bar never appears at all;
+            // once shown it holds for SCAN_MIN_VISIBLE_MS so borderline scans
+            // don't flash it for a frame either.
+            var showScanIndicator by remember { mutableStateOf(false) }
+            LaunchedEffect(state.scanningDomestic) {
+                if (state.scanningDomestic) {
+                    delay(SCAN_SHOW_DELAY_MS)
+                    showScanIndicator = true
+                } else {
+                    if (showScanIndicator) delay(SCAN_MIN_VISIBLE_MS)
+                    showScanIndicator = false
+                }
+            }
+            if (showScanIndicator) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter),
                 )
             }
         }
@@ -194,3 +220,5 @@ private fun AppRow(
 }
 
 private const val ICON_PX = 96
+private const val SCAN_SHOW_DELAY_MS = 150L
+private const val SCAN_MIN_VISIBLE_MS = 350L

@@ -4,6 +4,8 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.api.RouteMode
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * The route mode the user picked on Home, replayed into every engine start so
@@ -27,9 +29,15 @@ class RouteModeStore(private val file: File) {
 
     fun save(mode: RouteMode) {
         // Write-then-rename so a concurrent load never sees a torn value.
+        // Files.move, not File.renameTo: renameTo's replace semantics are
+        // platform-defined, ATOMIC_MOVE + REPLACE_EXISTING is the guaranteed
+        // form (same directory, so an atomic move is always possible).
         val tmp = File(file.path + ".tmp")
         tmp.writeText(mode.wire)
-        if (!tmp.renameTo(file)) throw IOException("cannot replace $file")
+        Files.move(
+            tmp.toPath(), file.toPath(),
+            StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING,
+        )
     }
 
     companion object {

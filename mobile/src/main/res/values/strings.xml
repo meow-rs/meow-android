@@ -29,6 +29,7 @@
     <string name="common_retry">Retry</string>
     <string name="common_discard">Discard</string>
     <string name="common_back">Back</string>
+    <string name="common_more_options">More options</string>
 
     <!-- Home -->
     <string name="home_not_connected">Not Connected</string>
@@ -188,10 +189,25 @@
     <string name="perapp_mode_bypass">Bypass Selected</string>
     <string name="perapp_search">Search apps…</string>
     <string name="perapp_show_system">Show system apps</string>
+    <string name="perapp_hide_system">Hide system apps</string>
     <string name="perapp_select_all">Select All</string>
     <string name="perapp_deselect_all">Deselect All</string>
+    <string name="perapp_select_domestic">Select Chinese Apps</string>
+    <string name="perapp_domestic_none">Didn\'t find any Chinese apps</string>
+    <string name="perapp_domestic_already">All Chinese apps are already selected</string>
+    <string name="perapp_domestic_already_eligible">Everything eligible is already selected</string>
+    <string name="perapp_domestic_failed">Scan didn\'t finish, try again</string>
+    <string name="perapp_status">%1$s, %2$s</string>
+    <plurals name="perapp_domestic_added">
+        <item quantity="one">Selected %1$d Chinese app</item>
+        <item quantity="other">Selected %1$d Chinese apps</item>
+    </plurals>
+    <plurals name="perapp_domestic_skipped_uid">
+        <item quantity="one">(skipped %1$d shared app)</item>
+        <item quantity="other">(skipped %1$d shared apps)</item>
+    </plurals>
     <string name="perapp_disabled_hint">Disabled while no apps are selected</string>
-    <string name="perapp_restart_required">Reconnect the VPN to apply changes</string>
+    <string name="perapp_restart_required">restart VPN to apply</string>
     <plurals name="perapp_selected">
         <item quantity="one">%1$d selected</item>
         <item quantity="other">%1$d selected</item>
