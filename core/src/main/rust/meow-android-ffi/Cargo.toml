@@ -18,23 +18,24 @@ needless_return = "allow"
 missing_const_for_thread_local = "allow"
 
 [dependencies]
-# Full upstream protocol set (mirrors meow-app's `full` bundle and meow-ios):
-# ss, trojan, vless (+vision, +post-quantum encryption, REALITY), vmess, snell,
-# hysteria2, anytls, ech-tls-tunnel. Features are spelled out explicitly rather
-# than relying on the crates' defaults so an upstream default change can't
-# silently drop a protocol from the app.
+# Full upstream protocol set (mirrors meow-app's `full` bundle):
+# ss (+simple-obfs / shadow-tls / restls / jls plugins), trojan, vless
+# (+vision, +post-quantum encryption, REALITY), vmess, snell, hysteria2,
+# anytls, ech-tls-tunnel, mux, kcptun. Features are spelled out explicitly
+# rather than relying on the crates' defaults so an upstream default change
+# can't silently drop a protocol from the app.
 #
-# `boring-tls` (BoringSSL-backed TLS in meow-transport) enables proxy-outbound
-# ECH (`ech-opts:`) and uTLS fingerprinting — without it those configs are
-# rejected at TlsLayer::new. Same trade-off as meow-ios: boring-sys vendors
-# BoringSSL (~few MB per ABI, needs cmake + NDK C++ at build time).
-meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2" }
-meow-config = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "boring-tls"] }
-meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2" }
-meow-api = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2" }
-meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2" }
-meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2", features = ["tls", "ws", "ech", "grpc", "h2", "httpupgrade", "reality", "boring-tls"] }
-meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.21.2", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel"] }
+# TLS is BoringSSL-only upstream (meow-transport's `tls` feature, with ECH and
+# uTLS fingerprints built in; hysteria2's quiche links the same copy).
+# boring-sys vendors BoringSSL (~few MB per ABI, needs cmake + NDK C++ at
+# build time).
+meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0" }
+meow-config = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
+meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0" }
+meow-api = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0" }
+meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0" }
+meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
+meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.22.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
 
 # Explicit pin (transitive through meow-tunnel; surfaced here because
 # engine startup builds DashMap<String, Arc<ProxyProvider>> for ApiServer::new
@@ -55,10 +56,6 @@ android_logger = "0.14"
 # YAML / serialization
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-
-# rustls is still needed by `start_engine_async` for the embedded meow
-# engine's outbound TLS (Trojan, etc.) — installs the ring crypto provider.
-rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 
 # Low-level
 libc = "0.2"

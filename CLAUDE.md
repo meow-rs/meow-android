@@ -132,11 +132,11 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 ```
 mobile → core (Compose lives only in :mobile; :core stays UI-free)
 core → rust (via rust-android-gradle cargo plugin)
-meow-android-ffi → meow-{tunnel,config,dns,api,common,transport,proxy} (git dep, tag-pinned, currently v0.21.2)
+meow-android-ffi → meow-{tunnel,config,dns,api,common,transport,proxy} (git dep, tag-pinned, currently v0.22.0)
                    → lwip (patched madeye/lwip rev), jni, android_logger, redb, mimalloc
 ```
 
-meow-rs crates are pinned by git **tag** in `Cargo.toml` — bumping the engine means changing the tag on every `meow-*` line. The full upstream protocol set is enabled explicitly (mirrors meow-app's `full` bundle and meow-ios): `ss`, `trojan`, `vless` (+`vless-vision`, +`vless-encryption`, REALITY), `vmess`, `snell`, `hysteria2`, `anytls`, `ech-tls-tunnel` (config/proxy) and `tls,ws,ech,grpc,h2,httpupgrade,reality,boring-tls` (transport; `boring-tls` provides proxy-outbound ECH + uTLS fingerprinting via vendored BoringSSL). Supported proxy protocols: Shadowsocks (with built-in `simple-obfs` and `v2ray-plugin`), Trojan, VLESS, VMess, Snell, Hysteria2, AnyTLS, Direct.
+meow-rs crates are pinned by git **tag** in `Cargo.toml` — bumping the engine means changing the tag on every `meow-*` line. The full upstream protocol set is enabled explicitly (mirrors meow-app's `full` bundle): `ss`, `trojan`, `vless` (+`vless-vision`, +`vless-encryption`, REALITY), `vmess`, `snell`, `hysteria2`, `anytls`, `ech-tls-tunnel`, `mux`, `kcptun` (config/proxy) and `tls,ws,grpc,h2,httpupgrade,xhttp,reality` (transport; `tls` is vendored BoringSSL with ECH + uTLS fingerprinting built in). Supported proxy protocols: Shadowsocks (with built-in `simple-obfs` and `v2ray-plugin`), Trojan, VLESS, VMess, Snell, Hysteria2, AnyTLS, Direct.
 
 ## E2E Test Structure
 

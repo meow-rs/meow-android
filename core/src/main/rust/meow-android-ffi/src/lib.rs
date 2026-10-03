@@ -28,7 +28,6 @@ use meow_api::ApiServer;
 use meow_common::TunnelMode;
 use meow_tunnel::Tunnel;
 use parking_lot::{Mutex, RwLock};
-use std::collections::HashMap;
 use std::sync::{Arc, Once, OnceLock};
 use tokio::sync::broadcast;
 use tracing_subscriber::filter::LevelFilter;
@@ -221,8 +220,6 @@ async fn start_engine_async(
     secret: Option<String>,
     mode: Option<TunnelMode>,
 ) -> Result<EngineState, anyhow::Error> {
-    logging::bridge_log("start_engine_async: initializing rustls");
-    let _ = rustls::crypto::ring::default_provider().install_default();
     install_tracing_subscriber();
 
     // Resolve config path + set XDG_CONFIG_HOME (meow-config looks for
@@ -290,34 +287,66 @@ async fn start_engine_async(
     // VPN's DNS server is `172.19.0.2` (our TUN), so `getaddrinfo` would
     // loop the query back through the engine's fake-IP pool and the
     // protected outbound socket would then try to dial a non-routable
-    // `28.0.0.0/8` address. See meow-rs PR fix/connect-tcp-host-resolver-hook
-    // and `meow-dns/src/host_resolver_hook.rs` for the bridge impl.
-    //
-    // The hook itself is `#[cfg(target_os = "android")]` upstream — gate our
-    // call to match so the FFI still builds for `cargo check` on host
-    // (macOS/linux) when iterating locally.
-    #[cfg(target_os = "android")]
-    meow_common::set_host_resolver(Arc::new(meow_dns::ResolverHostHook::new(Arc::clone(
-        &config.dns.resolver,
-    ))));
+    // `28.0.0.0/8` address. `proxy_resolver` is the config's
+    // `proxy-server-nameserver` pool, used for proxy-server hostnames when set.
+    // Unconditional, as meow-app does on the VPN platforms.
+    meow_common::set_host_resolver(Arc::new(
+        meow_dns::ResolverHostHook::new_with_proxy_resolver(
+            Arc::clone(&config.dns.resolver),
+            config.dns.proxy_resolver.clone(),
+        ),
+    ));
 
     *DNS_RESOLVER.write() = Some(config.dns.resolver.clone());
 
+    // Same startup order as meow-app's `run`: share the config's resolver
+    // slot, install the provider dialer registry before the first
+    // `update_routing` (provider nodes resolve `dialer-proxy` against it),
+    // then publish the routing table in one step.
     let raw_config = Arc::new(RwLock::new(config.raw.clone()));
-    let tunnel = Tunnel::new(config.dns.resolver.clone());
+    let tunnel = Tunnel::new_with_slot(Arc::clone(&config.dns.resolver_slot));
+    tunnel.set_dialer_registry(config.provider_dialer_registry.clone());
     tunnel.set_mode(config.general.mode);
-    tunnel.update_rules(config.rules);
-    tunnel.update_proxies(config.proxies);
+    tunnel.update_routing(config.proxies, config.rules, config.dialer_registry);
+    // The UDP NAT sweeper: evicts sessions idle in both directions (the
+    // tun2socks reply readers touch the same clock on every reply).
+    tunnel.spawn_background_tasks();
+    // Periodic probes for url-test / fallback groups. The tasks hold a weak
+    // tunnel handle, so they end with the engine.
+    tunnel.reconcile_health_checks(&meow_config::extract_health_check_specs(
+        config.raw.proxy_groups.as_deref().unwrap_or(&[]),
+    ));
 
     let mut handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
 
-    let proxy_providers = {
-        let map: DashMap<_, _> = config.proxy_providers.into_iter().collect();
-        Arc::new(map)
-    };
-    let rule_providers = Arc::new(RwLock::new(
-        config.rule_providers.into_iter().collect::<HashMap<_, _>>(),
-    ));
+    let proxy_providers: Arc<DashMap<_, _>> =
+        Arc::new(config.proxy_providers.into_iter().collect());
+    let rule_providers = Arc::new(RwLock::new(config.rule_providers));
+
+    // `interval:` refresh loops for rule and proxy providers.
+    let rule_provider_refresh =
+        Arc::new(meow_config::rule_provider_refresh::RefreshSupervisor::default());
+    rule_provider_refresh.reconcile(&rule_providers);
+    let proxy_provider_refresh =
+        Arc::new(meow_config::proxy_provider_refresh::ProxyProviderRefreshSupervisor::default());
+    proxy_provider_refresh.reconcile(&proxy_providers, config.raw.proxy_providers.as_ref());
+
+    // Providers whose `proxy:` could not resolve during the initial fetch
+    // (the dialer registry was not published yet) retry once now.
+    for entry in proxy_providers.iter() {
+        if entry.take_deferred_initial() {
+            let provider = Arc::clone(entry.value());
+            tokio::spawn(async move {
+                if let Err(e) = provider.acquire_initial().await {
+                    tracing::warn!(
+                        "proxy-provider '{}': deferred initial fetch failed: {e}",
+                        provider.name
+                    );
+                }
+            });
+        }
+    }
+
     let listeners_for_api = config.listeners.named.clone();
     let log_tx = log_broadcast_tx().clone();
 
@@ -326,15 +355,22 @@ async fn start_engine_async(
             tunnel.clone(),
             api_addr,
             config.api.secret.clone(),
-            String::new(),
-            raw_config.clone(),
+            // No config path: the app restarts the engine to apply a config,
+            // and `PUT /configs` must not persist into the stripped copy.
+            None,
+            raw_config,
             log_tx,
             proxy_providers,
             rule_providers,
+            rule_provider_refresh,
+            proxy_provider_refresh,
             listeners_for_api,
-            // No external web UI dashboard — the Flutter app talks to the API
+            // No external web UI dashboard — the app talks to the API
             // directly (added in meow-rs v0.15.1, #223).
             None,
+            // No DNS listener: tun2socks answers in-TUN queries in-process.
+            Arc::new(RwLock::new(None)),
+            config.provider_dialer_registry.clone(),
         );
         handles.push(tokio::spawn(async move {
             if let Err(e) = api_server.run().await {
@@ -455,6 +491,9 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
     *DNS_RESOLVER.write() = None;
     let mut engine = ENGINE.lock();
     if let Some(state) = engine.take() {
+        // Ends the tun2socks UDP reply readers now rather than at their next
+        // idle check.
+        state.tunnel.close_all_udp_sessions();
         for handle in state._handles {
             handle.abort();
         }
@@ -577,7 +616,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeVersion(
     env: JNIEnv,
     _class: JClass,
 ) -> jstring {
-    env.new_string("meow-rs 8502a1d")
+    env.new_string("meow-rs v0.22.0")
         .unwrap_or_else(|_| env.new_string("").unwrap())
         .into_raw()
 }

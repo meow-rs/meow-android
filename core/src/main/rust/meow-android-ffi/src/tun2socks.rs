@@ -15,7 +15,7 @@ use meow_common::{ConnType, Metadata, Network, ProxyConn};
 use meow_dns::DnsServer;
 use meow_tunnel::udp::UdpSession;
 use parking_lot::Mutex;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
 use std::os::raw::c_void;
@@ -33,6 +33,11 @@ use tracing::{trace, warn};
 type UdpMsg = (Vec<u8>, SocketAddr, SocketAddr);
 type AnyIpPktFrame = Vec<u8>;
 type FlowTasks = Arc<Mutex<Vec<JoinHandle<()>>>>;
+type NatKey = (SocketAddr, SocketAddr);
+/// The NAT session each running reply reader serves, by NAT key. Holding the
+/// session (not just the key) lets a replacement session get its own reader
+/// while the evicted one's reader is still winding down.
+type ReplyReaders = Arc<Mutex<HashMap<NatKey, Arc<UdpSession>>>>;
 
 static TUN2SOCKS_ACTIVE: AtomicBool = AtomicBool::new(false);
 static TUN2SOCKS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
@@ -47,6 +52,11 @@ static DNS_CAP_LOG_LAST_MS: AtomicU64 = AtomicU64::new(0);
 
 const DNS_PASSTHROUGH_UPSTREAMS: &[&str] = &["119.29.29.29:53", "223.5.5.5:53"];
 const DNS_PASSTHROUGH_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// How often a UDP reply reader checks whether its session is still live.
+/// A DIRECT session's read never ends on its own, so this bounds how long a
+/// reader outlives a swept (or flushed) session.
+const UDP_REPLY_CHECK_INTERVAL: Duration = Duration::from_secs(5);
 
 fn warn_capped(slot: &AtomicU64, msg: &str) {
     let now_ms = SystemTime::now()
@@ -127,8 +137,7 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
     let (udp_write, mut udp_read) = udp_socket.split();
 
     let (udp_reply_tx, mut udp_reply_rx) = mpsc::channel::<UdpMsg>(256);
-    let reply_readers: Arc<Mutex<HashSet<(SocketAddr, SocketAddr)>>> =
-        Arc::new(Mutex::new(HashSet::new()));
+    let reply_readers: ReplyReaders = Arc::new(Mutex::new(HashMap::new()));
 
     let (stack_ingress_tx, mut stack_ingress_rx) = mpsc::channel::<AnyIpPktFrame>(256);
     let (egress_tx, mut egress_rx) = mpsc::unbounded_channel::<Vec<u8>>();
@@ -442,11 +451,12 @@ async fn dispatch_udp(
     src: SocketAddr,
     dst: SocketAddr,
     reply_tx: mpsc::Sender<UdpMsg>,
-    reply_readers: Arc<Mutex<HashSet<(SocketAddr, SocketAddr)>>>,
+    reply_readers: ReplyReaders,
 ) {
     let Some(tunnel) = engine::tunnel() else {
         return;
     };
+    let inner = tunnel.inner();
 
     let mut metadata = Metadata {
         network: Network::Udp,
@@ -458,47 +468,108 @@ async fn dispatch_udp(
         ..Default::default()
     };
 
-    tunnel.inner().pre_handle_metadata(&mut metadata);
-    tunnel.inner().pre_resolve(&mut metadata).await;
+    // Derive the NAT key exactly as `handle_udp` does, so the session it
+    // creates is the one found below. An unmapped fake-IP is dropped (#618),
+    // and a fake-IP rewritten back to its hostname still needs a real
+    // address even when no rule asks for one.
+    if matches!(
+        inner.pre_handle_metadata(&mut metadata),
+        meow_tunnel::PreHandleVerdict::Drop
+    ) {
+        return;
+    }
+    inner.pre_resolve(&mut metadata).await;
+    if metadata.dst_ip.is_none() && !metadata.host.is_empty() {
+        metadata.dst_ip = inner.resolver().resolve_ip_real(&metadata.host).await;
+    }
     let Some(resolved_ip) = metadata.dst_ip else {
         return;
     };
     let key = (src, SocketAddr::new(resolved_ip, metadata.dst_port));
 
-    meow_tunnel::udp::handle_udp(tunnel.inner(), &payload, src, metadata).await;
+    meow_tunnel::udp::handle_udp(inner, &payload, src, metadata).await;
 
-    if !reply_readers.lock().insert(key) {
-        return;
-    }
-
-    let inner = tunnel.inner().clone();
-    let Some(session) = inner.nat_table.get(&key).map(|r| r.value().clone()) else {
-        reply_readers.lock().remove(&key);
+    let Some(session) = inner.nat_table.get(&key).map(|r| Arc::clone(r.value())) else {
         return;
     };
+    {
+        let mut readers = reply_readers.lock();
+        if readers
+            .get(&key)
+            .is_some_and(|served| Arc::ptr_eq(served, &session))
+        {
+            return;
+        }
+        readers.insert(key, Arc::clone(&session));
+    }
 
-    spawn_udp_reply_reader(key, session, src, dst, reply_tx, reply_readers, inner);
+    spawn_udp_reply_reader(
+        key,
+        session,
+        src,
+        dst,
+        reply_tx,
+        reply_readers,
+        Arc::clone(inner),
+    );
 }
 
 fn spawn_udp_reply_reader(
-    key: (SocketAddr, SocketAddr),
+    key: NatKey,
     session: Arc<UdpSession>,
     app_src: SocketAddr,
     app_dst: SocketAddr,
     reply_tx: mpsc::Sender<UdpMsg>,
-    reply_readers: Arc<Mutex<HashSet<(SocketAddr, SocketAddr)>>>,
+    reply_readers: ReplyReaders,
     tunnel_inner: Arc<meow_tunnel::tunnel::TunnelInner>,
 ) {
     tokio::spawn(async move {
-        let mut buf = vec![0u8; 4 * 1024];
-        while let Ok((n, _from)) = session.conn.read_packet(&mut buf).await {
-            let msg: UdpMsg = (buf[..n].to_vec(), app_dst, app_src);
-            if reply_tx.try_send(msg).is_err() {
-                break;
+        let relay = async {
+            let mut buf = vec![0u8; 4 * 1024];
+            while let Ok((n, _from)) = session.conn.read_packet(&mut buf).await {
+                // Replies are activity too: the NAT sweeper's idle clock is
+                // otherwise only bumped by outbound datagrams.
+                session.touch();
+                let msg: UdpMsg = (buf[..n].to_vec(), app_dst, app_src);
+                if reply_tx.try_send(msg).is_err() {
+                    break;
+                }
+            }
+        };
+        tokio::pin!(relay);
+        // The read is polled in place rather than raced against a timeout:
+        // cancelling a read mid-datagram would desync a stream-framed
+        // (Trojan, VLESS, …) packet conn.
+        let mut check = tokio::time::interval(UDP_REPLY_CHECK_INTERVAL);
+        check.tick().await;
+        loop {
+            tokio::select! {
+                () = &mut relay => break,
+                _ = check.tick() => {
+                    // Stop once the session left the NAT table (swept, failed
+                    // a write, flushed) or went idle both ways.
+                    let live = tunnel_inner
+                        .nat_table
+                        .get(&key)
+                        .is_some_and(|s| Arc::ptr_eq(s.value(), &session));
+                    if !live || session.idle_for() >= meow_tunnel::udp::DEFAULT_UDP_IDLE {
+                        break;
+                    }
+                }
             }
         }
-        tunnel_inner.nat_table.remove(&key);
-        reply_readers.lock().remove(&key);
+        // Compare-and-remove: a newer session under the same key keeps its
+        // NAT entry and its own reader.
+        tunnel_inner
+            .nat_table
+            .remove_if(&key, |_, s| Arc::ptr_eq(s, &session));
+        let mut readers = reply_readers.lock();
+        if readers
+            .get(&key)
+            .is_some_and(|served| Arc::ptr_eq(served, &session))
+        {
+            readers.remove(&key);
+        }
     });
 }
 

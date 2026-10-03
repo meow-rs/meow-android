@@ -81,9 +81,9 @@ class ExitIpLookup(
             // HTTP proxy that only proxy-aware clients would honour.
             .proxy(Proxy.NO_PROXY)
             // No keep-alive: a pooled connection keeps the route it was opened
-            // on, and the engine (v0.21.2) does not tear down live relays on
-            // DELETE /connections, so after a node or mode switch a reused
-            // connection would report the old exit. Every check dials fresh.
+            // on, and a node switch leaves live relays up, so after a switch a
+            // reused connection would report the old exit. Every check dials
+            // fresh.
             .connectionPool(ConnectionPool(0, 1, TimeUnit.SECONDS))
             .callTimeout(ATTEMPT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .build()
