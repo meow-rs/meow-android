@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -222,7 +223,9 @@ private fun DnsRow(result: DnsResult) {
         Spacer(Modifier.height(4.dp))
         Text(
             text = result.ips.joinToString(", "),
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            style = MaterialTheme.typography.bodySmall
+                .copy(fontFamily = FontFamily.Monospace)
+                .merge(MeowTextStyles.monoDigits),
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
@@ -241,7 +244,9 @@ private fun DnsRow(result: DnsResult) {
                 color = muted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                // A Latin upstream lays out left to right; keep it against the
+                // icon in a right-to-left UI instead of at the far edge.
+                modifier = Modifier.weight(1f).wrapContentWidth(Alignment.Start),
             )
             Text(
                 text = stringResource(R.string.dns_ttl, result.ttl),

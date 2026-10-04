@@ -42,7 +42,7 @@ cd core/src/main/rust/meow-android-ffi && cargo clippy -- -D warnings && cd -
 # Rust format check
 cd core/src/main/rust/meow-android-ffi && cargo fmt --check && cd -
 
-# Unit tests (engine API client + en/zh string parity)
+# Unit tests (engine API client + string parity across every locale)
 ./gradlew :core:testDebugUnitTest :mobile:testDebugUnitTest
 ```
 
@@ -125,8 +125,15 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 - **charts/**: hand-drawn `Canvas` charts — 30-day stacked bars with tap-to-select,
   and the live dual-series speed chart.
 - **screens/**: one package per screen, each a stateless composable plus a ViewModel.
-- Strings live in `res/values/strings.xml` + `values-zh-rCN`; `StringsParityTest`
-  fails the build if the two drift apart.
+- Strings live in `res/values/strings.xml` + `values-{zh-rCN,ru,fa,ar,vi,tr,my}` (and
+  the same set in `:core` for the notification); `StringsParityTest` fails the build
+  if a translation drifts from English, if a `values-xx` locale is missing from
+  `localeFilters` (it would be stripped from the APK), or if an RTL locale (fa, ar)
+  leaves a `%s` argument outside `\u2068…\u2069` isolates or opens a sentence with a
+  Latin word (prefix `\u200F`).
+- Text direction follows content (`MeowTypography` sets `TextDirection.Content`);
+  numeric readouts use `MeowTextStyles.monoDigits`, which falls back to LTR, so a
+  bare `1.2 MB` or IP list is not reordered under an RTL locale.
 
 ### Key Data Flow
 

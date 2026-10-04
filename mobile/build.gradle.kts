@@ -41,10 +41,14 @@ android {
         applicationId = "io.github.madeye.meow"
     }
 
-    // The app ships en + zh-rCN only. Without this, AndroidX drags in ~70
-    // locales' worth of strings the app can never select.
+    // Only the locales the app translates. Without this, AndroidX drags in ~70
+    // locales' worth of strings the app can never select. A values-xx directory
+    // missing here is stripped from the APK; StringsParityTest catches that.
     androidResources {
-        localeFilters += listOf("en", "zh-rCN")
+        localeFilters += listOf("en", "zh-rCN", "ru", "fa", "vi", "ar", "tr", "my")
+        // Lists the same locales under Settings > Apps > Meow > Language on
+        // Android 13+, so the app language can differ from the system's.
+        generateLocaleConfig = true
     }
 
     val keystorePath = prop("KEYSTORE_PATH")

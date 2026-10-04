@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Arabic is right-to-left. Every %s argument sits inside \u2068…\u2069
+  (FSI…PDI) so an LTR value such as "1.2 GB" or a Latin subscription name stays
+  one unit and does not flip the direction of the sentence around it. A
+  sentence that would otherwise start with a Latin word (dns_ttl) opens with
+  \u200F (RLM) so the line still reads right-to-left. StringsParityTest
+  enforces both for every RTL locale.
+
+  %d renders Arabic-Indic digits under this locale, so digits written into a
+  string literally (traffic_daily_history) are Arabic-Indic too. Plurals carry
+  all six CLDR quantities (zero, one, two, few, many, other).
+-->
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_proxy_groups">البروكسي</string>
+    <string name="tab_utility">الأدوات</string>
+    <string name="tab_settings">الإعدادات</string>
+
+    <!-- Common -->
+    <string name="common_cancel">إلغاء</string>
+    <string name="common_save">حفظ</string>
+    <string name="common_add">إضافة</string>
+    <string name="common_delete">حذف</string>
+    <string name="common_edit">تعديل</string>
+    <string name="common_select">تحديد</string>
+    <string name="common_refresh">تحديث</string>
+    <string name="common_retry">إعادة المحاولة</string>
+    <string name="common_discard">تجاهل</string>
+    <string name="common_back">رجوع</string>
+    <string name="common_close">إغلاق</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">غير متصل</string>
+    <string name="home_connecting">جارٍ الاتصال…</string>
+    <string name="home_connected">متصل</string>
+    <string name="home_disconnecting">جارٍ قطع الاتصال…</string>
+    <string name="home_disconnected">تم قطع الاتصال</string>
+    <string name="home_reconnecting_profile">جارٍ إعادة الاتصال باستخدام ملف التعريف المحدّث…</string>
+    <string name="home_profile_rejected">يحتوي ملف التعريف المحدّث على أخطاء، لذا سيستمر الاتصال الحالي</string>
+    <string name="home_upload">رفع</string>
+    <string name="home_download">تنزيل</string>
+    <string name="home_vpn_toggle">تشغيل VPN أو إيقافه</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">وضع التوجيه</string>
+    <string name="route_mode_rule">قواعد</string>
+    <string name="route_mode_global">شامل</string>
+    <string name="route_mode_direct">مباشر</string>
+    <string name="home_exit_ip">عنوان IP الخارجي</string>
+    <string name="home_exit_ip_checking">جارٍ التحقق…</string>
+    <string name="home_exit_ip_failed">تعذّر التحقق</string>
+    <string name="home_exit_ip_retry">انقر لإعادة المحاولة</string>
+    <string name="home_exit_ip_refresh">تحديث عنوان IP الخارجي</string>
+    <string name="home_exit_ip_bypassed">يُبقي إعداد «بروكسي لكل تطبيق» تطبيق Meow خارج VPN، لذا فهذا هو عنوان IP المباشر الخاص بك</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">مجموعات البروكسي</string>
+    <string name="proxy_no_groups">لم يُعثر على أي مجموعة بروكسي.</string>
+    <string name="proxy_no_subscription_hint">لم يُحدَّد أي اشتراك.\nأضِف اشتراكًا من تبويب «الرئيسية».</string>
+    <string name="proxy_groups_disconnected">اتصل بشبكة VPN من تبويب «الرئيسية» لتحميل مجموعات البروكسي.</string>
+    <string name="proxy_groups_connecting">جارٍ الاتصال — ستظهر المجموعات بعد تشغيل النواة.</string>
+    <string name="proxy_url_test_all">اختبار زمن الاستجابة للكل</string>
+    <string name="proxy_testing">جارٍ اختبار زمن الاستجابة…</string>
+    <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">انتهت المهلة</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">الاشتراكات</string>
+    <string name="subs_none">لا توجد اشتراكات</string>
+    <string name="subs_add">إضافة اشتراك</string>
+    <string name="subs_edit">تعديل الاشتراك</string>
+    <string name="subs_delete_confirm">هل تريد حذف «\u2068%1$s\u2069»؟</string>
+    <string name="subs_name">الاسم</string>
+    <string name="subs_url">عنوان URL للاشتراك</string>
+    <string name="subs_paste">لصق من الحافظة</string>
+    <string name="subs_clipboard_empty">الحافظة فارغة</string>
+    <string name="subs_auto_update">تحديث تلقائي</string>
+    <string name="subs_update_interval">الفاصل الزمني للتحديث (بالساعات)</string>
+    <string name="subs_update_interval_range">أدخِل قيمة من %1$d إلى %2$d</string>
+    <string name="subs_next_update">التحديث التالي بعد \u2068%1$s\u2069</string>
+    <string name="subs_next_update_due">التحديث التالي: حان موعده</string>
+    <string name="subs_auto_update_paused">متوقف مؤقتًا: يحتوي التكوين على تعديلات محلية. حدِّث الاشتراك أو استعِد النسخة الأصلية لاستئناف التحديث.</string>
+    <string name="subs_add_from_url">إضافة من عنوان URL</string>
+    <string name="subs_import_from_file">استيراد من ملف</string>
+    <string name="subs_export">تصدير</string>
+    <string name="subs_edit_yaml">تعديل YAML</string>
+    <string name="subs_updated">تم تحديث «\u2068%1$s\u2069»</string>
+    <string name="subs_last_updated">آخر تحديث: \u2068%1$s\u2069</string>
+    <string name="subs_usage">تم استخدام \u2068%1$s\u2069 من \u2068%2$s\u2069</string>
+    <string name="subs_expires">تنتهي الصلاحية في \u2068%1$s\u2069</string>
+    <string name="subs_expired">انتهت الصلاحية في \u2068%1$s\u2069</string>
+    <string name="subs_refresh_failed">تعذّر التحديث: \u2068%1$s\u2069</string>
+    <string name="subs_imported">تم استيراد «\u2068%1$s\u2069»</string>
+    <string name="subs_import_failed">تعذّر الاستيراد: \u2068%1$s\u2069</string>
+    <string name="subs_link_title">هل تريد إضافة الاشتراك من هذا الرابط؟</string>
+    <string name="subs_link_warning">لا تُضِف إلا الاشتراكات التي تثق بها، لأن التكوين هو الذي يحدّد وجهة حركة بياناتك.</string>
+    <string name="subs_link_unsupported">رابط غير مدعوم</string>
+    <string name="subs_link_missing_url">لا يحتوي الرابط على عنوان URL للاشتراك</string>
+    <string name="subs_link_bad_url">يمكن إضافة عناوين URL للاشتراك ببروتوكول http أو https فقط</string>
+    <string name="subs_export_saved">تم تصدير التكوين</string>
+    <string name="subs_export_failed">تعذّر التصدير: \u2068%1$s\u2069</string>
+    <string name="subs_share_qr">مشاركة كرمز QR</string>
+    <string name="subs_qr_share_image">مشاركة الصورة</string>
+    <string name="subs_qr_warning">يستطيع أي شخص يمسح هذا الرمز استخدام اشتراكك، لأن الرمز يتضمن مفتاح الوصول الخاص بك. لا تشاركه إلا مع من تثق بهم.</string>
+    <string name="subs_qr_too_long">عنوان URL لهذا الاشتراك أطول من أن يتّسع له رمز QR</string>
+    <string name="subs_scan_qr">مسح رمز QR</string>
+    <string name="subs_scan_hint">وجِّه الكاميرا نحو رمز QR للاشتراك</string>
+    <string name="subs_scan_from_image">اختيار صورة</string>
+    <string name="subs_scan_no_code">لم يُعثر على رمز QR في الصورة</string>
+    <string name="subs_scan_not_subscription">هذا ليس رمز QR لاشتراك</string>
+    <string name="subs_scan_camera_denied">يتطلب المسح الوصول إلى الكاميرا. يمكنك أيضًا اختيار صورة لرمز QR.</string>
+    <string name="subs_scan_allow_camera">السماح باستخدام الكاميرا</string>
+    <string name="subs_scan_no_camera">الكاميرا غير متاحة. اختر صورة لرمز QR بدلًا من ذلك.</string>
+    <string name="subs_scan_confirm_title">هل تريد إضافة الاشتراك من رمز QR؟</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">تكوين صالح</string>
+    <string name="yaml_config_invalid">تكوين غير صالح: \u2068%1$s\u2069</string>
+    <string name="yaml_revert">استعادة</string>
+    <string name="yaml_revert_confirm">هل تريد استعادة آخر نسخة تم تنزيلها؟</string>
+    <string name="yaml_discard_changes">هل تريد تجاهل التغييرات غير المحفوظة؟</string>
+    <string name="yaml_saved">تم حفظ التكوين</string>
+    <string name="yaml_reverted">تمت استعادة النسخة الأصلية</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">الأدوات</string>
+    <string name="traffic_title">حركة البيانات</string>
+    <string name="traffic_data_usage">استخدام البيانات</string>
+    <string name="traffic_today">اليوم</string>
+    <string name="traffic_this_month">هذا الشهر</string>
+    <string name="traffic_daily_history">آخر ٣٠ يومًا</string>
+    <string name="traffic_no_history">لا يوجد سجل لحركة البيانات بعد</string>
+    <string name="traffic_tap_bar_hint">انقر على عمود لعرض التفاصيل</string>
+    <string name="traffic_current_session">الجلسة الحالية</string>
+    <string name="traffic_speed">السرعة</string>
+    <string name="traffic_total">الإجمالي: \u2068%1$s\u2069</string>
+    <string name="traffic_collecting">جارٍ جمع البيانات…</string>
+    <string name="traffic_connect_to_see">اتصل بشبكة VPN لعرض حركة البيانات</string>
+    <string name="traffic_upload">رفع</string>
+    <string name="traffic_download">تنزيل</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_general">عام</string>
+    <string name="settings_version">الإصدار</string>
+    <string name="settings_engine">النواة</string>
+    <string name="settings_engine_section">النواة</string>
+    <string name="settings_engine_offline">اتصل بشبكة VPN لاستخدام هذه الميزة</string>
+    <string name="settings_network">الشبكة</string>
+    <string name="settings_dns_server">خادم DNS</string>
+    <string name="settings_dns_builtin">عبر النفق (TCP عادي)</string>
+    <string name="settings_show_exit_ip">عرض عنوان IP الخارجي</string>
+    <string name="settings_show_exit_ip_desc">يستعلم عن عنوان IP العام لديك عبر ip.sb أو ipwho.is أو ipinfo.io ويعرضه في «الرئيسية»</string>
+    <string name="settings_about">حول</string>
+    <string name="settings_source_code">الشفرة المصدرية</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">غير متاح</string>
+    <string name="settings_check_updates">البحث عن تحديثات</string>
+    <string name="settings_updates_github">يستعلم من GitHub عن أحدث إصدار</string>
+    <string name="settings_updates_play">يفتح صفحة Meow في Google Play</string>
+    <string name="settings_update_latest">أنت تستخدم أحدث إصدار (\u2068%1$s\u2069)</string>
+    <string name="settings_update_failed">تعذّر البحث عن تحديثات: \u2068%1$s\u2069</string>
+    <string name="settings_update_available">يتوفر الإصدار \u2068%1$s\u2069 من Meow</string>
+    <string name="settings_update_download">تنزيل</string>
+    <string name="settings_update_view">عرض الإصدار</string>
+    <string name="settings_update_later">لاحقًا</string>
+    <string name="settings_update_no_app">لا يوجد تطبيق يمكنه فتح الرابط</string>
+
+    <!-- Logs -->
+    <string name="logs_title">السجلات</string>
+    <string name="logs_empty">لا توجد سجلات بعد</string>
+    <string name="logs_auto_scroll">تمرير تلقائي</string>
+
+    <!-- Connections -->
+    <string name="connections_title">الاتصالات</string>
+    <string name="connections_tab_active">النشطة</string>
+    <string name="connections_tab_recent">الحديثة</string>
+    <string name="connections_empty">لا توجد اتصالات نشطة</string>
+    <string name="connections_recent_empty">لا توجد طلبات حديثة</string>
+    <string name="connections_close_all">إغلاق الكل</string>
+    <string name="connections_close_all_confirm">هل تريد إغلاق كل الاتصالات النشطة؟</string>
+    <string name="connections_recent_clear">مسح</string>
+    <string name="connections_recent_clear_confirm">هل تريد مسح الطلبات الحديثة؟</string>
+    <string name="connections_last_seen">آخر نشاط: \u2068%1$s\u2069</string>
+    <string name="connections_filter">تصفية حسب المضيف أو عنوان IP…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">القواعد</string>
+    <string name="rules_empty">لم يُعثر على أي قاعدة.\nاتصل بشبكة VPN لتحميل القواعد.</string>
+    <string name="rules_filter">تصفية حسب النوع أو القيمة أو البروكسي…</string>
+    <string name="rules_load_error">تعذّر تحميل القواعد</string>
+    <plurals name="rules_count">
+        <item quantity="zero">لا توجد قواعد</item>
+        <item quantity="one">قاعدة واحدة</item>
+        <item quantity="two">قاعدتان</item>
+        <item quantity="few">%1$d قواعد</item>
+        <item quantity="many">%1$d قاعدة</item>
+        <item quantity="other">%1$d قاعدة</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">البحث عن نطاق أو عنوان IP أو خادم منبع…</string>
+    <string name="dns_empty_title">لا توجد نتائج DNS</string>
+    <string name="dns_empty_description">تظهر هنا الاستعلامات المخزّنة مؤقتًا عندما تحلّ النواة أسماء النطاقات.</string>
+    <string name="dns_search_empty">لا توجد نتائج لـ «\u2068%1$s\u2069»</string>
+    <string name="dns_unknown_upstream">غير معروف</string>
+    <string name="dns_ttl">\u200FTTL %1$d ث</string>
+    <string name="dns_load_error">تعذّر تحميل نتائج DNS</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">بروكسي لكل تطبيق</string>
+    <string name="perapp_desc">حدِّد التطبيقات التي تستخدم VPN</string>
+    <string name="perapp_mode_proxy">المحددة فقط</string>
+    <string name="perapp_mode_bypass">باستثناء المحددة</string>
+    <string name="perapp_search">البحث في التطبيقات…</string>
+    <string name="perapp_show_system">عرض تطبيقات النظام</string>
+    <string name="perapp_select_all">تحديد الكل</string>
+    <string name="perapp_deselect_all">إلغاء تحديد الكل</string>
+    <string name="perapp_disabled_hint">معطّل إلى أن تحدِّد تطبيقًا واحدًا على الأقل</string>
+    <string name="perapp_restart_required">أعِد الاتصال بشبكة VPN لتفعيل التغييرات</string>
+    <plurals name="perapp_selected">
+        <item quantity="zero">لم يُحدَّد أي تطبيق</item>
+        <item quantity="one">تطبيق واحد محدد</item>
+        <item quantity="two">تطبيقان محددان</item>
+        <item quantity="few">%1$d تطبيقات محددة</item>
+        <item quantity="many">%1$d تطبيقًا محددًا</item>
+        <item quantity="other">%1$d تطبيق محدد</item>
+    </plurals>
+</resources>

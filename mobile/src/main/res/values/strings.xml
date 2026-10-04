@@ -6,7 +6,8 @@
   counts, transfer rates and dates are NOT string resources — they go through
   ui/util/Formatters.kt so the formatting rules live in one place.
 
-  values-zh-rCN must carry every key here; StringsParityTest enforces it.
+  Every values-xx translation must carry every key here; StringsParityTest
+  enforces it.
 -->
 <resources>
     <string name="app_name">Meow</string>

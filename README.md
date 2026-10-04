@@ -57,7 +57,9 @@ Network
     history) and Logs, grouped as on the iOS app
   - Settings: Version, live Rules view, network config, per-app VPN
     proxy/bypass, connectivity diagnostics, about
-- **i18n**: English, Chinese (zh_CN)
+- **i18n**: English, Chinese (zh_CN), Russian, Persian, Arabic, Vietnamese,
+  Turkish, Burmese (Persian and Arabic right-to-left); on Android 13+ the
+  language can be set per app in system settings
 - **E2E Tests**: Automated with ssserver + Android emulator (SS and HTTP-proxy harnesses)
 
 ## Building
@@ -102,7 +104,8 @@ mobile/                         Android app module (Compose UI host)
   src/main/java/.../ui/screens/ Home, Subscribe, Utility, Settings,
                                 Traffic, Connections, Logs, DNS, Rules,
                                 Per-app proxy, YAML editor
-  src/main/res/values{,-zh-rCN} Localization (en, zh_CN)
+  src/main/res/values{,-zh-rCN,-ru,-fa,-ar,-vi,-tr,-my}
+                                Localization (en, zh_CN, ru, fa)
 test-e2e.sh                     End-to-end test script (Shadowsocks)
 test-e2e-http.sh                End-to-end test script (HTTP proxy)
 ```

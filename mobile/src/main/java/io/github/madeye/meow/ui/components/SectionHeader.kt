@@ -13,8 +13,9 @@ import java.util.Locale
  * Small-caps group label above a card — "PROFILES", "ENGINE", "GENERAL".
  * Mirrors meow-ios's `SectionHeader` (caption2, semibold, muted, uppercased).
  *
- * `uppercase` is a no-op for Chinese, which is the desired behaviour and matches
- * SwiftUI's `.textCase(.uppercase)`.
+ * `uppercase` is a no-op for scripts without case (Chinese, Persian, Arabic, Burmese), which is
+ * the desired behaviour and matches SwiftUI's `.textCase(.uppercase)`. It takes the locale so
+ * Turkish turns `i` into `İ`, not `I`.
  */
 @Composable
 fun SectionHeader(

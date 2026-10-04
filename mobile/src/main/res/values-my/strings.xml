@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Burmese (Myanmar). Standard Unicode Myanmar script in canonical storage
+  order (UTN #11), never Zawgyi. %d renders Myanmar digits under this locale,
+  so literal digits are written as Myanmar digits too (၃၀).
+-->
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">ပင်မ</string>
+    <string name="tab_proxy_groups">ပရောက်စီ</string>
+    <string name="tab_utility">ကိရိယာများ</string>
+    <string name="tab_settings">ဆက်တင်များ</string>
+
+    <!-- Common -->
+    <string name="common_cancel">မလုပ်တော့</string>
+    <string name="common_save">သိမ်းရန်</string>
+    <string name="common_add">ထည့်ရန်</string>
+    <string name="common_delete">ဖျက်ရန်</string>
+    <string name="common_edit">တည်းဖြတ်ရန်</string>
+    <string name="common_select">ရွေးရန်</string>
+    <string name="common_refresh">ပြန်လည်ဆန်းသစ်ရန်</string>
+    <string name="common_retry">ထပ်စမ်းကြည့်ရန်</string>
+    <string name="common_discard">ဖယ်ပစ်ရန်</string>
+    <string name="common_back">နောက်သို့</string>
+    <string name="common_close">ပိတ်ရန်</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">ချိတ်ဆက်မထားပါ</string>
+    <string name="home_connecting">ချိတ်ဆက်နေသည်…</string>
+    <string name="home_connected">ချိတ်ဆက်ထားသည်</string>
+    <string name="home_disconnecting">ချိတ်ဆက်မှု ဖြတ်နေသည်…</string>
+    <string name="home_disconnected">ချိတ်ဆက်မှု ဖြတ်ထားသည်</string>
+    <string name="home_reconnecting_profile">အပ်ဒိတ်ထားသော ပရိုဖိုင်ဖြင့် ပြန်ချိတ်ဆက်နေသည်…</string>
+    <string name="home_profile_rejected">အပ်ဒိတ်ထားသော ပရိုဖိုင်တွင် အမှားရှိသည် — လက်ရှိ ချိတ်ဆက်မှုကို ဆက်သုံးနေသည်</string>
+    <string name="home_upload">အပ်လုဒ်</string>
+    <string name="home_download">ဒေါင်းလုဒ်</string>
+    <string name="home_vpn_toggle">VPN ဖွင့်/ပိတ်ရန်</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">လမ်းကြောင်းမုဒ်</string>
+    <string name="route_mode_rule">စည်းမျဉ်း</string>
+    <string name="route_mode_global">Global</string>
+    <string name="route_mode_direct">တိုက်ရိုက်</string>
+    <string name="home_exit_ip">ထွက်ပေါက် IP</string>
+    <string name="home_exit_ip_checking">စစ်ဆေးနေသည်…</string>
+    <string name="home_exit_ip_failed">စစ်ဆေး၍ မရပါ</string>
+    <string name="home_exit_ip_retry">ထပ်စမ်းရန် တို့ပါ</string>
+    <string name="home_exit_ip_refresh">ထွက်ပေါက် IP ပြန်လည်ဆန်းသစ်ရန်</string>
+    <string name="home_exit_ip_bypassed">အက်ပ်အလိုက် ပရောက်စီကြောင့် Meow သည် VPN ပြင်ပတွင် ရှိနေသဖြင့် ဤသည်မှာ သင်၏ တိုက်ရိုက် IP ဖြစ်သည်</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">ပရောက်စီအုပ်စုများ</string>
+    <string name="proxy_no_groups">ပရောက်စီအုပ်စု မတွေ့ပါ။</string>
+    <string name="proxy_no_subscription_hint">စာရင်းသွင်းမှု ရွေးမထားပါ။\nပင်မ တဘ်တွင် ထည့်ပါ။</string>
+    <string name="proxy_groups_disconnected">ပရောက်စီအုပ်စုများ ကြည့်ရန် ပင်မ တဘ်တွင် VPN ချိတ်ဆက်ပါ။</string>
+    <string name="proxy_groups_connecting">ချိတ်ဆက်နေသည် — အင်ဂျင် စတင်ပြီးနောက် အုပ်စုများ ပေါ်လာမည်။</string>
+    <string name="proxy_url_test_all">အားလုံးကို ကြန့်ကြာချိန် စစ်ဆေးရန်</string>
+    <string name="proxy_testing">ကြန့်ကြာချိန် စစ်ဆေးနေသည်…</string>
+    <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">အချိန်ကုန်</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">စာရင်းသွင်းမှုများ</string>
+    <string name="subs_none">စာရင်းသွင်းမှု မရှိပါ</string>
+    <string name="subs_add">စာရင်းသွင်းမှု ထည့်ရန်</string>
+    <string name="subs_edit">စာရင်းသွင်းမှု တည်းဖြတ်ရန်</string>
+    <string name="subs_delete_confirm">“%1$s” ကို ဖျက်မလား။</string>
+    <string name="subs_name">အမည်</string>
+    <string name="subs_url">စာရင်းသွင်းမှု URL</string>
+    <string name="subs_paste">ကလစ်ဘုတ်မှ ကူးထည့်ရန်</string>
+    <string name="subs_clipboard_empty">ကလစ်ဘုတ်တွင် ဘာမှမရှိပါ</string>
+    <string name="subs_auto_update">အလိုအလျောက် အပ်ဒိတ်</string>
+    <string name="subs_update_interval">အပ်ဒိတ် ကြားကာလ (နာရီ)</string>
+    <string name="subs_update_interval_range">%1$d မှ %2$d အထိ တန်ဖိုးတစ်ခု ထည့်ပါ</string>
+    <string name="subs_next_update">နောက်တစ်ကြိမ် အပ်ဒိတ်: %1$s နောက်ပိုင်း</string>
+    <string name="subs_next_update_due">နောက်တစ်ကြိမ် အပ်ဒိတ်: အချိန်ကျပြီ</string>
+    <string name="subs_auto_update_paused">ခဏရပ်ထားသည်: Config ကို ဤဖုန်းတွင် ပြင်ထားသည်။ ဆက်လုပ်ရန် ပြန်လည်ဆန်းသစ်ပါ သို့မဟုတ် ပြန်ပြောင်းပါ။</string>
+    <string name="subs_add_from_url">URL မှ ထည့်ရန်</string>
+    <string name="subs_import_from_file">ဖိုင်မှ တင်သွင်းရန်</string>
+    <string name="subs_export">ထုတ်ယူရန်</string>
+    <string name="subs_edit_yaml">YAML တည်းဖြတ်ရန်</string>
+    <string name="subs_updated">%1$s ကို အပ်ဒိတ်လုပ်ပြီးပါပြီ</string>
+    <string name="subs_last_updated">နောက်ဆုံး အပ်ဒိတ်: %1$s</string>
+    <string name="subs_usage">သုံးပြီး %1$s / %2$s</string>
+    <string name="subs_expires">%1$s တွင် သက်တမ်းကုန်မည်</string>
+    <string name="subs_expired">%1$s တွင် သက်တမ်းကုန်ခဲ့သည်</string>
+    <string name="subs_refresh_failed">ပြန်လည်ဆန်းသစ်၍ မရပါ: %1$s</string>
+    <string name="subs_imported">“%1$s” ကို တင်သွင်းပြီးပါပြီ</string>
+    <string name="subs_import_failed">တင်သွင်း၍ မရပါ: %1$s</string>
+    <string name="subs_link_title">လင့်ခ်မှ စာရင်းသွင်းမှု ထည့်မလား။</string>
+    <string name="subs_link_warning">ယုံကြည်ရသော စာရင်းသွင်းမှုများကိုသာ ထည့်ပါ။ Config က သင့်ဒေတာ မည်သည့်နေရာသို့ သွားမည်ကို ဆုံးဖြတ်သည်။</string>
+    <string name="subs_link_unsupported">ပံ့ပိုးမထားသော လင့်ခ်</string>
+    <string name="subs_link_missing_url">ဤလင့်ခ်တွင် စာရင်းသွင်းမှု URL မပါပါ</string>
+    <string name="subs_link_bad_url">http နှင့် https စာရင်းသွင်းမှု URL များကိုသာ ထည့်နိုင်သည်</string>
+    <string name="subs_export_saved">Config ကို ထုတ်ယူပြီးပါပြီ</string>
+    <string name="subs_export_failed">ထုတ်ယူ၍ မရပါ: %1$s</string>
+    <string name="subs_share_qr">QR ကုဒ်ဖြင့် မျှဝေရန်</string>
+    <string name="subs_qr_share_image">ပုံ မျှဝေရန်</string>
+    <string name="subs_qr_warning">ဤကုဒ်တွင် သင်၏ ဝင်ရောက်ခွင့် တိုကင် ပါဝင်သည်။ စကင်ဖတ်သူ မည်သူမဆို သင့်စာရင်းသွင်းမှုကို အသုံးပြုနိုင်သည်။ ယုံကြည်ရသူများကိုသာ မျှဝေပါ။</string>
+    <string name="subs_qr_too_long">ဤစာရင်းသွင်းမှု URL သည် QR ကုဒ်အတွက် ရှည်လွန်းသည်</string>
+    <string name="subs_scan_qr">QR ကုဒ် စကင်ဖတ်ရန်</string>
+    <string name="subs_scan_hint">ကင်မရာကို စာရင်းသွင်းမှု QR ကုဒ်ဆီ ချိန်ပါ</string>
+    <string name="subs_scan_from_image">ပုံ ရွေးရန်</string>
+    <string name="subs_scan_no_code">ပုံတွင် QR ကုဒ် မတွေ့ပါ</string>
+    <string name="subs_scan_not_subscription">စာရင်းသွင်းမှု QR ကုဒ် မဟုတ်ပါ</string>
+    <string name="subs_scan_camera_denied">စကင်ဖတ်ရန် ကင်မရာ လိုအပ်သည်။ QR ကုဒ်ပုံကိုလည်း ရွေးနိုင်သည်။</string>
+    <string name="subs_scan_allow_camera">ကင်မရာ ခွင့်ပြုရန်</string>
+    <string name="subs_scan_no_camera">ကင်မရာ အသုံးပြု၍ မရပါ။ QR ကုဒ်ပုံကို ရွေးပါ။</string>
+    <string name="subs_scan_confirm_title">QR ကုဒ်မှ စာရင်းသွင်းမှု ထည့်မလား။</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">Config မှန်ကန်သည်</string>
+    <string name="yaml_config_invalid">Config မမှန်ကန်ပါ: %1$s</string>
+    <string name="yaml_revert">ပြန်ပြောင်းရန်</string>
+    <string name="yaml_revert_confirm">နောက်ဆုံး ဒေါင်းလုဒ်လုပ်ထားသော ဗားရှင်းသို့ ပြန်ပြောင်းမလား။</string>
+    <string name="yaml_discard_changes">မသိမ်းရသေးသော အပြောင်းအလဲများကို ဖယ်ပစ်မလား။</string>
+    <string name="yaml_saved">Config ကို သိမ်းပြီးပါပြီ</string>
+    <string name="yaml_reverted">မူလအတိုင်း ပြန်ပြောင်းပြီးပါပြီ</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">ကိရိယာများ</string>
+    <string name="traffic_title">ဒေတာ အသွားအလာ</string>
+    <string name="traffic_data_usage">ဒေတာ အသုံးပြုမှု</string>
+    <string name="traffic_today">ယနေ့</string>
+    <string name="traffic_this_month">ဤလ</string>
+    <string name="traffic_daily_history">ပြီးခဲ့သော ရက် ၃၀</string>
+    <string name="traffic_no_history">ဒေတာ အသွားအလာ မှတ်တမ်း မရှိသေးပါ</string>
+    <string name="traffic_tap_bar_hint">အသေးစိတ် ကြည့်ရန် တိုင်တစ်ခုကို တို့ပါ</string>
+    <string name="traffic_current_session">လက်ရှိ ဆက်ရှင်</string>
+    <string name="traffic_speed">အမြန်နှုန်း</string>
+    <string name="traffic_total">စုစုပေါင်း: %1$s</string>
+    <string name="traffic_collecting">ဒေတာ စုဆောင်းနေသည်…</string>
+    <string name="traffic_connect_to_see">ဒေတာ အသွားအလာ ကြည့်ရန် VPN ချိတ်ဆက်ပါ</string>
+    <string name="traffic_upload">အပ်လုဒ်</string>
+    <string name="traffic_download">ဒေါင်းလုဒ်</string>
+
+    <!-- Settings -->
+    <string name="settings_title">ဆက်တင်များ</string>
+    <string name="settings_general">အထွေထွေ</string>
+    <string name="settings_version">ဗားရှင်း</string>
+    <string name="settings_engine">အင်ဂျင်</string>
+    <string name="settings_engine_section">အင်ဂျင်</string>
+    <string name="settings_engine_offline">အသုံးပြုရန် VPN ချိတ်ဆက်ပါ</string>
+    <string name="settings_network">ကွန်ရက်</string>
+    <string name="settings_dns_server">DNS ဆာဗာ</string>
+    <string name="settings_dns_builtin">Tunnel ဖြင့် TCP</string>
+    <string name="settings_show_exit_ip">ထွက်ပေါက် IP ပြရန်</string>
+    <string name="settings_show_exit_ip_desc">သင့် Public IP ကို ip.sb၊ ipwho.is သို့မဟုတ် ipinfo.io မှတစ်ဆင့် ရှာဖွေပြီး ပင်မတွင် ပြသည်</string>
+    <string name="settings_about">အကြောင်း</string>
+    <string name="settings_source_code">ရင်းမြစ်ကုဒ်</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">မရနိုင်ပါ</string>
+    <string name="settings_check_updates">အပ်ဒိတ် စစ်ဆေးရန်</string>
+    <string name="settings_updates_github">GitHub တွင် နောက်ဆုံးထုတ် ဗားရှင်းကို စစ်ဆေးသည်</string>
+    <string name="settings_updates_play">Google Play တွင် Meow ကို ဖွင့်သည်</string>
+    <string name="settings_update_latest">နောက်ဆုံး ဗားရှင်း (%1$s) ကို သုံးနေပါပြီ</string>
+    <string name="settings_update_failed">အပ်ဒိတ် စစ်ဆေး၍ မရပါ: %1$s</string>
+    <string name="settings_update_available">Meow %1$s ရနိုင်ပါပြီ</string>
+    <string name="settings_update_download">ဒေါင်းလုဒ်လုပ်ရန်</string>
+    <string name="settings_update_view">ထုတ်ဝေမှု ကြည့်ရန်</string>
+    <string name="settings_update_later">နောက်မှ</string>
+    <string name="settings_update_no_app">ဤလင့်ခ်ကို ဖွင့်နိုင်သည့် အက်ပ် မရှိပါ</string>
+
+    <!-- Logs -->
+    <string name="logs_title">မှတ်တမ်းများ</string>
+    <string name="logs_empty">မှတ်တမ်း မရှိသေးပါ</string>
+    <string name="logs_auto_scroll">အလိုအလျောက် လှိမ့်ရန်</string>
+
+    <!-- Connections -->
+    <string name="connections_title">ချိတ်ဆက်မှုများ</string>
+    <string name="connections_tab_active">လက်ရှိ</string>
+    <string name="connections_tab_recent">မကြာသေးမီ</string>
+    <string name="connections_empty">လက်ရှိ ချိတ်ဆက်မှု မရှိပါ</string>
+    <string name="connections_recent_empty">မကြာသေးမီ တောင်းဆိုမှု မရှိပါ</string>
+    <string name="connections_close_all">အားလုံး ပိတ်ရန်</string>
+    <string name="connections_close_all_confirm">လက်ရှိ ချိတ်ဆက်မှုအားလုံးကို ပိတ်မလား။</string>
+    <string name="connections_recent_clear">ရှင်းရန်</string>
+    <string name="connections_recent_clear_confirm">မကြာသေးမီ တောင်းဆိုမှုများကို ရှင်းမလား။</string>
+    <string name="connections_last_seen">နောက်ဆုံး တွေ့ချိန်: %1$s</string>
+    <string name="connections_filter">Host သို့မဟုတ် IP ဖြင့် စစ်ထုတ်ရန်…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">စည်းမျဉ်းများ</string>
+    <string name="rules_empty">စည်းမျဉ်း မတွေ့ပါ။\nစည်းမျဉ်းများ ကြည့်ရန် VPN ချိတ်ဆက်ပါ။</string>
+    <string name="rules_filter">အမျိုးအစား၊ payload သို့မဟုတ် ပရောက်စီဖြင့် စစ်ထုတ်ရန်…</string>
+    <string name="rules_load_error">စည်းမျဉ်းများ ရယူ၍ မရပါ</string>
+    <plurals name="rules_count">
+        <item quantity="other">စည်းမျဉ်း %1$d ခု</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">ဒိုမိန်း၊ IP သို့မဟုတ် ဆာဗာ ရှာရန်…</string>
+    <string name="dns_empty_title">DNS ရလဒ် မရှိပါ</string>
+    <string name="dns_empty_description">အင်ဂျင်က ဒိုမိန်းများကို ရှာဖွေသည့်အခါ ကက်ရှ်ထားသော ရလဒ်များ ဤနေရာတွင် ပေါ်လာမည်။</string>
+    <string name="dns_search_empty">“%1$s” အတွက် ရလဒ် မရှိပါ</string>
+    <string name="dns_unknown_upstream">မသိ</string>
+    <string name="dns_ttl">TTL %1$d စက္ကန့်</string>
+    <string name="dns_load_error">DNS ရလဒ်များ ရယူ၍ မရပါ</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">အက်ပ်အလိုက် ပရောက်စီ</string>
+    <string name="perapp_desc">VPN သုံးမည့် အက်ပ်များကို ရွေးပါ</string>
+    <string name="perapp_mode_proxy">ရွေးထားသည်သာ</string>
+    <string name="perapp_mode_bypass">ရွေးထားသည်မှလွဲ</string>
+    <string name="perapp_search">အက်ပ်များ ရှာရန်…</string>
+    <string name="perapp_show_system">စနစ် အက်ပ်များ ပြရန်</string>
+    <string name="perapp_select_all">အားလုံး ရွေးရန်</string>
+    <string name="perapp_deselect_all">ရွေးချယ်မှု အားလုံး ဖြုတ်ရန်</string>
+    <string name="perapp_disabled_hint">အက်ပ် မရွေးထားသရွေ့ အလုပ်မလုပ်ပါ</string>
+    <string name="perapp_restart_required">အပြောင်းအလဲများ အသက်ဝင်ရန် VPN ကို ပြန်ချိတ်ဆက်ပါ</string>
+    <plurals name="perapp_selected">
+        <item quantity="other">%1$d ခု ရွေးထားသည်</item>
+    </plurals>
+</resources>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Trang chủ</string>
+    <string name="tab_proxy_groups">Nhóm proxy</string>
+    <string name="tab_utility">Tiện ích</string>
+    <string name="tab_settings">Cài đặt</string>
+
+    <!-- Common -->
+    <string name="common_cancel">Hủy</string>
+    <string name="common_save">Lưu</string>
+    <string name="common_add">Thêm</string>
+    <string name="common_delete">Xóa</string>
+    <string name="common_edit">Chỉnh sửa</string>
+    <string name="common_select">Chọn</string>
+    <string name="common_refresh">Làm mới</string>
+    <string name="common_retry">Thử lại</string>
+    <string name="common_discard">Loại bỏ</string>
+    <string name="common_back">Quay lại</string>
+    <string name="common_close">Đóng</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">Chưa kết nối</string>
+    <string name="home_connecting">Đang kết nối…</string>
+    <string name="home_connected">Đã kết nối</string>
+    <string name="home_disconnecting">Đang ngắt kết nối…</string>
+    <string name="home_disconnected">Đã ngắt kết nối</string>
+    <string name="home_reconnecting_profile">Đang kết nối lại bằng cấu hình đã cập nhật…</string>
+    <string name="home_profile_rejected">Cấu hình đã cập nhật có lỗi — vẫn giữ kết nối hiện tại</string>
+    <string name="home_upload">Tải lên</string>
+    <string name="home_download">Tải xuống</string>
+    <string name="home_vpn_toggle">Bật/tắt VPN</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">Chế độ định tuyến</string>
+    <string name="route_mode_rule">Quy tắc</string>
+    <string name="route_mode_global">Toàn cục</string>
+    <string name="route_mode_direct">Trực tiếp</string>
+    <string name="home_exit_ip">IP đầu ra</string>
+    <string name="home_exit_ip_checking">Đang kiểm tra…</string>
+    <string name="home_exit_ip_failed">Không tra cứu được</string>
+    <string name="home_exit_ip_retry">Nhấn để thử lại</string>
+    <string name="home_exit_ip_refresh">Làm mới IP đầu ra</string>
+    <string name="home_exit_ip_bypassed">Proxy theo ứng dụng đang để Meow nằm ngoài VPN, nên đây là IP kết nối trực tiếp của bạn</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">Nhóm proxy</string>
+    <string name="proxy_no_groups">Không tìm thấy nhóm proxy nào.</string>
+    <string name="proxy_no_subscription_hint">Chưa chọn gói đăng ký nào.\nHãy thêm ở thẻ Trang chủ.</string>
+    <string name="proxy_groups_disconnected">Kết nối VPN ở thẻ Trang chủ để tải các nhóm proxy.</string>
+    <string name="proxy_groups_connecting">Đang kết nối — các nhóm sẽ hiện khi lõi khởi động xong.</string>
+    <string name="proxy_url_test_all">Kiểm tra độ trễ tất cả proxy</string>
+    <string name="proxy_testing">Đang kiểm tra độ trễ…</string>
+    <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">Hết giờ</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">Gói đăng ký</string>
+    <string name="subs_none">Chưa có gói đăng ký nào</string>
+    <string name="subs_add">Thêm gói đăng ký</string>
+    <string name="subs_edit">Chỉnh sửa gói đăng ký</string>
+    <string name="subs_delete_confirm">Xóa “%1$s”?</string>
+    <string name="subs_name">Tên</string>
+    <string name="subs_url">URL gói đăng ký</string>
+    <string name="subs_paste">Dán từ bảng nhớ tạm</string>
+    <string name="subs_clipboard_empty">Bảng nhớ tạm trống</string>
+    <string name="subs_auto_update">Tự động cập nhật</string>
+    <string name="subs_update_interval">Chu kỳ cập nhật (giờ)</string>
+    <string name="subs_update_interval_range">Nhập giá trị từ %1$d đến %2$d</string>
+    <string name="subs_next_update">Lần cập nhật tới: sau %1$s</string>
+    <string name="subs_next_update_due">Lần cập nhật tới: đã đến hạn</string>
+    <string name="subs_auto_update_paused">Đã tạm dừng: cấu hình có chỉnh sửa cục bộ. Hãy làm mới hoặc khôi phục cấu hình để tiếp tục.</string>
+    <string name="subs_add_from_url">Thêm từ URL</string>
+    <string name="subs_import_from_file">Nhập từ tệp</string>
+    <string name="subs_export">Xuất</string>
+    <string name="subs_edit_yaml">Chỉnh sửa YAML</string>
+    <string name="subs_updated">Đã cập nhật “%1$s”</string>
+    <string name="subs_last_updated">Cập nhật lúc %1$s</string>
+    <string name="subs_usage">Đã dùng %1$s / %2$s</string>
+    <string name="subs_expires">Hết hạn vào %1$s</string>
+    <string name="subs_expired">Đã hết hạn vào %1$s</string>
+    <string name="subs_refresh_failed">Không thể làm mới: %1$s</string>
+    <string name="subs_imported">Đã nhập “%1$s”</string>
+    <string name="subs_import_failed">Không thể nhập: %1$s</string>
+    <string name="subs_link_title">Thêm gói đăng ký từ liên kết?</string>
+    <string name="subs_link_warning">Chỉ thêm gói đăng ký mà bạn tin tưởng: cấu hình trong gói quyết định lưu lượng của bạn được gửi đi đâu.</string>
+    <string name="subs_link_unsupported">Liên kết không được hỗ trợ</string>
+    <string name="subs_link_missing_url">Liên kết không chứa URL gói đăng ký</string>
+    <string name="subs_link_bad_url">Chỉ có thể thêm URL gói đăng ký dạng http hoặc https</string>
+    <string name="subs_export_saved">Đã xuất cấu hình</string>
+    <string name="subs_export_failed">Không thể xuất: %1$s</string>
+    <string name="subs_share_qr">Chia sẻ bằng mã QR</string>
+    <string name="subs_qr_share_image">Chia sẻ hình ảnh</string>
+    <string name="subs_qr_warning">Mã QR này chứa cả token truy cập của bạn: bất kỳ ai quét mã đều có thể dùng gói đăng ký của bạn. Chỉ chia sẻ mã này với người bạn tin tưởng.</string>
+    <string name="subs_qr_too_long">URL gói đăng ký này quá dài để tạo mã QR</string>
+    <string name="subs_scan_qr">Quét mã QR</string>
+    <string name="subs_scan_hint">Hướng máy ảnh vào mã QR của gói đăng ký</string>
+    <string name="subs_scan_from_image">Chọn ảnh</string>
+    <string name="subs_scan_no_code">Không tìm thấy mã QR trong ảnh</string>
+    <string name="subs_scan_not_subscription">Đây không phải mã QR của gói đăng ký</string>
+    <string name="subs_scan_camera_denied">Cần quyền truy cập máy ảnh để quét. Bạn cũng có thể chọn ảnh chứa mã QR.</string>
+    <string name="subs_scan_allow_camera">Cho phép truy cập máy ảnh</string>
+    <string name="subs_scan_no_camera">Máy ảnh không khả dụng. Hãy chọn ảnh chứa mã QR.</string>
+    <string name="subs_scan_confirm_title">Thêm gói đăng ký từ mã QR?</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">Cấu hình hợp lệ</string>
+    <string name="yaml_config_invalid">Cấu hình không hợp lệ: %1$s</string>
+    <string name="yaml_revert">Khôi phục</string>
+    <string name="yaml_revert_confirm">Khôi phục về phiên bản tải xuống gần nhất?</string>
+    <string name="yaml_discard_changes">Loại bỏ các thay đổi chưa lưu?</string>
+    <string name="yaml_saved">Đã lưu cấu hình</string>
+    <string name="yaml_reverted">Đã khôi phục bản gốc</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">Tiện ích</string>
+    <string name="traffic_title">Lưu lượng</string>
+    <string name="traffic_data_usage">Mức sử dụng dữ liệu</string>
+    <string name="traffic_today">Hôm nay</string>
+    <string name="traffic_this_month">Tháng này</string>
+    <string name="traffic_daily_history">30 ngày qua</string>
+    <string name="traffic_no_history">Chưa có lịch sử lưu lượng</string>
+    <string name="traffic_tap_bar_hint">Nhấn vào một cột để xem chi tiết</string>
+    <string name="traffic_current_session">Phiên hiện tại</string>
+    <string name="traffic_speed">Tốc độ</string>
+    <string name="traffic_total">Tổng: %1$s</string>
+    <string name="traffic_collecting">Đang thu thập dữ liệu…</string>
+    <string name="traffic_connect_to_see">Kết nối VPN để xem lưu lượng</string>
+    <string name="traffic_upload">Tải lên</string>
+    <string name="traffic_download">Tải xuống</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_general">Chung</string>
+    <string name="settings_version">Phiên bản</string>
+    <string name="settings_engine">Lõi</string>
+    <string name="settings_engine_section">Lõi</string>
+    <string name="settings_engine_offline">Kết nối VPN để sử dụng</string>
+    <string name="settings_network">Mạng</string>
+    <string name="settings_dns_server">Máy chủ DNS</string>
+    <string name="settings_dns_builtin">TCP qua đường hầm</string>
+    <string name="settings_show_exit_ip">Hiển thị IP đầu ra</string>
+    <string name="settings_show_exit_ip_desc">Tra cứu IP công khai qua ip.sb, ipwho.is hoặc ipinfo.io và hiển thị ở Trang chủ</string>
+    <string name="settings_about">Giới thiệu</string>
+    <string name="settings_source_code">Mã nguồn</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">Không khả dụng</string>
+    <string name="settings_check_updates">Kiểm tra cập nhật</string>
+    <string name="settings_updates_github">Tìm bản phát hành mới nhất trên GitHub</string>
+    <string name="settings_updates_play">Mở Meow trên Google Play</string>
+    <string name="settings_update_latest">Bạn đang dùng phiên bản mới nhất (%1$s)</string>
+    <string name="settings_update_failed">Không thể kiểm tra cập nhật: %1$s</string>
+    <string name="settings_update_available">Đã có Meow %1$s</string>
+    <string name="settings_update_download">Tải xuống</string>
+    <string name="settings_update_view">Xem bản phát hành</string>
+    <string name="settings_update_later">Để sau</string>
+    <string name="settings_update_no_app">Không có ứng dụng nào mở được liên kết này</string>
+
+    <!-- Logs -->
+    <string name="logs_title">Nhật ký</string>
+    <string name="logs_empty">Chưa có nhật ký</string>
+    <string name="logs_auto_scroll">Tự động cuộn</string>
+
+    <!-- Connections -->
+    <string name="connections_title">Kết nối</string>
+    <string name="connections_tab_active">Đang mở</string>
+    <string name="connections_tab_recent">Gần đây</string>
+    <string name="connections_empty">Không có kết nối nào đang mở</string>
+    <string name="connections_recent_empty">Không có yêu cầu gần đây</string>
+    <string name="connections_close_all">Đóng tất cả</string>
+    <string name="connections_close_all_confirm">Đóng tất cả kết nối đang mở?</string>
+    <string name="connections_recent_clear">Xóa</string>
+    <string name="connections_recent_clear_confirm">Xóa các yêu cầu gần đây?</string>
+    <string name="connections_last_seen">Hoạt động lần cuối: %1$s</string>
+    <string name="connections_filter">Lọc theo máy chủ hoặc IP…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">Quy tắc</string>
+    <string name="rules_empty">Không tìm thấy quy tắc nào.\nKết nối VPN để tải quy tắc.</string>
+    <string name="rules_filter">Lọc theo loại, giá trị hoặc proxy…</string>
+    <string name="rules_load_error">Không thể tải quy tắc</string>
+    <plurals name="rules_count">
+        <item quantity="other">%1$d quy tắc</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">Tìm tên miền, IP hoặc máy chủ DNS…</string>
+    <string name="dns_empty_title">Chưa có kết quả DNS</string>
+    <string name="dns_empty_description">Kết quả tra cứu trong bộ nhớ đệm sẽ xuất hiện khi lõi phân giải tên miền.</string>
+    <string name="dns_search_empty">Không có kết quả cho “%1$s”</string>
+    <string name="dns_unknown_upstream">Không rõ</string>
+    <string name="dns_ttl">TTL %1$d giây</string>
+    <string name="dns_load_error">Không thể tải kết quả DNS</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">Proxy theo ứng dụng</string>
+    <string name="perapp_desc">Chọn những ứng dụng sẽ dùng VPN</string>
+    <string name="perapp_mode_proxy">Chỉ mục đã chọn</string>
+    <string name="perapp_mode_bypass">Trừ mục đã chọn</string>
+    <string name="perapp_search">Tìm ứng dụng…</string>
+    <string name="perapp_show_system">Hiển thị ứng dụng hệ thống</string>
+    <string name="perapp_select_all">Chọn tất cả</string>
+    <string name="perapp_deselect_all">Bỏ chọn tất cả</string>
+    <string name="perapp_disabled_hint">Không có tác dụng khi chưa chọn ứng dụng nào</string>
+    <string name="perapp_restart_required">Kết nối lại VPN để áp dụng thay đổi</string>
+    <plurals name="perapp_selected">
+        <item quantity="other">Đã chọn %1$d</item>
+    </plurals>
+</resources>

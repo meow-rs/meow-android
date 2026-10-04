@@ -44,6 +44,7 @@ import io.github.madeye.meow.R
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.components.NavRow
 import io.github.madeye.meow.ui.components.SectionHeader
+import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 
 @Composable
@@ -233,7 +234,7 @@ private fun InfoRow(
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
             color = colors.mutedText,
             textAlign = TextAlign.End,
         )

@@ -35,6 +35,7 @@ import io.github.madeye.meow.ui.components.SectionHeader
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
+import java.util.Locale
 
 @Composable
 fun TrafficScreen(
@@ -119,7 +120,7 @@ fun TrafficScreen(
 private fun UsageCard(label: String, totals: TrafficTotals, modifier: Modifier = Modifier) {
     GlassCard(modifier = modifier) {
         Text(
-            text = label.uppercase(),
+            text = label.uppercase(Locale.getDefault()),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.meow.mutedText,
         )
@@ -171,7 +172,7 @@ private fun SessionCard(
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
             Spacer(Modifier.size(6.dp))
             Text(
-                text = label.uppercase(),
+                text = label.uppercase(Locale.getDefault()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.meow.mutedText,
             )

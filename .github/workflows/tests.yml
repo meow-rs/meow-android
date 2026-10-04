@@ -9,7 +9,7 @@ on:
 
 jobs:
   # Replaces the old flutter-test job. Covers the engine API client (against a
-  # MockWebServer) and en/zh-rCN string parity — the Kotlin equivalents of what
+  # MockWebServer) and string parity across locales — the Kotlin equivalents of what
   # the Dart tests used to check. These are plain JVM tests and pull in no cargo
   # tasks, but :core still needs the NDK present to *configure*, so the install
   # step below is not optional.

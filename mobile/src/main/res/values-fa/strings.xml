@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Persian is right-to-left. Every %s argument sits inside \u2068…\u2069
+  (FSI…PDI) so an LTR value such as "1.2 GB" or a Latin subscription name stays
+  one unit and does not flip the direction of the sentence around it. A
+  sentence that would otherwise start with a Latin word (dns_ttl) opens with
+  \u200F (RLM) so the line still reads right-to-left. StringsParityTest
+  enforces both for every RTL locale.
+-->
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">خانه</string>
+    <string name="tab_proxy_groups">پروکسی‌ها</string>
+    <string name="tab_utility">ابزارها</string>
+    <string name="tab_settings">تنظیمات</string>
+
+    <!-- Common -->
+    <string name="common_cancel">لغو</string>
+    <string name="common_save">ذخیره</string>
+    <string name="common_add">افزودن</string>
+    <string name="common_delete">حذف</string>
+    <string name="common_edit">ویرایش</string>
+    <string name="common_select">انتخاب</string>
+    <string name="common_refresh">تازه‌سازی</string>
+    <string name="common_retry">تلاش دوباره</string>
+    <string name="common_discard">حذف تغییرات</string>
+    <string name="common_back">بازگشت</string>
+    <string name="common_close">بستن</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">متصل نیست</string>
+    <string name="home_connecting">در حال اتصال…</string>
+    <string name="home_connected">متصل</string>
+    <string name="home_disconnecting">در حال قطع اتصال…</string>
+    <string name="home_disconnected">قطع شد</string>
+    <string name="home_reconnecting_profile">در حال اتصال دوباره با پروفایل به‌روزشده…</string>
+    <string name="home_profile_rejected">پروفایل به‌روزشده خطا دارد؛ اتصال فعلی حفظ می‌شود</string>
+    <string name="home_upload">آپلود</string>
+    <string name="home_download">دانلود</string>
+    <string name="home_vpn_toggle">روشن یا خاموش کردن VPN</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">حالت مسیریابی</string>
+    <string name="route_mode_rule">قوانین</string>
+    <string name="route_mode_global">سراسری</string>
+    <string name="route_mode_direct">مستقیم</string>
+    <string name="home_exit_ip">آی‌پی خروجی</string>
+    <string name="home_exit_ip_checking">در حال بررسی…</string>
+    <string name="home_exit_ip_failed">بررسی ناموفق بود</string>
+    <string name="home_exit_ip_retry">برای تلاش دوباره ضربه بزنید</string>
+    <string name="home_exit_ip_refresh">تازه‌سازی آی‌پی خروجی</string>
+    <string name="home_exit_ip_bypassed">پروکسی به تفکیک برنامه، Meow را از VPN مستثنا می‌کند؛ پس این آی‌پی مستقیم شماست</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">گروه‌های پروکسی</string>
+    <string name="proxy_no_groups">هیچ گروه پروکسی‌ای پیدا نشد.</string>
+    <string name="proxy_no_subscription_hint">هیچ اشتراکی انتخاب نشده است.\nاز زبانهٔ خانه یکی اضافه کنید.</string>
+    <string name="proxy_groups_disconnected">برای بارگیری گروه‌های پروکسی، VPN را از زبانهٔ خانه وصل کنید.</string>
+    <string name="proxy_groups_connecting">در حال اتصال — گروه‌ها پس از راه‌اندازی هسته نمایش داده می‌شوند.</string>
+    <string name="proxy_url_test_all">تست تأخیر همه</string>
+    <string name="proxy_testing">در حال تست تأخیر…</string>
+    <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">پایان مهلت</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">اشتراک‌ها</string>
+    <string name="subs_none">اشتراکی وجود ندارد</string>
+    <string name="subs_add">افزودن اشتراک</string>
+    <string name="subs_edit">ویرایش اشتراک</string>
+    <string name="subs_delete_confirm">«\u2068%1$s\u2069» حذف شود؟</string>
+    <string name="subs_name">نام</string>
+    <string name="subs_url">لینک اشتراک</string>
+    <string name="subs_paste">چسباندن از کلیپ‌بورد</string>
+    <string name="subs_clipboard_empty">کلیپ‌بورد خالی است</string>
+    <string name="subs_auto_update">به‌روزرسانی خودکار</string>
+    <string name="subs_update_interval">فاصلهٔ به‌روزرسانی (ساعت)</string>
+    <string name="subs_update_interval_range">عددی از %1$d تا %2$d وارد کنید</string>
+    <string name="subs_next_update">به‌روزرسانی بعدی پس از \u2068%1$s\u2069</string>
+    <string name="subs_next_update_due">به‌روزرسانی بعدی: همین حالا</string>
+    <string name="subs_auto_update_paused">متوقف شده: پیکربندی به‌صورت محلی ویرایش شده است. برای ادامه، آن را تازه‌سازی یا بازگردانی کنید.</string>
+    <string name="subs_add_from_url">افزودن از لینک</string>
+    <string name="subs_import_from_file">وارد کردن از فایل</string>
+    <string name="subs_export">خروجی گرفتن</string>
+    <string name="subs_edit_yaml">ویرایش YAML</string>
+    <string name="subs_updated">اشتراک «\u2068%1$s\u2069» به‌روز شد</string>
+    <string name="subs_last_updated">آخرین به‌روزرسانی: \u2068%1$s\u2069</string>
+    <string name="subs_usage">مصرف: \u2068%1$s\u2069 از \u2068%2$s\u2069</string>
+    <string name="subs_expires">انقضا: \u2068%1$s\u2069</string>
+    <string name="subs_expired">در \u2068%1$s\u2069 منقضی شد</string>
+    <string name="subs_refresh_failed">تازه‌سازی ناموفق بود: \u2068%1$s\u2069</string>
+    <string name="subs_imported">«\u2068%1$s\u2069» وارد شد</string>
+    <string name="subs_import_failed">وارد کردن ناموفق بود: \u2068%1$s\u2069</string>
+    <string name="subs_link_title">اشتراک از این لینک افزوده شود؟</string>
+    <string name="subs_link_warning">فقط اشتراک‌هایی را اضافه کنید که به آن‌ها اعتماد دارید: پیکربندی تعیین می‌کند ترافیک شما به کجا برود.</string>
+    <string name="subs_link_unsupported">این لینک پشتیبانی نمی‌شود</string>
+    <string name="subs_link_missing_url">این لینک نشانی اشتراک ندارد</string>
+    <string name="subs_link_bad_url">فقط لینک‌های اشتراک http یا https را می‌توان افزود</string>
+    <string name="subs_export_saved">از پیکربندی خروجی گرفته شد</string>
+    <string name="subs_export_failed">خروجی گرفتن ناموفق بود: \u2068%1$s\u2069</string>
+    <string name="subs_share_qr">اشتراک‌گذاری با کد QR</string>
+    <string name="subs_qr_share_image">اشتراک‌گذاری تصویر</string>
+    <string name="subs_qr_warning">هر کسی که این کد را اسکن کند می‌تواند از اشتراک شما، همراه با توکن دسترسی آن، استفاده کند. این کد را فقط به افرادی بدهید که به آن‌ها اعتماد دارید.</string>
+    <string name="subs_qr_too_long">لینک این اشتراک برای کد QR بیش از حد طولانی است</string>
+    <string name="subs_scan_qr">اسکن کد QR</string>
+    <string name="subs_scan_hint">دوربین را به سمت کد QR اشتراک بگیرید</string>
+    <string name="subs_scan_from_image">انتخاب تصویر</string>
+    <string name="subs_scan_no_code">هیچ کد QR در تصویر پیدا نشد</string>
+    <string name="subs_scan_not_subscription">این کد QR مربوط به اشتراک نیست</string>
+    <string name="subs_scan_camera_denied">برای اسکن به دوربین نیاز است. می‌توانید تصویری از کد QR را هم انتخاب کنید.</string>
+    <string name="subs_scan_allow_camera">اجازهٔ دسترسی به دوربین</string>
+    <string name="subs_scan_no_camera">دوربین در دسترس نیست. به‌جای آن، تصویری از کد QR انتخاب کنید.</string>
+    <string name="subs_scan_confirm_title">اشتراک از کد QR افزوده شود؟</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">پیکربندی معتبر است</string>
+    <string name="yaml_config_invalid">پیکربندی نامعتبر است: \u2068%1$s\u2069</string>
+    <string name="yaml_revert">بازگردانی</string>
+    <string name="yaml_revert_confirm">به آخرین نسخهٔ دانلودشده بازگردانده شود؟</string>
+    <string name="yaml_discard_changes">از تغییرات ذخیره‌نشده صرف‌نظر شود؟</string>
+    <string name="yaml_saved">پیکربندی ذخیره شد</string>
+    <string name="yaml_reverted">به نسخهٔ اصلی بازگردانده شد</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">ابزارها</string>
+    <string name="traffic_title">ترافیک</string>
+    <string name="traffic_data_usage">مصرف داده</string>
+    <string name="traffic_today">امروز</string>
+    <string name="traffic_this_month">این ماه</string>
+    <string name="traffic_daily_history">۳۰ روز گذشته</string>
+    <string name="traffic_no_history">هنوز سابقهٔ ترافیکی وجود ندارد</string>
+    <string name="traffic_tap_bar_hint">برای دیدن جزئیات، روی یک ستون ضربه بزنید</string>
+    <string name="traffic_current_session">نشست فعلی</string>
+    <string name="traffic_speed">سرعت</string>
+    <string name="traffic_total">مجموع: \u2068%1$s\u2069</string>
+    <string name="traffic_collecting">در حال جمع‌آوری داده…</string>
+    <string name="traffic_connect_to_see">برای دیدن ترافیک، VPN را وصل کنید</string>
+    <string name="traffic_upload">آپلود</string>
+    <string name="traffic_download">دانلود</string>
+
+    <!-- Settings -->
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_general">عمومی</string>
+    <string name="settings_version">نسخه</string>
+    <string name="settings_engine">هسته</string>
+    <string name="settings_engine_section">هسته</string>
+    <string name="settings_engine_offline">پس از اتصال VPN در دسترس است</string>
+    <string name="settings_network">شبکه</string>
+    <string name="settings_dns_server">سرور DNS</string>
+    <string name="settings_dns_builtin">از طریق تونل با TCP ساده</string>
+    <string name="settings_show_exit_ip">نمایش آی‌پی خروجی</string>
+    <string name="settings_show_exit_ip_desc">آی‌پی عمومی شما را در صفحهٔ خانه از طریق ip.sb یا ipwho.is یا ipinfo.io بررسی می‌کند</string>
+    <string name="settings_about">درباره</string>
+    <string name="settings_source_code">کد منبع</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">در دسترس نیست</string>
+    <string name="settings_check_updates">بررسی به‌روزرسانی</string>
+    <string name="settings_updates_github">آخرین نسخه را از GitHub بررسی می‌کند</string>
+    <string name="settings_updates_play">صفحهٔ Meow را در Google Play باز می‌کند</string>
+    <string name="settings_update_latest">از آخرین نسخه استفاده می‌کنید (\u2068%1$s\u2069)</string>
+    <string name="settings_update_failed">بررسی به‌روزرسانی ناموفق بود: \u2068%1$s\u2069</string>
+    <string name="settings_update_available">نسخهٔ \u2068%1$s\u2069 از Meow در دسترس است</string>
+    <string name="settings_update_download">دانلود</string>
+    <string name="settings_update_view">مشاهدهٔ نسخه</string>
+    <string name="settings_update_later">بعداً</string>
+    <string name="settings_update_no_app">برنامه‌ای برای باز کردن لینک پیدا نشد</string>
+
+    <!-- Logs -->
+    <string name="logs_title">گزارش‌ها</string>
+    <string name="logs_empty">هنوز گزارشی وجود ندارد</string>
+    <string name="logs_auto_scroll">پیمایش خودکار</string>
+
+    <!-- Connections -->
+    <string name="connections_title">اتصال‌ها</string>
+    <string name="connections_tab_active">فعال</string>
+    <string name="connections_tab_recent">اخیر</string>
+    <string name="connections_empty">اتصال فعالی وجود ندارد</string>
+    <string name="connections_recent_empty">درخواست اخیری وجود ندارد</string>
+    <string name="connections_close_all">بستن همه</string>
+    <string name="connections_close_all_confirm">همهٔ اتصال‌های فعال بسته شوند؟</string>
+    <string name="connections_recent_clear">پاک کردن</string>
+    <string name="connections_recent_clear_confirm">درخواست‌های اخیر پاک شوند؟</string>
+    <string name="connections_last_seen">آخرین فعالیت: \u2068%1$s\u2069</string>
+    <string name="connections_filter">فیلتر بر اساس میزبان یا آی‌پی…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">قوانین</string>
+    <string name="rules_empty">هیچ قانونی پیدا نشد.\nبرای بارگیری قوانین، VPN را وصل کنید.</string>
+    <string name="rules_filter">فیلتر بر اساس نوع، مقدار یا پروکسی…</string>
+    <string name="rules_load_error">بارگیری قوانین ناموفق بود</string>
+    <plurals name="rules_count">
+        <item quantity="one">%1$d قانون</item>
+        <item quantity="other">%1$d قانون</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">جستجوی دامنه، آی‌پی یا سرور بالادستی…</string>
+    <string name="dns_empty_title">نتیجهٔ DNS وجود ندارد</string>
+    <string name="dns_empty_description">وقتی هسته دامنه‌ها را تفکیک کند، پاسخ‌های ذخیره‌شده اینجا نمایش داده می‌شوند.</string>
+    <string name="dns_search_empty">نتیجه‌ای برای «\u2068%1$s\u2069» پیدا نشد</string>
+    <string name="dns_unknown_upstream">نامشخص</string>
+    <string name="dns_ttl">\u200FTTL %1$d ثانیه</string>
+    <string name="dns_load_error">بارگیری نتایج DNS ناموفق بود</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">پروکسی به تفکیک برنامه</string>
+    <string name="perapp_desc">انتخاب کنید کدام برنامه‌ها از VPN استفاده کنند</string>
+    <string name="perapp_mode_proxy">فقط انتخاب‌شده‌ها</string>
+    <string name="perapp_mode_bypass">به‌جز انتخاب‌شده‌ها</string>
+    <string name="perapp_search">جستجوی برنامه‌ها…</string>
+    <string name="perapp_show_system">نمایش برنامه‌های سیستمی</string>
+    <string name="perapp_select_all">انتخاب همه</string>
+    <string name="perapp_deselect_all">لغو انتخاب همه</string>
+    <string name="perapp_disabled_hint">تا وقتی برنامه‌ای انتخاب نشده، غیرفعال است</string>
+    <string name="perapp_restart_required">برای اعمال تغییرات، VPN را دوباره وصل کنید</string>
+    <plurals name="perapp_selected">
+        <item quantity="one">%1$d برنامه انتخاب شده</item>
+        <item quantity="other">%1$d برنامه انتخاب شده</item>
+    </plurals>
+</resources>

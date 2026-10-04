@@ -4,9 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -22,6 +25,7 @@ import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -38,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
@@ -45,6 +50,7 @@ import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
+import java.util.Locale
 
 /**
  * The Home tab: the VPN switch and what it is doing, with the subscriptions
@@ -198,14 +204,21 @@ private fun RouteModeCard(mode: RouteMode, enabled: Boolean, onSelect: (RouteMod
             )
         }
         Spacer(Modifier.height(10.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        // Three segments leave ~75dp per label on a 360dp phone, so the fill
+        // marks the selection rather than a checkmark (which would take 26dp),
+        // and a label that still does not fit (Russian "Глобальный") shrinks
+        // instead of wrapping into a taller segment. Each segment otherwise
+        // takes its own label's height, and Burmese lines are taller than the
+        // Latin "Global" between them, so all three fill the tallest.
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             RouteMode.entries.forEachIndexed { index, entry ->
                 SegmentedButton(
                     selected = mode == entry,
                     onClick = { if (mode != entry) onSelect(entry) },
                     enabled = enabled,
                     shape = SegmentedButtonDefaults.itemShape(index, RouteMode.entries.size),
-                    modifier = Modifier.testTag("route_mode_${entry.wire}"),
+                    modifier = Modifier.fillMaxHeight().testTag("route_mode_${entry.wire}"),
+                    icon = {},
                 ) {
                     Text(
                         stringResource(
@@ -214,6 +227,11 @@ private fun RouteModeCard(mode: RouteMode, enabled: Boolean, onSelect: (RouteMod
                                 RouteMode.Global -> R.string.route_mode_global
                                 RouteMode.Direct -> R.string.route_mode_direct
                             },
+                        ),
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 10.sp,
+                            maxFontSize = LocalTextStyle.current.fontSize,
                         ),
                     )
                 }
@@ -236,7 +254,7 @@ private fun TrafficTile(
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
             Spacer(Modifier.size(6.dp))
             Text(
-                text = label.uppercase(),
+                text = label.uppercase(Locale.getDefault()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.meow.mutedText,
             )

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">VPN durumu</string>
+    <string name="notification_connecting">Bağlanıyor…</string>
+    <string name="notification_stop">Durdur</string>
+    <string name="profile_empty">Profil seçilmedi</string>
+    <string name="service_failed">Hizmet hatası</string>
+    <string name="reboot_required">Yeniden başlatma gerekli</string>
+</resources>

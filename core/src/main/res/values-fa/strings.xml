@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">وضعیت VPN</string>
+    <string name="notification_connecting">در حال اتصال…</string>
+    <string name="notification_stop">توقف</string>
+    <string name="profile_empty">هیچ پروفایلی انتخاب نشده است</string>
+    <string name="service_failed">سرویس با خطا مواجه شد</string>
+    <string name="reboot_required">راه‌اندازی مجدد دستگاه لازم است</string>
+</resources>

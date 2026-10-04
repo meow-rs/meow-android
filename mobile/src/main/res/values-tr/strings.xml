@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Ana sayfa</string>
+    <string name="tab_proxy_groups">Proxy</string>
+    <string name="tab_utility">Araçlar</string>
+    <string name="tab_settings">Ayarlar</string>
+
+    <!-- Common -->
+    <string name="common_cancel">İptal</string>
+    <string name="common_save">Kaydet</string>
+    <string name="common_add">Ekle</string>
+    <string name="common_delete">Sil</string>
+    <string name="common_edit">Düzenle</string>
+    <string name="common_select">Seç</string>
+    <string name="common_refresh">Yenile</string>
+    <string name="common_retry">Tekrar dene</string>
+    <string name="common_discard">Sil</string>
+    <string name="common_back">Geri</string>
+    <string name="common_close">Kapat</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">Bağlı değil</string>
+    <string name="home_connecting">Bağlanıyor…</string>
+    <string name="home_connected">Bağlı</string>
+    <string name="home_disconnecting">Bağlantı kesiliyor…</string>
+    <string name="home_disconnected">Bağlantı kesildi</string>
+    <string name="home_reconnecting_profile">Güncellenen profille yeniden bağlanılıyor…</string>
+    <string name="home_profile_rejected">Güncellenen profilde hatalar var — mevcut bağlantı korunuyor</string>
+    <string name="home_upload">Yükleme</string>
+    <string name="home_download">İndirme</string>
+    <string name="home_vpn_toggle">VPN bağlantısını aç veya kapat</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">Yönlendirme modu</string>
+    <string name="route_mode_rule">Kural</string>
+    <string name="route_mode_global">Global</string>
+    <string name="route_mode_direct">Doğrudan</string>
+    <string name="home_exit_ip">Çıkış IP\'si</string>
+    <string name="home_exit_ip_checking">Kontrol ediliyor…</string>
+    <string name="home_exit_ip_failed">Sorgulanamadı</string>
+    <string name="home_exit_ip_retry">Tekrar denemek için dokunun</string>
+    <string name="home_exit_ip_refresh">Çıkış IP\'sini yenile</string>
+    <string name="home_exit_ip_bypassed">Uygulama bazlı proxy ayarı Meow uygulamasını VPN dışında bırakıyor; bu nedenle burada doğrudan IP adresiniz görünüyor</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">Proxy grupları</string>
+    <string name="proxy_no_groups">Proxy grubu bulunamadı.</string>
+    <string name="proxy_no_subscription_hint">Abonelik seçilmedi.\nAna sayfa sekmesinden bir abonelik ekleyin.</string>
+    <string name="proxy_groups_disconnected">Proxy gruplarını yüklemek için Ana sayfa sekmesinden VPN bağlantısını kurun.</string>
+    <string name="proxy_groups_connecting">Bağlanıyor — gruplar çekirdek başlayınca görünecek.</string>
+    <string name="proxy_url_test_all">Tümünün gecikmesini test et</string>
+    <string name="proxy_testing">Gecikme test ediliyor…</string>
+    <string name="proxy_delay_ms">%1$d ms</string>
+    <string name="proxy_delay_timeout">Zaman aşımı</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">Abonelikler</string>
+    <string name="subs_none">Abonelik yok</string>
+    <string name="subs_add">Abonelik ekle</string>
+    <string name="subs_edit">Aboneliği düzenle</string>
+    <string name="subs_delete_confirm">“%1$s” silinsin mi?</string>
+    <string name="subs_name">Ad</string>
+    <string name="subs_url">Abonelik URL\'si</string>
+    <string name="subs_paste">Panodan yapıştır</string>
+    <string name="subs_clipboard_empty">Pano boş</string>
+    <string name="subs_auto_update">Otomatik güncelleme</string>
+    <string name="subs_update_interval">Güncelleme aralığı (saat)</string>
+    <string name="subs_update_interval_range">%1$d ile %2$d arasında bir değer girin</string>
+    <string name="subs_next_update">Sonraki güncelleme: en erken %1$s</string>
+    <string name="subs_next_update_due">Sonraki güncelleme: şimdi</string>
+    <string name="subs_auto_update_paused">Duraklatıldı: yapılandırmada yerel değişiklikler var. Sürdürmek için yapılandırmayı yenileyin veya geri döndürün.</string>
+    <string name="subs_add_from_url">URL\'den ekle</string>
+    <string name="subs_import_from_file">Dosyadan içe aktar</string>
+    <string name="subs_export">Dışa aktar</string>
+    <string name="subs_edit_yaml">YAML dosyasını düzenle</string>
+    <string name="subs_updated">“%1$s” aboneliği güncellendi</string>
+    <string name="subs_last_updated">Son güncelleme: %1$s</string>
+    <string name="subs_usage">Kullanılan: %1$s / %2$s</string>
+    <string name="subs_expires">Süresi %1$s tarihinde doluyor</string>
+    <string name="subs_expired">Süresi %1$s tarihinde doldu</string>
+    <string name="subs_refresh_failed">Yenilenemedi: %1$s</string>
+    <string name="subs_imported">“%1$s” içe aktarıldı</string>
+    <string name="subs_import_failed">İçe aktarılamadı: %1$s</string>
+    <string name="subs_link_title">Bağlantıdan abonelik eklensin mi?</string>
+    <string name="subs_link_warning">Yalnızca güvendiğiniz abonelikleri ekleyin: trafiğinizin nereye gideceğini yapılandırma belirler.</string>
+    <string name="subs_link_unsupported">Desteklenmeyen bağlantı</string>
+    <string name="subs_link_missing_url">Bağlantıda abonelik URL\'si yok</string>
+    <string name="subs_link_bad_url">Yalnızca http ve https abonelik URL\'leri eklenebilir</string>
+    <string name="subs_export_saved">Yapılandırma dışa aktarıldı</string>
+    <string name="subs_export_failed">Dışa aktarılamadı: %1$s</string>
+    <string name="subs_share_qr">QR koduyla paylaş</string>
+    <string name="subs_qr_share_image">Görseli paylaş</string>
+    <string name="subs_qr_warning">Bu kod erişim anahtarınızı da içerir: kodu tarayan herkes aboneliğinizi kullanabilir. Yalnızca güvendiğiniz kişilerle paylaşın.</string>
+    <string name="subs_qr_too_long">Bu abonelik URL\'si QR kodu için çok uzun</string>
+    <string name="subs_scan_qr">QR kodu tara</string>
+    <string name="subs_scan_hint">Kamerayı bir abonelik QR koduna doğrultun</string>
+    <string name="subs_scan_from_image">Görsel seç</string>
+    <string name="subs_scan_no_code">Görselde QR kodu bulunamadı</string>
+    <string name="subs_scan_not_subscription">Bu bir abonelik QR kodu değil</string>
+    <string name="subs_scan_camera_denied">Tarama için kamera gerekiyor. QR kodunu içeren bir görsel de seçebilirsiniz.</string>
+    <string name="subs_scan_allow_camera">Kameraya izin ver</string>
+    <string name="subs_scan_no_camera">Kamera kullanılamıyor. Bunun yerine QR kodunu içeren bir görsel seçin.</string>
+    <string name="subs_scan_confirm_title">QR kodundan abonelik eklensin mi?</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">Geçerli yapılandırma</string>
+    <string name="yaml_config_invalid">Geçersiz yapılandırma: %1$s</string>
+    <string name="yaml_revert">Geri döndür</string>
+    <string name="yaml_revert_confirm">Son indirilen sürüme geri dönülsün mü?</string>
+    <string name="yaml_discard_changes">Kaydedilmemiş değişiklikler silinsin mi?</string>
+    <string name="yaml_saved">Yapılandırma kaydedildi</string>
+    <string name="yaml_reverted">Orijinal sürüme geri dönüldü</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">Araçlar</string>
+    <string name="traffic_title">Trafik</string>
+    <string name="traffic_data_usage">Veri kullanımı</string>
+    <string name="traffic_today">Bugün</string>
+    <string name="traffic_this_month">Bu ay</string>
+    <string name="traffic_daily_history">Son 30 gün</string>
+    <string name="traffic_no_history">Henüz trafik geçmişi yok</string>
+    <string name="traffic_tap_bar_hint">Ayrıntılar için bir çubuğa dokunun</string>
+    <string name="traffic_current_session">Mevcut oturum</string>
+    <string name="traffic_speed">Hız</string>
+    <string name="traffic_total">Toplam: %1$s</string>
+    <string name="traffic_collecting">Veri toplanıyor…</string>
+    <string name="traffic_connect_to_see">Trafiği görmek için VPN bağlantısını kurun</string>
+    <string name="traffic_upload">Yükleme</string>
+    <string name="traffic_download">İndirme</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_general">Genel</string>
+    <string name="settings_version">Sürüm</string>
+    <string name="settings_engine">Çekirdek</string>
+    <string name="settings_engine_section">Çekirdek</string>
+    <string name="settings_engine_offline">VPN bağlıyken kullanılabilir</string>
+    <string name="settings_network">Ağ</string>
+    <string name="settings_dns_server">DNS sunucusu</string>
+    <string name="settings_dns_builtin">Tünel üzerinden TCP</string>
+    <string name="settings_show_exit_ip">Çıkış IP\'sini göster</string>
+    <string name="settings_show_exit_ip_desc">Ana sayfada genel IP adresinizi ip.sb, ipwho.is veya ipinfo.io üzerinden sorgular</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_source_code">Kaynak kodu</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">Mevcut değil</string>
+    <string name="settings_check_updates">Güncellemeleri kontrol et</string>
+    <string name="settings_updates_github">En son sürümü GitHub\'dan sorgular</string>
+    <string name="settings_updates_play">Meow uygulamasını Google Play\'de açar</string>
+    <string name="settings_update_latest">En son sürümü kullanıyorsunuz (%1$s)</string>
+    <string name="settings_update_failed">Güncellemeler kontrol edilemedi: %1$s</string>
+    <string name="settings_update_available">Meow %1$s sürümü yayınlandı</string>
+    <string name="settings_update_download">İndir</string>
+    <string name="settings_update_view">Sürümü görüntüle</string>
+    <string name="settings_update_later">Daha sonra</string>
+    <string name="settings_update_no_app">Bağlantıyı açabilecek uygulama yok</string>
+
+    <!-- Logs -->
+    <string name="logs_title">Günlükler</string>
+    <string name="logs_empty">Henüz günlük kaydı yok</string>
+    <string name="logs_auto_scroll">Otomatik kaydırma</string>
+
+    <!-- Connections -->
+    <string name="connections_title">Bağlantılar</string>
+    <string name="connections_tab_active">Etkin</string>
+    <string name="connections_tab_recent">Son istekler</string>
+    <string name="connections_empty">Etkin bağlantı yok</string>
+    <string name="connections_recent_empty">Son istek yok</string>
+    <string name="connections_close_all">Tümünü kapat</string>
+    <string name="connections_close_all_confirm">Tüm etkin bağlantılar kapatılsın mı?</string>
+    <string name="connections_recent_clear">Temizle</string>
+    <string name="connections_recent_clear_confirm">Son istekler temizlensin mi?</string>
+    <string name="connections_last_seen">Son görülme: %1$s</string>
+    <string name="connections_filter">Alan adı veya IP adresine göre filtrele…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">Kurallar</string>
+    <string name="rules_empty">Kural bulunamadı.\nKuralları yüklemek için VPN bağlantısını kurun.</string>
+    <string name="rules_filter">Tür, değer veya proxy adına göre filtrele…</string>
+    <string name="rules_load_error">Kurallar yüklenemedi</string>
+    <plurals name="rules_count">
+        <item quantity="one">%1$d kural</item>
+        <item quantity="other">%1$d kural</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">Alan adı, IP veya sunucu ara…</string>
+    <string name="dns_empty_title">DNS sonucu yok</string>
+    <string name="dns_empty_description">Çekirdek alan adlarını çözümledikçe önbellekteki sorgular burada görünür.</string>
+    <string name="dns_search_empty">“%1$s” için sonuç yok</string>
+    <string name="dns_unknown_upstream">Bilinmiyor</string>
+    <string name="dns_ttl">TTL %1$d sn</string>
+    <string name="dns_load_error">DNS sonuçları yüklenemedi</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">Uygulama bazlı proxy</string>
+    <string name="perapp_desc">VPN kullanacak uygulamaları seçin</string>
+    <string name="perapp_mode_proxy">Sadece seçililer</string>
+    <string name="perapp_mode_bypass">Seçililer hariç</string>
+    <string name="perapp_search">Uygulama ara…</string>
+    <string name="perapp_show_system">Sistem uygulamalarını göster</string>
+    <string name="perapp_select_all">Tümünü seç</string>
+    <string name="perapp_deselect_all">Tüm seçimleri kaldır</string>
+    <string name="perapp_disabled_hint">Uygulama seçilmediği sürece devre dışı</string>
+    <string name="perapp_restart_required">Değişiklikleri uygulamak için VPN bağlantısını yeniden kurun</string>
+    <plurals name="perapp_selected">
+        <item quantity="one">%1$d seçili</item>
+        <item quantity="other">%1$d seçili</item>
+    </plurals>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">Состояние VPN</string>
+    <string name="notification_connecting">Подключение…</string>
+    <string name="notification_stop">Остановить</string>
+    <string name="profile_empty">Профиль не выбран</string>
+    <string name="service_failed">Сбой службы</string>
+    <string name="reboot_required">Требуется перезагрузка</string>
+</resources>

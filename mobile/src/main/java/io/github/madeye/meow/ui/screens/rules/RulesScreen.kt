@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -173,7 +174,8 @@ private fun RuleRow(rule: Rule) {
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                // Keep a Latin payload next to its type chip in a right-to-left UI.
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).wrapContentWidth(Alignment.Start),
             )
             Text(
                 text = rule.proxy,

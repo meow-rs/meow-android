@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Главная</string>
+    <string name="tab_proxy_groups">Прокси</string>
+    <string name="tab_utility">Утилиты</string>
+    <string name="tab_settings">Настройки</string>
+
+    <!-- Common -->
+    <string name="common_cancel">Отмена</string>
+    <string name="common_save">Сохранить</string>
+    <string name="common_add">Добавить</string>
+    <string name="common_delete">Удалить</string>
+    <string name="common_edit">Изменить</string>
+    <string name="common_select">Выбрать</string>
+    <string name="common_refresh">Обновить</string>
+    <string name="common_retry">Повторить</string>
+    <string name="common_discard">Не сохранять</string>
+    <string name="common_back">Назад</string>
+    <string name="common_close">Закрыть</string>
+
+    <!-- Home -->
+    <string name="home_not_connected">Не подключено</string>
+    <string name="home_connecting">Подключение…</string>
+    <string name="home_connected">Подключено</string>
+    <string name="home_disconnecting">Отключение…</string>
+    <string name="home_disconnected">Отключено</string>
+    <string name="home_reconnecting_profile">Переподключение с обновлённым профилем…</string>
+    <string name="home_profile_rejected">В обновлённом профиле есть ошибки — текущее подключение сохранено</string>
+    <string name="home_upload">Отправка</string>
+    <string name="home_download">Загрузка</string>
+    <string name="home_vpn_toggle">Включить или выключить VPN</string>
+    <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
+    <string name="tile_label">Meow VPN</string>
+    <string name="home_route_mode">Режим маршрутизации</string>
+    <string name="route_mode_rule">Правила</string>
+    <string name="route_mode_global">Глобальный</string>
+    <string name="route_mode_direct">Прямой</string>
+    <string name="home_exit_ip">Внешний IP</string>
+    <string name="home_exit_ip_checking">Проверка…</string>
+    <string name="home_exit_ip_failed">Не удалось определить</string>
+    <string name="home_exit_ip_retry">Нажмите, чтобы повторить</string>
+    <string name="home_exit_ip_refresh">Обновить внешний IP</string>
+    <string name="home_exit_ip_bypassed">Из-за настройки «Прокси для приложений» Meow работает в обход VPN, поэтому здесь показан ваш прямой IP</string>
+
+    <!-- Proxy groups -->
+    <string name="proxy_groups_title">Группы прокси</string>
+    <string name="proxy_no_groups">Группы прокси не найдены.</string>
+    <string name="proxy_no_subscription_hint">Подписка не выбрана.\nДобавьте её на вкладке «Главная».</string>
+    <string name="proxy_groups_disconnected">Подключите VPN на вкладке «Главная», чтобы загрузить группы прокси.</string>
+    <string name="proxy_groups_connecting">Подключение — группы появятся, когда запустится ядро.</string>
+    <string name="proxy_url_test_all">Проверить задержку всех</string>
+    <string name="proxy_testing">Проверка задержки…</string>
+    <string name="proxy_delay_ms">%1$d мс</string>
+    <string name="proxy_delay_timeout">Тайм-аут</string>
+
+    <!-- Subscriptions -->
+    <string name="subs_title">Подписки</string>
+    <string name="subs_none">Нет подписок</string>
+    <string name="subs_add">Добавить подписку</string>
+    <string name="subs_edit">Изменить подписку</string>
+    <string name="subs_delete_confirm">Удалить «%1$s»?</string>
+    <string name="subs_name">Название</string>
+    <string name="subs_url">URL подписки</string>
+    <string name="subs_paste">Вставить из буфера обмена</string>
+    <string name="subs_clipboard_empty">Буфер обмена пуст</string>
+    <string name="subs_auto_update">Автообновление</string>
+    <string name="subs_update_interval">Интервал обновления (ч)</string>
+    <string name="subs_update_interval_range">Введите значение от %1$d до %2$d</string>
+    <string name="subs_next_update">Следующее обновление после %1$s</string>
+    <string name="subs_next_update_due">Следующее обновление: сейчас</string>
+    <string name="subs_auto_update_paused">Приостановлено: в конфигурации есть локальные изменения. Обновите или откатите её, чтобы возобновить.</string>
+    <string name="subs_add_from_url">Добавить по ссылке</string>
+    <string name="subs_import_from_file">Импорт из файла</string>
+    <string name="subs_export">Экспорт</string>
+    <string name="subs_edit_yaml">Редактировать YAML</string>
+    <string name="subs_updated">Подписка «%1$s» обновлена</string>
+    <string name="subs_last_updated">Обновлено %1$s</string>
+    <string name="subs_usage">Использовано %1$s / %2$s</string>
+    <string name="subs_expires">Истекает %1$s</string>
+    <string name="subs_expired">Истекла %1$s</string>
+    <string name="subs_refresh_failed">Не удалось обновить: %1$s</string>
+    <string name="subs_imported">Импортировано: «%1$s»</string>
+    <string name="subs_import_failed">Ошибка импорта: %1$s</string>
+    <string name="subs_link_title">Добавить подписку по ссылке?</string>
+    <string name="subs_link_warning">Добавляйте только подписки, которым доверяете: конфигурация определяет, куда пойдёт ваш трафик.</string>
+    <string name="subs_link_unsupported">Неподдерживаемая ссылка</string>
+    <string name="subs_link_missing_url">В ссылке нет URL подписки</string>
+    <string name="subs_link_bad_url">Можно добавлять только подписки с URL http или https</string>
+    <string name="subs_export_saved">Конфигурация экспортирована</string>
+    <string name="subs_export_failed">Ошибка экспорта: %1$s</string>
+    <string name="subs_share_qr">Поделиться QR-кодом</string>
+    <string name="subs_qr_share_image">Поделиться изображением</string>
+    <string name="subs_qr_warning">Этот код содержит ваш токен доступа: любой, кто его отсканирует, сможет пользоваться вашей подпиской. Делитесь им только с теми, кому доверяете.</string>
+    <string name="subs_qr_too_long">URL этой подписки слишком длинный для QR-кода</string>
+    <string name="subs_scan_qr">Сканировать QR-код</string>
+    <string name="subs_scan_hint">Наведите камеру на QR-код подписки</string>
+    <string name="subs_scan_from_image">Выбрать изображение</string>
+    <string name="subs_scan_no_code">На изображении нет QR-кода</string>
+    <string name="subs_scan_not_subscription">Это не QR-код подписки</string>
+    <string name="subs_scan_camera_denied">Для сканирования нужна камера. Можно также выбрать изображение с QR-кодом.</string>
+    <string name="subs_scan_allow_camera">Разрешить доступ к камере</string>
+    <string name="subs_scan_no_camera">Камера недоступна. Выберите изображение с QR-кодом.</string>
+    <string name="subs_scan_confirm_title">Добавить подписку из QR-кода?</string>
+
+    <!-- YAML editor -->
+    <string name="yaml_valid">Конфигурация корректна</string>
+    <string name="yaml_config_invalid">Некорректная конфигурация: %1$s</string>
+    <string name="yaml_revert">Откатить</string>
+    <string name="yaml_revert_confirm">Вернуть последнюю загруженную версию?</string>
+    <string name="yaml_discard_changes">Выйти без сохранения?</string>
+    <string name="yaml_saved">Конфигурация сохранена</string>
+    <string name="yaml_reverted">Исходная версия восстановлена</string>
+
+    <!-- Traffic -->
+    <string name="utility_title">Утилиты</string>
+    <string name="traffic_title">Трафик</string>
+    <string name="traffic_data_usage">Расход трафика</string>
+    <string name="traffic_today">Сегодня</string>
+    <string name="traffic_this_month">В этом месяце</string>
+    <string name="traffic_daily_history">Последние 30 дней</string>
+    <string name="traffic_no_history">Истории трафика пока нет</string>
+    <string name="traffic_tap_bar_hint">Нажмите на столбец, чтобы увидеть подробности</string>
+    <string name="traffic_current_session">Текущий сеанс</string>
+    <string name="traffic_speed">Скорость</string>
+    <string name="traffic_total">Всего: %1$s</string>
+    <string name="traffic_collecting">Сбор данных…</string>
+    <string name="traffic_connect_to_see">Подключите VPN, чтобы видеть трафик</string>
+    <string name="traffic_upload">Отправка</string>
+    <string name="traffic_download">Загрузка</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_general">Общие</string>
+    <string name="settings_version">Версия</string>
+    <string name="settings_engine">Ядро</string>
+    <string name="settings_engine_section">Ядро</string>
+    <string name="settings_engine_offline">Доступно после подключения VPN</string>
+    <string name="settings_network">Сеть</string>
+    <string name="settings_dns_server">DNS-сервер</string>
+    <string name="settings_dns_builtin">TCP через туннель</string>
+    <string name="settings_show_exit_ip">Показывать внешний IP</string>
+    <string name="settings_show_exit_ip_desc">Определяет ваш внешний IP на вкладке «Главная» через ip.sb, ipwho.is или ipinfo.io</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_source_code">Исходный код</string>
+    <string name="settings_source_url">github.com/madeye/meow</string>
+    <string name="settings_version_unavailable">Недоступно</string>
+    <string name="settings_check_updates">Проверить обновления</string>
+    <string name="settings_updates_github">Ищет последний выпуск на GitHub</string>
+    <string name="settings_updates_play">Открывает Meow в Google Play</string>
+    <string name="settings_update_latest">У вас последняя версия (%1$s)</string>
+    <string name="settings_update_failed">Не удалось проверить обновления: %1$s</string>
+    <string name="settings_update_available">Доступна новая версия Meow: %1$s</string>
+    <string name="settings_update_download">Скачать</string>
+    <string name="settings_update_view">Открыть выпуск</string>
+    <string name="settings_update_later">Позже</string>
+    <string name="settings_update_no_app">Нет приложения, которое может открыть ссылку</string>
+
+    <!-- Logs -->
+    <string name="logs_title">Журнал</string>
+    <string name="logs_empty">Записей пока нет</string>
+    <string name="logs_auto_scroll">Автопрокрутка</string>
+
+    <!-- Connections -->
+    <string name="connections_title">Соединения</string>
+    <string name="connections_tab_active">Активные</string>
+    <string name="connections_tab_recent">Недавние</string>
+    <string name="connections_empty">Нет активных соединений</string>
+    <string name="connections_recent_empty">Нет недавних запросов</string>
+    <string name="connections_close_all">Закрыть все</string>
+    <string name="connections_close_all_confirm">Закрыть все активные соединения?</string>
+    <string name="connections_recent_clear">Очистить</string>
+    <string name="connections_recent_clear_confirm">Очистить недавние запросы?</string>
+    <string name="connections_last_seen">Последняя активность: %1$s</string>
+    <string name="connections_filter">Фильтр по хосту или IP…</string>
+
+    <!-- Rules -->
+    <string name="rules_title">Правила</string>
+    <string name="rules_empty">Правила не найдены.\nПодключите VPN, чтобы загрузить правила.</string>
+    <string name="rules_filter">Фильтр: тип, значение, прокси…</string>
+    <string name="rules_load_error">Не удалось загрузить правила</string>
+    <plurals name="rules_count">
+        <item quantity="one">%1$d правило</item>
+        <item quantity="few">%1$d правила</item>
+        <item quantity="many">%1$d правил</item>
+        <item quantity="other">%1$d правила</item>
+    </plurals>
+
+    <!-- DNS -->
+    <string name="dns_title">DNS</string>
+    <string name="dns_title_count">DNS (%1$d)</string>
+    <string name="dns_search">Поиск по домену, IP или серверу…</string>
+    <string name="dns_empty_title">Нет результатов DNS</string>
+    <string name="dns_empty_description">Кэшированные ответы появятся, когда ядро начнёт разрешать домены.</string>
+    <string name="dns_search_empty">Нет результатов по запросу «%1$s»</string>
+    <string name="dns_unknown_upstream">Неизвестно</string>
+    <string name="dns_ttl">TTL %1$d с</string>
+    <string name="dns_load_error">Не удалось загрузить результаты DNS</string>
+
+    <!-- Per-app proxy -->
+    <string name="perapp_title">Прокси для приложений</string>
+    <string name="perapp_desc">Выберите, какие приложения используют VPN</string>
+    <string name="perapp_mode_proxy">Только выбранные</string>
+    <string name="perapp_mode_bypass">Кроме выбранных</string>
+    <string name="perapp_search">Поиск приложений…</string>
+    <string name="perapp_show_system">Показывать системные приложения</string>
+    <string name="perapp_select_all">Выбрать все</string>
+    <string name="perapp_deselect_all">Снять выбор</string>
+    <string name="perapp_disabled_hint">Не действует, пока не выбрано ни одного приложения</string>
+    <string name="perapp_restart_required">Переподключите VPN, чтобы применить изменения</string>
+    <plurals name="perapp_selected">
+        <item quantity="one">Выбрано: %1$d</item>
+        <item quantity="few">Выбрано: %1$d</item>
+        <item quantity="many">Выбрано: %1$d</item>
+        <item quantity="other">Выбрано: %1$d</item>
+    </plurals>
+</resources>

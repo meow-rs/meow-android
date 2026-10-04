@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">Trạng thái VPN</string>
+    <string name="notification_connecting">Đang kết nối…</string>
+    <string name="notification_stop">Dừng</string>
+    <string name="profile_empty">Chưa chọn cấu hình</string>
+    <string name="service_failed">Dịch vụ gặp lỗi</string>
+    <string name="reboot_required">Cần khởi động lại</string>
+</resources>

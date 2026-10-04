@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">حالة VPN</string>
+    <string name="notification_connecting">جارٍ الاتصال…</string>
+    <string name="notification_stop">إيقاف</string>
+    <string name="profile_empty">لم يُحدَّد أي ملف تعريف</string>
+    <string name="service_failed">حدث خطأ في الخدمة</string>
+    <string name="reboot_required">يلزم إعادة تشغيل الجهاز</string>
+</resources>

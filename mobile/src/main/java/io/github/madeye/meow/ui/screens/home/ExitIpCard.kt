@@ -65,7 +65,7 @@ fun ExitIpCard(state: ExitIpUiState, onRefresh: () -> Unit, modifier: Modifier =
             Spacer(Modifier.size(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.home_exit_ip).uppercase(),
+                    text = stringResource(R.string.home_exit_ip).uppercase(Locale.getDefault()),
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.mutedText,
                 )

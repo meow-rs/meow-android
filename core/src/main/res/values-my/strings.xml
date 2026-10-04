@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meow</string>
+    <string name="notification_channel_vpn">VPN အခြေအနေ</string>
+    <string name="notification_connecting">ချိတ်ဆက်နေသည်…</string>
+    <string name="notification_stop">ရပ်ရန်</string>
+    <string name="profile_empty">ပရိုဖိုင် ရွေးမထားပါ</string>
+    <string name="service_failed">ဝန်ဆောင်မှု မအောင်မြင်ပါ</string>
+    <string name="reboot_required">ပြန်လည်စတင်ရန် လိုအပ်သည်</string>
+</resources>
