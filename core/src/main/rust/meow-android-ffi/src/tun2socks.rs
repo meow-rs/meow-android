@@ -25,8 +25,9 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
-use tokio::sync::{mpsc, Semaphore};
+use tokio::io::unix::AsyncFd;
+use tokio::io::{AsyncRead, AsyncWrite, Interest, ReadBuf};
+use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinHandle;
 use tracing::{trace, warn};
 
@@ -41,6 +42,9 @@ type ReplyReaders = Arc<Mutex<HashMap<NatKey, Arc<UdpSession>>>>;
 
 static TUN2SOCKS_ACTIVE: AtomicBool = AtomicBool::new(false);
 static TUN2SOCKS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
+// Wakes the TUN reader, which sleeps until the fd is readable and so would
+// not notice the flag above on an idle VPN.
+static TUN2SOCKS_STOP_NOTIFY: Notify = Notify::const_new();
 // Handle of the running session's top-level task, so `stop()` can wait for
 // it to finish touching the TUN fd before Kotlin closes it.
 static TUN2SOCKS_TASK: Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
@@ -107,6 +111,7 @@ pub fn start(fd: i32, _dns_port: u16) -> Result<(), String> {
 /// stopped using the TUN fd (bounded by `TUN2SOCKS_STOP_TIMEOUT`).
 pub fn stop() {
     TUN2SOCKS_STOP_REQUESTED.store(true, Ordering::SeqCst);
+    TUN2SOCKS_STOP_NOTIFY.notify_waiters();
     let Some(handle) = TUN2SOCKS_TASK.lock().take() else {
         return;
     };
@@ -243,25 +248,50 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
         }
     });
 
-    // TUN reader: reads raw IP packets, intercepts DNS pre-stack.
+    // TUN reader: reads raw IP packets, intercepts DNS pre-stack. It sleeps in
+    // epoll until the fd is readable: an idle VPN must not keep waking the
+    // CPU, as polling the fd every 200 µs did (~750 wakeups a second).
     let tun_reader_handle = tokio::spawn(async move {
+        // Taken before the flag is read: notify_waiters() reaches a Notified
+        // from the moment it exists, so a stop() in between is not lost.
+        let stopped = TUN2SOCKS_STOP_NOTIFY.notified();
+        tokio::pin!(stopped);
+        if TUN2SOCKS_STOP_REQUESTED.load(Ordering::SeqCst) {
+            return;
+        }
+        // Dropped when this task ends, which stop() waits for, so the fd
+        // leaves epoll before Kotlin closes it.
+        let tun = match AsyncFd::with_interest(fd, Interest::READABLE) {
+            Ok(tun) => tun,
+            Err(e) => {
+                logging::bridge_log(&format!("tun2socks: cannot poll the TUN fd: {}", e));
+                return;
+            }
+        };
         let mut read_buf = vec![0u8; 65535];
 
         loop {
-            if TUN2SOCKS_STOP_REQUESTED.load(Ordering::SeqCst) {
-                break;
-            }
+            let mut ready = tokio::select! {
+                _ = &mut stopped => break,
+                ready = tun.readable() => match ready {
+                    Ok(ready) => ready,
+                    Err(e) => {
+                        logging::bridge_log(&format!("tun2socks: TUN poll error: {}", e));
+                        break;
+                    }
+                },
+            };
 
-            tokio::task::yield_now().await;
-
-            let mut did_work = false;
             loop {
                 let n =
                     unsafe { libc::read(fd, read_buf.as_mut_ptr() as *mut c_void, read_buf.len()) };
                 if n <= 0 {
+                    // EAGAIN: drained. Any other failure also waits for the
+                    // next packet rather than retrying at once, which would
+                    // spin.
+                    ready.clear_ready();
                     break;
                 }
-                did_work = true;
                 let n = n as usize;
                 let ip_data = &read_buf[..n];
 
@@ -340,12 +370,8 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                     Err(mpsc::error::TrySendError::Full(frame)) => {
                         let _ = stack_ingress_tx.send(frame).await;
                     }
-                    Err(mpsc::error::TrySendError::Closed(_)) => break,
+                    Err(mpsc::error::TrySendError::Closed(_)) => return,
                 }
-            }
-
-            if !did_work {
-                tokio::time::sleep(Duration::from_micros(200)).await;
             }
         }
     });
@@ -753,10 +779,15 @@ fn ipv4_header_checksum(h: &[u8]) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Instant;
+
+    // The tests share the session globals.
+    static SERIAL: Mutex<()> = Mutex::new(());
 
     /// `stop()` runs on JNI threads, which are outside the runtime.
     #[test]
     fn stop_from_a_non_runtime_thread_waits_for_the_session() {
+        let _serial = SERIAL.lock();
         let finished = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&finished);
         let handle = crate::get_runtime().spawn(async move {
@@ -771,5 +802,139 @@ mod tests {
 
         assert!(finished.load(Ordering::SeqCst));
         TUN2SOCKS_STOP_REQUESTED.store(false, Ordering::SeqCst);
+    }
+
+    /// A session on one end of a datagram socketpair, which keeps packet
+    /// boundaries and polls like a TUN fd. Returns the other end.
+    fn start_on_fake_tun() -> (RawFd, RawFd) {
+        let mut fds = [0; 2];
+        let rc = unsafe { libc::socketpair(libc::AF_UNIX, libc::SOCK_DGRAM, 0, fds.as_mut_ptr()) };
+        assert_eq!(rc, 0);
+        start(fds[0], 0).unwrap();
+        // Let the reader get as far as waiting for the fd.
+        std::thread::sleep(Duration::from_millis(200));
+        (fds[0], fds[1])
+    }
+
+    fn stop_and_close((tun, peer): (RawFd, RawFd)) {
+        stop();
+        unsafe {
+            libc::close(tun);
+            libc::close(peer);
+        }
+    }
+
+    /// Voluntary context switches of the runtime's threads so far.
+    fn worker_wakeups() -> u64 {
+        let mut total = 0;
+        for task in std::fs::read_dir("/proc/self/task").unwrap().flatten() {
+            // "tokio-rt-worker", "tokio-runtime-worker" before tokio 1.50.
+            let comm = std::fs::read_to_string(task.path().join("comm")).unwrap_or_default();
+            if !comm.starts_with("tokio-") {
+                continue;
+            }
+            let status = std::fs::read_to_string(task.path().join("status")).unwrap_or_default();
+            total += status
+                .lines()
+                .find_map(|l| l.strip_prefix("voluntary_ctxt_switches:"))
+                .and_then(|v| v.trim().parse::<u64>().ok())
+                .unwrap_or(0);
+        }
+        total
+    }
+
+    /// An idle VPN must leave the CPU asleep. Polling the fd every 200 µs
+    /// cost ~1400 context switches a second here; what remains (~8) is
+    /// mostly lwIP's own 250 ms timer.
+    #[test]
+    fn an_idle_session_does_not_wake_the_cpu() {
+        let _serial = SERIAL.lock();
+        let fds = start_on_fake_tun();
+
+        let before = worker_wakeups();
+        std::thread::sleep(Duration::from_secs(1));
+        let wakeups = worker_wakeups() - before;
+
+        stop_and_close(fds);
+        assert!(wakeups < 50, "{wakeups} worker wakeups in an idle second");
+    }
+
+    /// An IPv4 TCP SYN from 172.19.0.2:40000 to 198.51.100.1:80.
+    fn tcp_syn() -> Vec<u8> {
+        let (src, dst) = ([172, 19, 0, 2], [198, 51, 100, 1]);
+        let mut pkt = vec![0u8; 40];
+        pkt[0] = 0x45;
+        pkt[2..4].copy_from_slice(&40u16.to_be_bytes());
+        pkt[8] = 64;
+        pkt[9] = 6;
+        pkt[12..16].copy_from_slice(&src);
+        pkt[16..20].copy_from_slice(&dst);
+        let sum = ipv4_header_checksum(&pkt[..20]);
+        pkt[10..12].copy_from_slice(&sum.to_be_bytes());
+        pkt[20..22].copy_from_slice(&40000u16.to_be_bytes());
+        pkt[22..24].copy_from_slice(&80u16.to_be_bytes());
+        pkt[24..28].copy_from_slice(&1u32.to_be_bytes());
+        pkt[32] = 0x50; // 20-byte header
+        pkt[33] = 0x02; // SYN
+        pkt[34..36].copy_from_slice(&65535u16.to_be_bytes());
+        let mut pseudo = [&src[..], &dst[..], &[0, 6, 0, 20]].concat();
+        pseudo.extend_from_slice(&pkt[20..]);
+        let sum = ipv4_header_checksum(&pseudo);
+        pkt[36..38].copy_from_slice(&sum.to_be_bytes());
+        pkt
+    }
+
+    /// The reader sleeps until the fd is readable, so a packet must wake it:
+    /// lwIP answers the SYN.
+    #[test]
+    fn a_packet_wakes_the_reader() {
+        let _serial = SERIAL.lock();
+        let fds = start_on_fake_tun();
+        let (_, peer) = fds;
+
+        let syn = tcp_syn();
+        let sent = unsafe { libc::write(peer, syn.as_ptr() as *const c_void, syn.len()) };
+        assert_eq!(sent, syn.len() as isize);
+
+        let mut pfd = libc::pollfd {
+            fd: peer,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let ready = unsafe { libc::poll(&mut pfd, 1, 3000) };
+        let mut reply = [0u8; 1500];
+        let n = if ready == 1 {
+            unsafe { libc::read(peer, reply.as_mut_ptr() as *mut c_void, reply.len()) }
+        } else {
+            0
+        };
+
+        stop_and_close(fds);
+        assert!(n >= 40, "no reply to the SYN");
+        assert_eq!(reply[9], 6, "not TCP");
+        assert_eq!(
+            &reply[20..24],
+            &[0, 80, 0x9c, 0x40],
+            "not from :80 to :40000"
+        );
+        assert_eq!(reply[33] & 0x12, 0x12, "not a SYN-ACK");
+    }
+
+    /// With the reader asleep on an idle fd, stop() has to wake it rather
+    /// than wait out TUN2SOCKS_STOP_TIMEOUT.
+    #[test]
+    fn stop_wakes_an_idle_reader() {
+        let _serial = SERIAL.lock();
+        let fds = start_on_fake_tun();
+
+        let started = Instant::now();
+        stop_and_close(fds);
+
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "stop took {:?}",
+            started.elapsed()
+        );
+        assert!(!TUN2SOCKS_ACTIVE.load(Ordering::SeqCst));
     }
 }
