@@ -80,6 +80,10 @@
     <string name="subs_import_from_file">ဖိုင်မှ တင်သွင်းရန်</string>
     <string name="subs_export">ထုတ်ယူရန်</string>
     <string name="subs_edit_yaml">YAML တည်းဖြတ်ရန်</string>
+    <string name="subs_view_yaml">YAML ကြည့်ရန်</string>
+    <string name="subs_duplicate">မိတ္တူ ပြုလုပ်ရန်</string>
+    <string name="subs_copy_name">%1$s မိတ္တူ</string>
+    <string name="subs_duplicated">“%1$s” ကို ပြုလုပ်ပြီးပါပြီ</string>
     <string name="subs_updated">%1$s ကို အပ်ဒိတ်လုပ်ပြီးပါပြီ</string>
     <string name="subs_last_updated">နောက်ဆုံး အပ်ဒိတ်: %1$s</string>
     <string name="subs_usage">သုံးပြီး %1$s / %2$s</string>
@@ -117,6 +121,7 @@
     <string name="yaml_discard_changes">မသိမ်းရသေးသော အပြောင်းအလဲများကို ဖယ်ပစ်မလား။</string>
     <string name="yaml_saved">Config ကို သိမ်းပြီးပါပြီ</string>
     <string name="yaml_reverted">မူလအတိုင်း ပြန်ပြောင်းပြီးပါပြီ</string>
+    <string name="yaml_read_only">စာရင်းသွင်းမှု Config များကို ဖတ်ရန်သာ ဖြစ်သည်၊ အပ်ဒိတ်တိုင်းက ၎င်းတို့ကို အစားထိုးသောကြောင့် ဖြစ်သည်။ ပြင်ဆင်ရန် မိတ္တူ ပြုလုပ်ပါ။</string>
 
     <!-- Traffic -->
     <string name="utility_title">ကိရိယာများ</string>

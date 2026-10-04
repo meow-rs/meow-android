@@ -86,6 +86,10 @@
     <string name="subs_import_from_file">Import from file</string>
     <string name="subs_export">Export</string>
     <string name="subs_edit_yaml">Edit YAML</string>
+    <string name="subs_view_yaml">View YAML</string>
+    <string name="subs_duplicate">Create a copy</string>
+    <string name="subs_copy_name">%1$s copy</string>
+    <string name="subs_duplicated">Created \"%1$s\"</string>
     <string name="subs_updated">%1$s updated</string>
     <string name="subs_last_updated">Updated %1$s</string>
     <string name="subs_usage">Used %1$s / %2$s</string>
@@ -123,6 +127,7 @@
     <string name="yaml_discard_changes">Discard unsaved changes?</string>
     <string name="yaml_saved">Config saved</string>
     <string name="yaml_reverted">Reverted to original</string>
+    <string name="yaml_read_only">Subscription configs are read-only: every update replaces them. To edit this one, create a copy.</string>
 
     <!-- Traffic -->
     <string name="utility_title">Utility</string>

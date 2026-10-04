@@ -51,7 +51,9 @@ Network
   - Home: VPN toggle, connection status, route mode (Rule / Global / Direct,
     remembered across reconnects) and the live Rules view; the top-right
     button opens Subscriptions: switch profiles, add/edit/remove, share/scan
-    them as QR codes, YAML editor, import/export config
+    them as QR codes, YAML editor, import/export config. Subscription configs
+    are read-only, as on Surge (every update replaces them): create a copy to
+    edit one
   - Proxy Groups: proxy group & node selection, per-group latency tests
   - Utility: live Connections and DNS-cache views powered by the REST API,
     Traffic (real-time speed chart, session upload/download stats, daily

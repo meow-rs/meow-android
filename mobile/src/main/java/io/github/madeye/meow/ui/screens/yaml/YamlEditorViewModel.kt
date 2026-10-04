@@ -33,6 +33,14 @@ class YamlEditorViewModel(
     private val _profileName = MutableStateFlow("")
     val profileName: StateFlow<String> = _profileName.asStateFlow()
 
+    private val _readOnly = MutableStateFlow(false)
+
+    /**
+     * A subscription's config is only viewed: it belongs to its provider and
+     * every download replaces it, so the user edits a copy instead.
+     */
+    val readOnly: StateFlow<Boolean> = _readOnly.asStateFlow()
+
     private val _initialText = MutableStateFlow<String?>(null)
 
     /** Null until the profile has been read; the editor waits for it. */
@@ -63,6 +71,9 @@ class YamlEditorViewModel(
         viewModelScope.launch {
             val profile = profiles.getById(profileId)
             _profileName.value = profile?.name.orEmpty()
+            // Before the text: the editor view is created once, when the text
+            // arrives, and takes its editability from that first composition.
+            _readOnly.value = profile?.url.orEmpty().isNotEmpty()
             _initialText.value = profile?.yamlContent.orEmpty()
             _canRevert.value = !profile?.yamlBackup.isNullOrEmpty() &&
                 profile?.yamlBackup != profile?.yamlContent
@@ -75,6 +86,8 @@ class YamlEditorViewModel(
     }
 
     fun save(text: String, onDone: () -> Unit) {
+        // The screen offers no Save then, and the DAO would ignore it anyway.
+        if (_readOnly.value) return
         viewModelScope.launch {
             profiles.updateYaml(profileId, text)
             analytics.profileYamlEdit()
@@ -94,6 +107,27 @@ class YamlEditorViewModel(
             _dirty.value = false
             _canRevert.value = false
             onDone(reverted)
+        }
+    }
+
+    /** Set once a copy is on its way, so a second tap can't make another. */
+    private var duplicating = false
+
+    /**
+     * Copies this profile's config into a new local profile named [name] and
+     * hands its id to [onDone], which opens it for editing.
+     */
+    fun duplicate(name: String, onDone: (Long) -> Unit) {
+        if (duplicating) return
+        duplicating = true
+        viewModelScope.launch {
+            val copy = profiles.duplicate(profileId, name)
+            if (copy == null) {
+                duplicating = false
+                return@launch
+            }
+            analytics.profileDuplicate()
+            onDone(copy.id)
         }
     }
 

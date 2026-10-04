@@ -47,6 +47,14 @@ class ProfileDaoFetchTest {
         )
     )
 
+    /**
+     * Edits saved in the YAML editor before subscription configs became
+     * read-only. [ProfileDao.updateYamlContent] refuses subscriptions now, but
+     * such rows are still around and auto-update must keep them.
+     */
+    private fun saveLegacyEdits(id: Long) =
+        dao.update(dao.getById(id)!!.copy(yamlContent = "edited: true\n"))
+
     private fun ClashProfile.downloaded() = copy(
         yamlContent = "new: true\n",
         yamlBackup = "new: true\n",
@@ -87,7 +95,7 @@ class ProfileDaoFetchTest {
         val id = insertSubscription("a")
         val snapshot = dao.getById(id)!!
 
-        dao.updateYamlContent(id, "edited: true\n")
+        saveLegacyEdits(id)
         dao.storeFetched(snapshot.downloaded(), onlyIfUnedited = true)
 
         val after = dao.getById(id)!!
@@ -110,7 +118,7 @@ class ProfileDaoFetchTest {
     fun storeFetched_overwritesEditsByDefault() {
         // A manual refresh is the user asking for the provider's config.
         val id = insertSubscription("a")
-        dao.updateYamlContent(id, "edited: true\n")
+        saveLegacyEdits(id)
 
         dao.storeFetched(dao.getById(id)!!.downloaded())
 

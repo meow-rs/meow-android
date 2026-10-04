@@ -75,6 +75,10 @@
     <string name="subs_import_from_file">Dosyadan içe aktar</string>
     <string name="subs_export">Dışa aktar</string>
     <string name="subs_edit_yaml">YAML dosyasını düzenle</string>
+    <string name="subs_view_yaml">YAML dosyasını görüntüle</string>
+    <string name="subs_duplicate">Kopya oluştur</string>
+    <string name="subs_copy_name">%1$s kopyası</string>
+    <string name="subs_duplicated">“%1$s” oluşturuldu</string>
     <string name="subs_updated">“%1$s” aboneliği güncellendi</string>
     <string name="subs_last_updated">Son güncelleme: %1$s</string>
     <string name="subs_usage">Kullanılan: %1$s / %2$s</string>
@@ -112,6 +116,7 @@
     <string name="yaml_discard_changes">Kaydedilmemiş değişiklikler silinsin mi?</string>
     <string name="yaml_saved">Yapılandırma kaydedildi</string>
     <string name="yaml_reverted">Orijinal sürüme geri dönüldü</string>
+    <string name="yaml_read_only">Abonelik yapılandırmaları salt okunurdur, çünkü her güncelleme bunların yerine geçer. Düzenlemek için bir kopya oluşturun.</string>
 
     <!-- Traffic -->
     <string name="utility_title">Araçlar</string>

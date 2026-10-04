@@ -46,7 +46,21 @@ class ProfileRepository(
     suspend fun addLocal(name: String, yamlContent: String): ClashProfile =
         SubscriptionService.addLocal(name, yamlContent)
 
-    /** Renames/re-points a subscription and immediately re-fetches it. */
+    /**
+     * Copies [id]'s config into a new local profile named [name]: the YAML
+     * only, not the URL, plan figures or selection, so the copy is the user's
+     * to edit while the original keeps following its provider. Null when the
+     * source is gone or has no config to copy.
+     */
+    suspend fun duplicate(id: Long, name: String): ClashProfile? {
+        val source = getById(id)?.takeIf { it.yamlContent.isNotEmpty() } ?: return null
+        return SubscriptionService.addLocal(name, source.yamlContent)
+    }
+
+    /**
+     * Renames/re-points a subscription and immediately re-fetches it. A local
+     * profile (empty [url]) is only renamed.
+     */
     suspend fun update(id: Long, name: String, url: String) = withContext(Dispatchers.IO) {
         reloader.applying {
             val existing = dao.getById(id) ?: return@applying
@@ -81,6 +95,11 @@ class ProfileRepository(
         }
     }
 
+    /**
+     * Saves the YAML editor's text. Local profiles only: a subscription's
+     * config belongs to its provider, so the app never writes it and the DAO
+     * ignores the call; edit a copy ([duplicate]) instead.
+     */
     suspend fun updateYaml(id: Long, yaml: String) = withContext(Dispatchers.IO) {
         reloader.applying { dao.updateYamlContent(id, yaml) }
     }

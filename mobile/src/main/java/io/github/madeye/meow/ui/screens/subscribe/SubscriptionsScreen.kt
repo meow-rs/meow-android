@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -81,6 +83,7 @@ fun SubscriptionsScreen(
     onSelect: (Long) -> Unit,
     onEdit: (ProfileUi) -> Unit,
     onEditYaml: (Long) -> Unit,
+    onDuplicate: (id: Long, name: String) -> Unit,
     onRefresh: (Long) -> Unit,
     onExport: (ProfileUi) -> Unit,
     onShareQr: (ProfileUi) -> Unit,
@@ -109,12 +112,14 @@ fun SubscriptionsScreen(
         // The actions follow the check in the list above, so they never need
         // to say which profile they act on. Nothing picked, nothing to act on.
         if (selected != null) {
+            val nameOfCopy = copyName(stringResource(R.string.subs_copy_name, selected.name))
             Spacer(Modifier.height(8.dp))
             SectionHeader(stringResource(R.string.common_edit))
             ProfileActions(
                 profile = selected,
                 onEdit = { onEdit(selected) },
                 onEditYaml = { onEditYaml(selected.id) },
+                onDuplicate = { onDuplicate(selected.id, nameOfCopy) },
                 onRefresh = { onRefresh(selected.id) },
                 onExport = { onExport(selected) },
                 onShareQr = { onShareQr(selected) },
@@ -236,13 +241,18 @@ private fun ProfileRow(profile: ProfileUi, onSelect: () -> Unit) {
 /**
  * Every action on [profile], the selected one, each a row of its own. A row
  * only shows when it can work: a file import has no URL to refresh from or
- * share, and a profile without YAML has nothing to edit or export.
+ * share, and a profile without YAML has nothing to open, copy or export.
+ *
+ * A subscription's config is read-only, as on Surge: every download replaces
+ * it, so its YAML row only views it, and editing starts from a copy, which is
+ * a local profile.
  */
 @Composable
 private fun ProfileActions(
     profile: ProfileUi,
     onEdit: () -> Unit,
     onEditYaml: () -> Unit,
+    onDuplicate: () -> Unit,
     onRefresh: () -> Unit,
     onExport: () -> Unit,
     onShareQr: () -> Unit,
@@ -258,11 +268,22 @@ private fun ProfileActions(
             onClick = onEdit,
         )
         if (profile.hasYaml) {
+            val subscription = profile.url.isNotEmpty()
+            HorizontalDivider(color = border)
+            // Both open the editor, which decides for itself whether the
+            // config is read-only.
+            NavRow(
+                title = stringResource(
+                    if (subscription) R.string.subs_view_yaml else R.string.subs_edit_yaml,
+                ),
+                icon = if (subscription) Icons.Filled.Visibility else Icons.Filled.EditNote,
+                onClick = onEditYaml,
+            )
             HorizontalDivider(color = border)
             NavRow(
-                title = stringResource(R.string.subs_edit_yaml),
-                icon = Icons.Filled.EditNote,
-                onClick = onEditYaml,
+                title = stringResource(R.string.subs_duplicate),
+                icon = Icons.Filled.ContentCopy,
+                onClick = onDuplicate,
             )
         }
         if (profile.url.isNotEmpty()) {
@@ -383,7 +404,10 @@ private fun UsageBar(fraction: Float, color: Color) {
     }
 }
 
-/** Add/edit dialog. [initial] non-null means edit. */
+/**
+ * Add/edit dialog. [initial] non-null means edit; a local profile's edit
+ * shows the name alone.
+ */
 @Composable
 fun SubscriptionDialog(
     initial: ProfileUi?,
@@ -399,6 +423,10 @@ fun SubscriptionDialog(
     var intervalText by rememberSaveable(initial?.id) { mutableStateOf(storedHours.toString()) }
     val intervalHours = AutoUpdateSchedule.parseIntervalHours(intervalText)
     val now = remember { System.currentTimeMillis() }
+    // A local profile (a file import or a copy) only gets a new name here. A
+    // URL would turn it into a subscription, whose next download would
+    // overwrite its config, edits included.
+    val local = initial != null && initial.url.isEmpty()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -417,29 +445,32 @@ fun SubscriptionDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text(stringResource(R.string.subs_url)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
-                                val text = clipboardText()
-                                if (text.isNullOrBlank()) onClipboardEmpty() else url = text
-                            },
-                        ) {
-                            Icon(
-                                Icons.Filled.ContentPaste,
-                                contentDescription = stringResource(R.string.subs_paste),
-                            )
-                        }
-                    },
-                )
-                // A file import has no URL to refresh from, so editing one
-                // shows no schedule until a URL is entered.
+                if (!local) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        label = { Text(stringResource(R.string.subs_url)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val text = clipboardText()
+                                    if (text.isNullOrBlank()) onClipboardEmpty() else url = text
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Filled.ContentPaste,
+                                    contentDescription = stringResource(R.string.subs_paste),
+                                )
+                            }
+                        },
+                    )
+                }
+                // Without a URL there is nothing to refresh from, so no
+                // schedule: never for a local profile, and not while a
+                // subscription's URL is cleared.
                 if (initial == null || url.isNotBlank()) {
                     // Saving a changed URL re-downloads, which restarts the
                     // schedule, so the preview only holds for the same URL.
@@ -468,7 +499,13 @@ fun SubscriptionDialog(
                         intervalHours ?: storedHours,
                     )
                 },
-                enabled = url.isNotBlank() && (intervalHours != null || !autoUpdate),
+                // A local profile has no schedule fields and sends its stored
+                // schedule back as it was, so only the name has to be valid.
+                enabled = if (local) {
+                    name.isNotBlank()
+                } else {
+                    url.isNotBlank() && (intervalHours != null || !autoUpdate)
+                },
             ) {
                 Text(stringResource(if (initial == null) R.string.common_add else R.string.common_save))
             }

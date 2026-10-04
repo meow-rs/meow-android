@@ -53,6 +53,7 @@ data class SubscribeUiState(
 sealed interface SubscribeEvent {
     data class Imported(val name: String) : SubscribeEvent
     data class Updated(val name: String) : SubscribeEvent
+    data class Duplicated(val name: String) : SubscribeEvent
     data class ImportFailed(val reason: String) : SubscribeEvent
     data class RefreshFailed(val reason: String) : SubscribeEvent
     data class Failure(val reason: String) : SubscribeEvent
@@ -111,8 +112,22 @@ class SubscribeViewModel(
         // nodes, and the download would discard any YAML edits.
         val scheduleOnly = before != null && name == before.name && url == before.url &&
             (autoUpdate != before.autoUpdate || intervalHours != before.updateIntervalHours)
+        // A local profile's dialog edits only the name and passes the stored
+        // schedule back, so it lands here with an empty URL: renamed, no fetch.
         if (!scheduleOnly) profiles.update(id, name, url)
         analytics.subscriptionEdit()
+    }
+
+    /**
+     * Copies [id]'s config into a new local profile named [name]. That is how
+     * a subscription gets edited: its own config is read-only, since every
+     * download replaces it. The copy is not selected; the original keeps
+     * running until the user picks the copy.
+     */
+    fun duplicate(id: Long, name: String) = withBusy {
+        val copy = profiles.duplicate(id, name) ?: return@withBusy
+        analytics.profileDuplicate()
+        _events.tryEmit(SubscribeEvent.Duplicated(copy.name))
     }
 
     fun delete(id: Long) = withBusy {

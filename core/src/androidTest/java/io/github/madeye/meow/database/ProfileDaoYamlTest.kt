@@ -37,6 +37,25 @@ class ProfileDaoYamlTest {
 
     @Test
     fun updateYamlContent_changesContent_keepsBackup() {
+        // A local profile (file import or copy): no URL.
+        val id = dao.insert(
+            ClashProfile(
+                name = "test",
+                yamlContent = "imported: true\n",
+                yamlBackup = "imported: true\n",
+            )
+        )
+
+        dao.updateYamlContent(id, "edited: true\n")
+
+        val after = dao.getById(id)!!
+        assertEquals("edited: true\n", after.yamlContent)
+        // Backup must NOT change on edit — it is what Revert restores.
+        assertEquals("imported: true\n", after.yamlBackup)
+    }
+
+    @Test
+    fun updateYamlContent_refusesSubscriptions() {
         val id = dao.insert(
             ClashProfile(
                 name = "test",
@@ -48,10 +67,8 @@ class ProfileDaoYamlTest {
 
         dao.updateYamlContent(id, "edited: true\n")
 
-        val after = dao.getById(id)!!
-        assertEquals("edited: true\n", after.yamlContent)
-        // Backup must NOT change on edit — it tracks the upstream snapshot.
-        assertEquals("fetched: true\n", after.yamlBackup)
+        // The provider's config is read-only; the user edits a copy.
+        assertEquals("fetched: true\n", dao.getById(id)!!.yamlContent)
     }
 
     @Test

@@ -75,9 +75,21 @@ interface ProfileDao {
     @Query("UPDATE clash_profile SET selected_proxy = :proxyName WHERE id = :id")
     fun updateSelectedProxy(id: Long, proxyName: String)
 
-    @Query("UPDATE clash_profile SET yaml_content = :yaml WHERE id = :id")
+    /**
+     * Saves edited YAML, for local profiles only (no URL: file imports and
+     * copies). A subscription's config belongs to its provider and every
+     * download replaces it, so the app never writes it; the user edits a
+     * copy instead. The guard is in the statement so it holds whatever the
+     * caller checked.
+     */
+    @Query("UPDATE clash_profile SET yaml_content = :yaml WHERE id = :id AND url = ''")
     fun updateYamlContent(id: Long, yaml: String)
 
+    /**
+     * Restores the last download. Unguarded: it only ever brings back the
+     * provider's config, which is how a subscription edited before configs
+     * became read-only gets its auto-update back.
+     */
     @Query("UPDATE clash_profile SET yaml_content = yaml_backup WHERE id = :id")
     fun revertYamlContent(id: Long)
 

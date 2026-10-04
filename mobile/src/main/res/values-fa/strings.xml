@@ -83,6 +83,10 @@
     <string name="subs_import_from_file">وارد کردن از فایل</string>
     <string name="subs_export">خروجی گرفتن</string>
     <string name="subs_edit_yaml">ویرایش YAML</string>
+    <string name="subs_view_yaml">مشاهدهٔ YAML</string>
+    <string name="subs_duplicate">ساخت رونوشت</string>
+    <string name="subs_copy_name">\u2068%1$s\u2069 (رونوشت)</string>
+    <string name="subs_duplicated">«\u2068%1$s\u2069» ساخته شد</string>
     <string name="subs_updated">اشتراک «\u2068%1$s\u2069» به‌روز شد</string>
     <string name="subs_last_updated">آخرین به‌روزرسانی: \u2068%1$s\u2069</string>
     <string name="subs_usage">مصرف: \u2068%1$s\u2069 از \u2068%2$s\u2069</string>
@@ -120,6 +124,7 @@
     <string name="yaml_discard_changes">از تغییرات ذخیره‌نشده صرف‌نظر شود؟</string>
     <string name="yaml_saved">پیکربندی ذخیره شد</string>
     <string name="yaml_reverted">به نسخهٔ اصلی بازگردانده شد</string>
+    <string name="yaml_read_only">پیکربندی اشتراک‌ها فقط‌خواندنی است، چون هر به‌روزرسانی آن را جایگزین می‌کند. برای ویرایش، یک رونوشت بسازید.</string>
 
     <!-- Traffic -->
     <string name="utility_title">ابزارها</string>

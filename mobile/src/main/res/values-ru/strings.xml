@@ -75,6 +75,10 @@
     <string name="subs_import_from_file">Импорт из файла</string>
     <string name="subs_export">Экспорт</string>
     <string name="subs_edit_yaml">Редактировать YAML</string>
+    <string name="subs_view_yaml">Просмотреть YAML</string>
+    <string name="subs_duplicate">Создать копию</string>
+    <string name="subs_copy_name">%1$s (копия)</string>
+    <string name="subs_duplicated">Создано: «%1$s»</string>
     <string name="subs_updated">Подписка «%1$s» обновлена</string>
     <string name="subs_last_updated">Обновлено %1$s</string>
     <string name="subs_usage">Использовано %1$s / %2$s</string>
@@ -112,6 +116,7 @@
     <string name="yaml_discard_changes">Выйти без сохранения?</string>
     <string name="yaml_saved">Конфигурация сохранена</string>
     <string name="yaml_reverted">Исходная версия восстановлена</string>
+    <string name="yaml_read_only">Конфигурации подписок доступны только для чтения: каждое обновление их перезаписывает. Создайте копию, чтобы редактировать.</string>
 
     <!-- Traffic -->
     <string name="utility_title">Утилиты</string>

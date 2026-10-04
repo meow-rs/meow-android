@@ -87,6 +87,10 @@
     <string name="subs_import_from_file">استيراد من ملف</string>
     <string name="subs_export">تصدير</string>
     <string name="subs_edit_yaml">تعديل YAML</string>
+    <string name="subs_view_yaml">عرض YAML</string>
+    <string name="subs_duplicate">إنشاء نسخة</string>
+    <string name="subs_copy_name">\u2068%1$s\u2069 (نسخة)</string>
+    <string name="subs_duplicated">تم إنشاء «\u2068%1$s\u2069»</string>
     <string name="subs_updated">تم تحديث «\u2068%1$s\u2069»</string>
     <string name="subs_last_updated">آخر تحديث: \u2068%1$s\u2069</string>
     <string name="subs_usage">تم استخدام \u2068%1$s\u2069 من \u2068%2$s\u2069</string>
@@ -124,6 +128,7 @@
     <string name="yaml_discard_changes">هل تريد تجاهل التغييرات غير المحفوظة؟</string>
     <string name="yaml_saved">تم حفظ التكوين</string>
     <string name="yaml_reverted">تمت استعادة النسخة الأصلية</string>
+    <string name="yaml_read_only">تكوينات الاشتراكات للقراءة فقط، لأن كل تحديث يستبدلها. أنشئ نسخة لتعديلها.</string>
 
     <!-- Traffic -->
     <string name="utility_title">الأدوات</string>

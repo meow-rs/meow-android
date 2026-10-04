@@ -81,6 +81,10 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 - **bg/MeowInstance.kt**: Writes config.yaml (stripping only the app-managed `subscriptions:` block — `dns:`/listeners/`sniffer:` are handled by `engine::strip_and_inject` on the Rust side), calls JNI start/stop. Passes the Home route-mode pick (`preference/RouteModeStore`, a one-line file because `:vpn` can't see fresh SharedPreferences writes from the UI process) to `nativeStartEngine`, which overrides the profile's `mode:`.
 - **core/MeowCore.kt**: JNI bridge object. `System.loadLibrary("meow_android_ffi")`.
 - **database/**: Room database with `ClashProfile` entity (id, name, url, yamlContent, selected, lastUpdated, tx, rx).
+  A profile with a `url` is a subscription, and its config is read-only, as on Surge: it
+  belongs to the provider and every download replaces it. `ProfileDao.updateYamlContent`
+  only writes local profiles (`url = ''`: file imports and copies), so editing a
+  subscription means `ProfileRepository.duplicate`, which makes a local copy.
 
 ### Engine API client (`core/src/main/java/io/github/madeye/meow/api/`)
 
@@ -105,6 +109,8 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   through `ProfileRepository.refresh` — the manual refresh path. Store a download with
   `ProfileDao.storeFetched`, never `update(row)`: writing back the row read before the fetch
   reverts whatever changed meanwhile, e.g. a profile switch (`selected` is per row).
+  Local edits (`yamlContent != yamlBackup`) pause auto-update; on a subscription these can
+  only be edits saved before configs became read-only, kept until a refresh or revert.
 - **update/**: `GitHubReleases` reads the latest GitHub release for Settings' "Check for
   updates". Only the `playRelease` build type sets `BuildConfig.PLAY_STORE`, and there the
   row just opens the Play listing: Play policy allows no other update channel, so keep every
@@ -115,9 +121,10 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 
 - **MeowApp.kt**: navigation-compose host. Four tabs as on meow-ios (Home — VPN
   switch, route mode, exit IP —, Proxy Groups, Utility, Settings);
-  Subscriptions/Rules (from Home), the YAML editor (from Subscriptions),
-  Connections/DNS/Traffic/Logs (from Utility) and Per-App Proxy (from Settings)
-  are pushed routes. `SubscriptionsRoute` owns the subscription dialogs and
+  Subscriptions/Rules (from Home), the YAML editor (from Subscriptions; read-only
+  for a subscription, with a banner whose "Create a copy" opens the copy's editor in
+  its place), Connections/DNS/Traffic/Logs (from Utility) and Per-App Proxy (from
+  Settings) are pushed routes. `SubscriptionsRoute` owns the subscription dialogs and
   launchers and answers `clash://install-config` links, which `MeowNavHost`
   routes to it; its ViewModel lives on Home's back-stack entry, so an add or
   refresh survives leaving the page.

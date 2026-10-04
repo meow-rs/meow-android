@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
+import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.meow
 
 @Composable
@@ -41,10 +43,12 @@ fun YamlEditorScreen(
     error: String?,
     dirty: Boolean,
     canRevert: Boolean,
+    readOnly: Boolean,
     contentPadding: PaddingValues,
     onEdit: (String) -> Unit,
     onRequestSave: (String) -> Unit,
     onRequestRevert: () -> Unit,
+    onDuplicate: () -> Unit,
     confirmRevert: Boolean,
     onDismissRevert: () -> Unit,
     onNavigateBack: () -> Unit,
@@ -62,6 +66,7 @@ fun YamlEditorScreen(
             .fillMaxSize()
             .padding(top = contentPadding.calculateTopPadding()),
     ) {
+        if (readOnly) ReadOnlyBanner(onDuplicate = onDuplicate)
         Box(modifier = Modifier.weight(1f).imePadding()) {
             if (initialText == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -71,6 +76,7 @@ fun YamlEditorScreen(
                 SoraYamlEditor(
                     initialText = initialText,
                     handle = handle,
+                    editable = !readOnly,
                     onContentChanged = { onEdit(handle.text()) },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -114,26 +120,73 @@ fun YamlEditorScreen(
     }
 }
 
-/** Toolbar actions, hoisted so the screen's scaffold can host them. */
+/**
+ * Toolbar actions, hoisted so the screen's scaffold can host them.
+ *
+ * A read-only config has nothing to save. It can still be reverted when
+ * [canRevert]: that is a subscription edited before configs became
+ * read-only, and restoring the provider's config is still allowed (it also
+ * resumes auto-update, which local edits pause).
+ */
 @Composable
 fun YamlEditorActions(
     dirty: Boolean,
     valid: Boolean,
     canRevert: Boolean,
+    readOnly: Boolean,
     onRevert: () -> Unit,
     onSave: () -> Unit,
 ) {
-    IconButton(onClick = onRevert, enabled = canRevert) {
-        Icon(
-            Icons.Filled.Restore,
-            contentDescription = stringResource(R.string.yaml_revert),
-        )
+    if (!readOnly || canRevert) {
+        IconButton(onClick = onRevert, enabled = canRevert) {
+            Icon(
+                Icons.Filled.Restore,
+                contentDescription = stringResource(R.string.yaml_revert),
+            )
+        }
     }
-    IconButton(onClick = onSave, enabled = dirty && valid) {
-        Icon(
-            Icons.Filled.Save,
-            contentDescription = stringResource(R.string.common_save),
-        )
+    if (!readOnly) {
+        IconButton(onClick = onSave, enabled = dirty && valid) {
+            Icon(
+                Icons.Filled.Save,
+                contentDescription = stringResource(R.string.common_save),
+            )
+        }
+    }
+}
+
+/**
+ * Why a subscription's config can't be typed into, and the way out: a copy,
+ * which is a local profile and edits like any file import.
+ */
+@Composable
+private fun ReadOnlyBanner(onDuplicate: () -> Unit) {
+    val colors = MaterialTheme.meow
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(end = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Lock,
+                contentDescription = null,
+                tint = colors.accent,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(R.string.yaml_read_only),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.mutedText,
+            )
+        }
+        TextButton(onClick = onDuplicate, modifier = Modifier.align(Alignment.End)) {
+            Text(stringResource(R.string.subs_duplicate))
+        }
     }
 }
 

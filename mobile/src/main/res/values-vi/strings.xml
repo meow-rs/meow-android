@@ -75,6 +75,10 @@
     <string name="subs_import_from_file">Nhập từ tệp</string>
     <string name="subs_export">Xuất</string>
     <string name="subs_edit_yaml">Chỉnh sửa YAML</string>
+    <string name="subs_view_yaml">Xem YAML</string>
+    <string name="subs_duplicate">Tạo bản sao</string>
+    <string name="subs_copy_name">Bản sao của %1$s</string>
+    <string name="subs_duplicated">Đã tạo “%1$s”</string>
     <string name="subs_updated">Đã cập nhật “%1$s”</string>
     <string name="subs_last_updated">Cập nhật lúc %1$s</string>
     <string name="subs_usage">Đã dùng %1$s / %2$s</string>
@@ -112,6 +116,7 @@
     <string name="yaml_discard_changes">Loại bỏ các thay đổi chưa lưu?</string>
     <string name="yaml_saved">Đã lưu cấu hình</string>
     <string name="yaml_reverted">Đã khôi phục bản gốc</string>
+    <string name="yaml_read_only">Cấu hình gói đăng ký chỉ đọc vì mỗi lần cập nhật sẽ ghi đè lên nó. Hãy tạo bản sao để chỉnh sửa.</string>
 
     <!-- Traffic -->
     <string name="utility_title">Tiện ích</string>

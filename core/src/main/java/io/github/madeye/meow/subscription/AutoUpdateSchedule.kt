@@ -46,6 +46,9 @@ object AutoUpdateSchedule {
      * The user saved changes in the YAML editor since the last download. A
      * refresh replaces the config wholesale, so doing it unasked would silently
      * throw those edits away; a manual refresh or a revert clears the state.
+     * Subscription configs are read-only now, so on a subscription these can
+     * only be edits saved before that. They stay, keeping auto-update paused,
+     * until the user refreshes or reverts.
      */
     fun hasLocalEdits(profile: ClashProfile): Boolean = profile.yamlContent != profile.yamlBackup
 

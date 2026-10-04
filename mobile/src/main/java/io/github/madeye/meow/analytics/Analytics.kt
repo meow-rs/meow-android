@@ -46,6 +46,8 @@ class Analytics(context: Context) {
 
     fun profileYamlRevert() = firebase.logEvent("profile_yaml_revert") {}
 
+    fun profileDuplicate() = firebase.logEvent("profile_duplicate") {}
+
     fun perAppProxySave(mode: String) = firebase.logEvent("per_app_proxy_save") {
         param("mode", mode)
     }

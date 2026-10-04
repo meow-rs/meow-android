@@ -75,6 +75,10 @@
     <string name="subs_import_from_file">从文件导入</string>
     <string name="subs_export">导出</string>
     <string name="subs_edit_yaml">编辑 YAML</string>
+    <string name="subs_view_yaml">查看 YAML</string>
+    <string name="subs_duplicate">创建副本</string>
+    <string name="subs_copy_name">%1$s 副本</string>
+    <string name="subs_duplicated">已创建 \"%1$s\"</string>
     <string name="subs_updated">%1$s 已更新</string>
     <string name="subs_last_updated">更新于 %1$s</string>
     <string name="subs_usage">已用 %1$s / %2$s</string>
@@ -112,6 +116,7 @@
     <string name="yaml_discard_changes">放弃未保存的更改？</string>
     <string name="yaml_saved">配置已保存</string>
     <string name="yaml_reverted">已还原</string>
+    <string name="yaml_read_only">订阅配置为只读，每次更新都会被覆盖。创建副本后即可编辑。</string>
 
     <!-- Traffic -->
     <string name="utility_title">工具</string>

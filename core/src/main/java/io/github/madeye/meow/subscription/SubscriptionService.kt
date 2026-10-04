@@ -73,9 +73,10 @@ object SubscriptionService {
         fetched.copy(id = id)
     }
 
-    /// Create a profile from a YAML string the user imported from a file. It
-    /// has no source URL, so refresh-from-URL skips it (see
-    /// `ProfileRepository.refresh`).
+    /// Create a profile from a YAML string the user imported from a file, or
+    /// copied from another profile (`ProfileRepository.duplicate`). It has no
+    /// source URL, so refresh-from-URL skips it (see
+    /// `ProfileRepository.refresh`) and its YAML stays editable.
     suspend fun addLocal(name: String, yamlContent: String): ClashProfile = withContext(Dispatchers.IO) {
         val profile = ClashProfile(
             name = name,

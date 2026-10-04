@@ -90,6 +90,7 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionQrDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionsScreen
+import io.github.madeye.meow.ui.screens.subscribe.copyName
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
 import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
@@ -185,6 +186,7 @@ private fun MeowNavHost(
     val onTab = TABS.any { tab ->
         backStackEntry?.destination?.hierarchy?.any { it.hasRoute(tab.dest::class) } == true
     }
+    val scope = rememberCoroutineScope()
 
     NavHost(navController = navController, startDestination = Dest.Home) {
         composable<Dest.Home> {
@@ -236,6 +238,16 @@ private fun MeowNavHost(
         composable<Dest.YamlEditor> { entry ->
             YamlEditorRoute(
                 snackbarHost = snackbarHost,
+                onOpenCopy = { copyId, notice ->
+                    // The copy's editor takes the viewer's place, so Back
+                    // from it returns to the Subscriptions page. The notice
+                    // runs in this scope: the viewer's ends as it leaves and
+                    // would dismiss the snackbar with it.
+                    navController.navigate(Dest.YamlEditor(copyId)) {
+                        popUpTo(entry.destination.id) { inclusive = true }
+                    }
+                    scope.launch { snackbarHost.showSnackbar(notice) }
+                },
                 onBack = navController::popBackStack,
             )
         }
@@ -431,6 +443,7 @@ private fun SubscriptionsRoute(
     val importedFmt = stringResource(R.string.subs_imported)
     val importFailedFmt = stringResource(R.string.subs_import_failed)
     val updatedFmt = stringResource(R.string.subs_updated)
+    val duplicatedFmt = stringResource(R.string.subs_duplicated)
     val refreshFailedFmt = stringResource(R.string.subs_refresh_failed)
     val linkRejected = (installLink as? InstallConfigLink.Invalid)
         ?.let { stringResource(it.reason.messageRes()) }
@@ -474,6 +487,7 @@ private fun SubscriptionsRoute(
             val message = when (event) {
                 is SubscribeEvent.Imported -> String.format(importedFmt, event.name)
                 is SubscribeEvent.Updated -> String.format(updatedFmt, event.name)
+                is SubscribeEvent.Duplicated -> String.format(duplicatedFmt, event.name)
                 is SubscribeEvent.ImportFailed -> String.format(importFailedFmt, event.reason)
                 is SubscribeEvent.RefreshFailed -> String.format(refreshFailedFmt, event.reason)
                 is SubscribeEvent.Failure -> event.reason
@@ -502,6 +516,7 @@ private fun SubscriptionsRoute(
                 onSelect = viewModel::select,
                 onEdit = { dialogFor = it; dialogOpen = true },
                 onEditYaml = onEditYaml,
+                onDuplicate = viewModel::duplicate,
                 onRefresh = viewModel::refresh,
                 onExport = { profile ->
                     pendingExport = profile
@@ -731,18 +746,30 @@ private fun PerAppProxyRoute(onBack: () -> Unit) {
     }
 }
 
+/**
+ * The YAML editor, or a viewer for a subscription's read-only config. From
+ * the viewer, "Create a copy" hands the copy's id and a snackbar message to
+ * [onOpenCopy], which opens the copy for editing in its place.
+ */
 @Composable
-private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit) {
+private fun YamlEditorRoute(
+    snackbarHost: SnackbarHostState,
+    onOpenCopy: (copyId: Long, notice: String) -> Unit,
+    onBack: () -> Unit,
+) {
     val viewModel: YamlEditorViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val initialText by viewModel.initialText.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val dirty by viewModel.dirty.collectAsStateWithLifecycle()
     val canRevert by viewModel.canRevert.collectAsStateWithLifecycle()
+    val readOnly by viewModel.readOnly.collectAsStateWithLifecycle()
     val name by viewModel.profileName.collectAsStateWithLifecycle()
     val handle = rememberSoraEditorHandle()
     val scope = rememberCoroutineScope()
     val revertedMessage = stringResource(R.string.yaml_reverted)
     val savedMessage = stringResource(R.string.yaml_saved)
+    val nameOfCopy = copyName(stringResource(R.string.subs_copy_name, name))
+    val duplicatedFmt = stringResource(R.string.subs_duplicated)
     var confirmRevert by remember { mutableStateOf(false) }
 
     MeowScaffold(
@@ -753,6 +780,7 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
                 dirty = dirty,
                 valid = error == null,
                 canRevert = canRevert,
+                readOnly = readOnly,
                 onRevert = { confirmRevert = true },
                 onSave = {
                     viewModel.save(handle.text()) {
@@ -767,6 +795,7 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
             error = error,
             dirty = dirty,
             canRevert = canRevert,
+            readOnly = readOnly,
             contentPadding = padding,
             onEdit = viewModel::onEdit,
             onRequestSave = { viewModel.save(it) {} },
@@ -774,6 +803,11 @@ private fun YamlEditorRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit)
                 viewModel.revert { reverted ->
                     handle.setText(reverted)
                     scope.launch { snackbarHost.showSnackbar(revertedMessage) }
+                }
+            },
+            onDuplicate = {
+                viewModel.duplicate(nameOfCopy) { copyId ->
+                    onOpenCopy(copyId, String.format(duplicatedFmt, nameOfCopy))
                 }
             },
             confirmRevert = confirmRevert,

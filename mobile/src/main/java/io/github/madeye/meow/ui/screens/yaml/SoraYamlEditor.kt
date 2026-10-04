@@ -46,6 +46,9 @@ fun rememberSoraEditorHandle(): SoraEditorHandle = remember { SoraEditorHandle()
  * O(document) copy per character. Compose runs in the same process, so
  * [onContentChanged] carries no payload: it is a tick, and the debounced
  * validator pulls the text once when the user stops typing.
+ *
+ * With [editable] false the text can still be scrolled, selected and copied,
+ * but not changed by the user.
  */
 @Composable
 fun SoraYamlEditor(
@@ -53,6 +56,7 @@ fun SoraYamlEditor(
     handle: SoraEditorHandle,
     onContentChanged: () -> Unit,
     modifier: Modifier = Modifier,
+    editable: Boolean = true,
     textSizeSp: Float = 14f,
 ) {
     val changed by rememberUpdatedState(onContentChanged)
@@ -68,6 +72,9 @@ fun SoraYamlEditor(
                 // Only here: re-setting the text on recomposition would reset
                 // the caret and scroll position on every keystroke.
                 setText(initialText)
+                // Fixed at creation too, like the text: the screen knows it
+                // before the view exists, and it never changes for a profile.
+                isEditable = editable
                 subscribeAlways<ContentChangeEvent> { changed() }
                 handle.editor = this
             }
