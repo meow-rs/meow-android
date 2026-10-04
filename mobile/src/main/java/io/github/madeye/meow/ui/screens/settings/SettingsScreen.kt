@@ -17,7 +17,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dns
@@ -52,13 +51,11 @@ fun SettingsScreen(
     state: SettingsUiState,
     contentPadding: PaddingValues,
     onPerAppProxy: () -> Unit,
-    onRules: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
     onCheckForUpdates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unavailable = stringResource(R.string.settings_version_unavailable)
-    val offlineHint = stringResource(R.string.settings_engine_offline)
 
     Column(
         modifier = modifier
@@ -99,20 +96,6 @@ fun SettingsScreen(
                 } else {
                     null
                 },
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-        // Rules reads the engine's controller API, so it is only reachable
-        // while it is listening. Connections and Logs moved to the Utility tab.
-        SectionHeader(stringResource(R.string.settings_engine_section))
-        GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
-            NavRow(
-                title = stringResource(R.string.rules_title),
-                icon = Icons.AutoMirrored.Filled.List,
-                onClick = onRules,
-                enabled = state.engineOnline,
-                subtitle = offlineHint.takeUnless { state.engineOnline },
             )
         }
 

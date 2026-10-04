@@ -33,6 +33,8 @@ data class HomeUiState(
     val state: BaseService.State = BaseService.State.Idle,
     val profileName: String = "",
     val hasProfile: Boolean = false,
+    /** False until Room's first answer, so launch doesn't flash the no-profile prompt. */
+    val profileLoaded: Boolean = false,
     val traffic: TrafficStats = TrafficStats(),
     val routeMode: RouteMode = RouteMode.Rule,
 ) {
@@ -80,6 +82,7 @@ class HomeViewModel(
             state = state,
             profileName = profile?.name.orEmpty(),
             hasProfile = profile != null,
+            profileLoaded = true,
             traffic = traffic,
             routeMode = mode,
         )

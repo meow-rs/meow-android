@@ -22,7 +22,6 @@
     <string name="common_add">افزودن</string>
     <string name="common_delete">حذف</string>
     <string name="common_edit">ویرایش</string>
-    <string name="common_select">انتخاب</string>
     <string name="common_refresh">تازه‌سازی</string>
     <string name="common_retry">تلاش دوباره</string>
     <string name="common_discard">حذف تغییرات</string>
@@ -144,7 +143,6 @@
     <string name="settings_general">عمومی</string>
     <string name="settings_version">نسخه</string>
     <string name="settings_engine">هسته</string>
-    <string name="settings_engine_section">هسته</string>
     <string name="settings_engine_offline">پس از اتصال VPN در دسترس است</string>
     <string name="settings_network">شبکه</string>
     <string name="settings_dns_server">سرور DNS</string>

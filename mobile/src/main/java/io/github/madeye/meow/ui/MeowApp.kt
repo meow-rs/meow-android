@@ -4,15 +4,12 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -42,6 +39,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -91,8 +89,8 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscriptionBusyOverlay
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionQrDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity
+import io.github.madeye.meow.ui.screens.subscribe.SubscriptionsScreen
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
-import io.github.madeye.meow.ui.screens.subscribe.subscriptionItems
 import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorScreen
@@ -193,9 +191,10 @@ private fun MeowNavHost(
             HomeRoute(
                 snackbarHost = snackbarHost,
                 autoConnect = autoConnect,
-                installLink = installLink,
-                onInstallLinkHandled = onInstallLinkHandled,
-                onEditYaml = { navController.navigate(Dest.YamlEditor(it)) },
+                onOpenSubscriptions = {
+                    navController.navigate(Dest.Subscriptions) { launchSingleTop = true }
+                },
+                onRules = { navController.navigate(Dest.Rules) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
@@ -215,11 +214,24 @@ private fun MeowNavHost(
             SettingsRoute(
                 snackbarHost = snackbarHost,
                 onPerAppProxy = { navController.navigate(Dest.PerAppProxy) },
-                onRules = { navController.navigate(Dest.Rules) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
 
+        composable<Dest.Subscriptions> { entry ->
+            // Home's entry is always on the stack under this page, so the
+            // ViewModel lives there: an add or refresh still running when the
+            // user goes back has to finish, not be cancelled with the page.
+            val home = remember(entry) { navController.getBackStackEntry<Dest.Home>() }
+            SubscriptionsRoute(
+                viewModelOwner = home,
+                snackbarHost = snackbarHost,
+                installLink = installLink,
+                onInstallLinkHandled = onInstallLinkHandled,
+                onEditYaml = { navController.navigate(Dest.YamlEditor(it)) },
+                onBack = navController::popBackStack,
+            )
+        }
         composable<Dest.PerAppProxy> { PerAppProxyRoute(onBack = navController::popBackStack) }
         composable<Dest.YamlEditor> { entry ->
             YamlEditorRoute(
@@ -234,16 +246,20 @@ private fun MeowNavHost(
         composable<Dest.Dns> { DnsRoute(onBack = navController::popBackStack) }
     }
 
-    // A link is answered on Home, where the new subscription then shows up. If
-    // Home is already open it is left alone, even under the YAML editor (only
-    // reachable from it): switching tabs recreates the editor and would drop
-    // unsaved edits, so the prompt waits until the user is back on the list.
+    // A link is answered on the Subscriptions page, where the new subscription
+    // then shows up; the page is pushed over Home, as Home's button does. If
+    // the page is already open it is left alone, even under the YAML editor
+    // (only reachable from it): reopening the page would pop the editor and
+    // drop unsaved edits, so the prompt waits until the user is back on it.
     LaunchedEffect(installLink) {
         if (installLink == null) return@LaunchedEffect
         val current = navController.currentDestination
-        val onHome = current?.hasRoute(Dest.Home::class) == true ||
+        val onPage = current?.hasRoute(Dest.Subscriptions::class) == true ||
             current?.hasRoute(Dest.YamlEditor::class) == true
-        if (!onHome) navController.navigateToTab(Dest.Home)
+        if (!onPage) {
+            navController.navigateToTab(Dest.Home)
+            navController.navigate(Dest.Subscriptions) { launchSingleTop = true }
+        }
     }
 }
 
@@ -294,9 +310,8 @@ private fun NavHostController.navigateToTab(dest: Dest) {
 private fun HomeRoute(
     snackbarHost: SnackbarHostState,
     autoConnect: Boolean,
-    installLink: InstallConfigLink?,
-    onInstallLinkHandled: () -> Unit,
-    onEditYaml: (Long) -> Unit,
+    onOpenSubscriptions: () -> Unit,
+    onRules: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel(factory = AppGraph.viewModelFactory)
@@ -338,13 +353,21 @@ private fun HomeRoute(
         }
     }
 
-    SubscriptionsHost(
-        snackbarHost = snackbarHost,
-        installLink = installLink,
-        onInstallLinkHandled = onInstallLinkHandled,
-        onEditYaml = onEditYaml,
+    MeowScaffold(
+        title = stringResource(R.string.app_name),
         bottomBar = bottomBar,
-    ) { padding, subscriptions ->
+        actions = {
+            IconButton(
+                onClick = onOpenSubscriptions,
+                modifier = Modifier.testTag("home_subscriptions"),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ViewList,
+                    contentDescription = stringResource(R.string.subs_title),
+                )
+            }
+        },
+    ) { padding ->
         HomeScreen(
             state = state,
             contentPadding = padding,
@@ -354,9 +377,13 @@ private fun HomeRoute(
             onSelectRouteMode = viewModel::onSelectRouteMode,
             exitIp = exitIpState,
             onRefreshExitIp = exitIp::refresh,
-            subscriptions = subscriptions,
+            onOpenSubscriptions = onOpenSubscriptions,
+            onRules = onRules,
         )
     }
+    // ProfileReloadNotice's snackbars: a background update can restart the
+    // VPN while Home is showing.
+    SnackbarHost(snackbarHost)
 }
 
 private fun startVpnService(context: android.content.Context) {
@@ -366,20 +393,21 @@ private fun startVpnService(context: android.content.Context) {
 }
 
 /**
- * Home's scaffold, with everything the subscription list needs around it: the
- * refresh and add actions, the file and QR launchers, the dialogs. [content]
- * lays the list's items out under Home's own cards.
+ * The Subscriptions page, with everything its rows need around it: the file
+ * and QR launchers, the export flow, the dialogs. Install-config links are
+ * answered here too; [MeowNavHost] brings them to this page.
  */
 @Composable
-private fun SubscriptionsHost(
+private fun SubscriptionsRoute(
+    viewModelOwner: ViewModelStoreOwner,
     snackbarHost: SnackbarHostState,
     installLink: InstallConfigLink?,
     onInstallLinkHandled: () -> Unit,
     onEditYaml: (Long) -> Unit,
-    bottomBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues, LazyListScope.() -> Unit) -> Unit,
+    onBack: () -> Unit,
 ) {
-    val viewModel: SubscribeViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val viewModel: SubscribeViewModel =
+        viewModel(viewModelStoreOwner = viewModelOwner, factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -387,7 +415,6 @@ private fun SubscriptionsHost(
 
     var dialogFor by remember { mutableStateOf<ProfileUi?>(null) }
     var dialogOpen by remember { mutableStateOf(false) }
-    var addMenuOpen by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<ProfileUi?>(null) }
     var qrFor by remember { mutableStateOf<ProfileUi?>(null) }
     // The raw text, so it survives recreation; parsed again below.
@@ -465,60 +492,27 @@ private fun SubscriptionsHost(
     }
 
     MeowScaffold(
-        title = stringResource(R.string.app_name),
-        bottomBar = bottomBar,
-        actions = {
-            IconButton(onClick = viewModel::refreshAll) {
-                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.common_refresh))
-            }
-            Box {
-                IconButton(onClick = { addMenuOpen = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.subs_add))
-                }
-                DropdownMenu(expanded = addMenuOpen, onDismissRequest = { addMenuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subs_add_from_url)) },
-                        onClick = {
-                            addMenuOpen = false
-                            dialogFor = null
-                            dialogOpen = true
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subs_scan_qr)) },
-                        onClick = {
-                            addMenuOpen = false
-                            scanLauncher.launch(Unit)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subs_import_from_file)) },
-                        onClick = {
-                            addMenuOpen = false
-                            importLauncher.launch(arrayOf("*/*"))
-                        },
-                    )
-                }
-            }
-        },
+        title = stringResource(R.string.subs_title),
+        navigationIcon = { BackButton(onBack) },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            content(padding) {
-                subscriptionItems(
-                    state = state,
-                    onSelect = viewModel::select,
-                    onEdit = { dialogFor = it; dialogOpen = true },
-                    onEditYaml = onEditYaml,
-                    onExport = { profile ->
-                        pendingExport = profile
-                        exportLauncher.launch("${profile.name}.yaml")
-                    },
-                    onRefresh = viewModel::refresh,
-                    onShareQr = { qrFor = it },
-                    onDelete = viewModel::delete,
-                    onAddRequested = { dialogFor = null; dialogOpen = true },
-                )
-            }
+            SubscriptionsScreen(
+                state = state,
+                contentPadding = padding,
+                onSelect = viewModel::select,
+                onEdit = { dialogFor = it; dialogOpen = true },
+                onEditYaml = onEditYaml,
+                onRefresh = viewModel::refresh,
+                onExport = { profile ->
+                    pendingExport = profile
+                    exportLauncher.launch("${profile.name}.yaml")
+                },
+                onShareQr = { qrFor = it },
+                onDelete = viewModel::delete,
+                onAddFromUrl = { dialogFor = null; dialogOpen = true },
+                onScanQr = { scanLauncher.launch(Unit) },
+                onImportFromFile = { importLauncher.launch(arrayOf("*/*")) },
+            )
             if (state.busy) SubscriptionBusyOverlay()
         }
     }
@@ -632,7 +626,6 @@ private fun TrafficRoute(onBack: () -> Unit) {
 private fun SettingsRoute(
     snackbarHost: SnackbarHostState,
     onPerAppProxy: () -> Unit,
-    onRules: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = AppGraph.viewModelFactory)
@@ -659,7 +652,6 @@ private fun SettingsRoute(
             state = state,
             contentPadding = padding,
             onPerAppProxy = onPerAppProxy,
-            onRules = onRules,
             onShowExitIpChange = viewModel::onShowExitIpChange,
             onCheckForUpdates = {
                 // Play policy lets a Play build update only through Play, so

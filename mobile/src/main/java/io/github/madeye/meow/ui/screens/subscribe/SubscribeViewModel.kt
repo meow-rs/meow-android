@@ -99,6 +99,7 @@ class SubscribeViewModel(
     ) = withBusy {
         val added = profiles.add(name.ifBlank { url }, url)
         profiles.setAutoUpdate(added.id, autoUpdate, intervalHours)
+        selectIfNone(added.id)
         analytics.subscriptionAdd()
     }
 
@@ -139,20 +140,6 @@ class SubscribeViewModel(
         }
     }
 
-    fun refreshAll() {
-        viewModelScope.launch {
-            busy.value = true
-            try {
-                profiles.refreshAll()
-                analytics.subscriptionRefreshAll()
-            } catch (e: Exception) {
-                _events.tryEmit(SubscribeEvent.RefreshFailed(e.reason()))
-            } finally {
-                busy.value = false
-            }
-        }
-    }
-
     /**
      * Imports a YAML file the user picked. The engine validates it — the UI
      * never parses config itself, so an import can't be accepted here and then
@@ -167,7 +154,7 @@ class SubscribeViewModel(
                     _events.tryEmit(SubscribeEvent.ImportFailed(error))
                     return@launch
                 }
-                profiles.addLocal(name, yaml)
+                selectIfNone(profiles.addLocal(name, yaml).id)
                 analytics.configImport()
                 _events.tryEmit(SubscribeEvent.Imported(name))
             } catch (e: Exception) {
@@ -179,6 +166,16 @@ class SubscribeViewModel(
     }
 
     fun onExported() = analytics.configExport()
+
+    /**
+     * A profile added while none is picked becomes the picked one: the list
+     * to pick from is a page away from Home, whose switch stays disabled
+     * until there is one, so a first subscription would otherwise leave Home
+     * still asking for one.
+     */
+    private suspend fun selectIfNone(id: Long) {
+        if (profiles.getSelected() == null) profiles.select(id)
+    }
 
     suspend fun yamlOf(id: Long): String = profiles.getById(id)?.yamlContent.orEmpty()
 

@@ -138,7 +138,7 @@ class ConfigReloaderTest {
 
     @Test
     fun `a batch reloads once for all its writes`() = runTest {
-        // Refresh-all: several profiles rewritten inside one applying block.
+        // Several writes to the selected profile inside one applying block.
         reloader().applying {
             selected = a.copy(yaml = "proxies: [a2]")
             selected = a.copy(yaml = "proxies: [a3]")
@@ -150,7 +150,7 @@ class ConfigReloaderTest {
 
     @Test
     fun `a write that commits and then fails still reloads`() = runTest {
-        // Refresh-all saved the selected profile, then a later fetch threw.
+        // The block saved the selected profile, then a later step threw.
         val result = runCatching {
             reloader().applying<Unit> {
                 selected = b

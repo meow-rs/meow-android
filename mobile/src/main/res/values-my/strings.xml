@@ -19,7 +19,6 @@
     <string name="common_add">ထည့်ရန်</string>
     <string name="common_delete">ဖျက်ရန်</string>
     <string name="common_edit">တည်းဖြတ်ရန်</string>
-    <string name="common_select">ရွေးရန်</string>
     <string name="common_refresh">ပြန်လည်ဆန်းသစ်ရန်</string>
     <string name="common_retry">ထပ်စမ်းကြည့်ရန်</string>
     <string name="common_discard">ဖယ်ပစ်ရန်</string>
@@ -141,7 +140,6 @@
     <string name="settings_general">အထွေထွေ</string>
     <string name="settings_version">ဗားရှင်း</string>
     <string name="settings_engine">အင်ဂျင်</string>
-    <string name="settings_engine_section">အင်ဂျင်</string>
     <string name="settings_engine_offline">အသုံးပြုရန် VPN ချိတ်ဆက်ပါ</string>
     <string name="settings_network">ကွန်ရက်</string>
     <string name="settings_dns_server">DNS ဆာဗာ</string>

@@ -14,7 +14,6 @@
     <string name="common_add">Добавить</string>
     <string name="common_delete">Удалить</string>
     <string name="common_edit">Изменить</string>
-    <string name="common_select">Выбрать</string>
     <string name="common_refresh">Обновить</string>
     <string name="common_retry">Повторить</string>
     <string name="common_discard">Не сохранять</string>
@@ -136,7 +135,6 @@
     <string name="settings_general">Общие</string>
     <string name="settings_version">Версия</string>
     <string name="settings_engine">Ядро</string>
-    <string name="settings_engine_section">Ядро</string>
     <string name="settings_engine_offline">Доступно после подключения VPN</string>
     <string name="settings_network">Сеть</string>
     <string name="settings_dns_server">DNS-сервер</string>

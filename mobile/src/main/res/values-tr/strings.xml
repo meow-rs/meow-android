@@ -14,7 +14,6 @@
     <string name="common_add">Ekle</string>
     <string name="common_delete">Sil</string>
     <string name="common_edit">Düzenle</string>
-    <string name="common_select">Seç</string>
     <string name="common_refresh">Yenile</string>
     <string name="common_retry">Tekrar dene</string>
     <string name="common_discard">Sil</string>
@@ -136,7 +135,6 @@
     <string name="settings_general">Genel</string>
     <string name="settings_version">Sürüm</string>
     <string name="settings_engine">Çekirdek</string>
-    <string name="settings_engine_section">Çekirdek</string>
     <string name="settings_engine_offline">VPN bağlıyken kullanılabilir</string>
     <string name="settings_network">Ağ</string>
     <string name="settings_dns_server">DNS sunucusu</string>

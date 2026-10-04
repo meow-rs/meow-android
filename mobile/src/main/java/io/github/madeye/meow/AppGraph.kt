@@ -107,7 +107,6 @@ object AppGraph {
 
                 SettingsViewModel::class.java -> SettingsViewModel(
                     appVersions,
-                    vpn,
                     showExitIp,
                     // Null in the Play build, which may only update through
                     // Play. Built here, not in a lazy property: that delegate

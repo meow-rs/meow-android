@@ -32,8 +32,6 @@ class Analytics(context: Context) {
 
     fun subscriptionRefresh() = firebase.logEvent("subscription_refresh") {}
 
-    fun subscriptionRefreshAll() = firebase.logEvent("subscription_refresh_all") {}
-
     fun profileSelect() = firebase.logEvent("profile_select") {}
 
     fun proxyNodeSelect(proxyName: String) = firebase.logEvent("proxy_node_select") {

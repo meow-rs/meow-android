@@ -81,8 +81,6 @@ class ProfileRepository(
         }
     }
 
-    suspend fun refreshAll() = SubscriptionService.refreshAll()
-
     suspend fun updateYaml(id: Long, yaml: String) = withContext(Dispatchers.IO) {
         reloader.applying { dao.updateYamlContent(id, yaml) }
     }

@@ -4,31 +4,38 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,56 +57,97 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import io.github.madeye.meow.ui.components.GlassCard
+import io.github.madeye.meow.ui.components.NavRow
 import io.github.madeye.meow.ui.components.SectionHeader
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 
 /**
- * The subscription list, as items under Home's cards: a section header, then
- * one card per profile, or an add prompt while there are none.
+ * The Subscriptions page, pushed from Home's app bar and laid out like
+ * Surge's profile sheet: the profiles, where a tap picks the one the VPN
+ * runs; every action on the picked one; then the ways to add another. All of
+ * them are rows, so nothing hides behind a menu.
  */
-fun LazyListScope.subscriptionItems(
+@Composable
+fun SubscriptionsScreen(
     state: SubscribeUiState,
+    contentPadding: PaddingValues,
     onSelect: (Long) -> Unit,
     onEdit: (ProfileUi) -> Unit,
     onEditYaml: (Long) -> Unit,
-    onExport: (ProfileUi) -> Unit,
     onRefresh: (Long) -> Unit,
+    onExport: (ProfileUi) -> Unit,
     onShareQr: (ProfileUi) -> Unit,
     onDelete: (Long) -> Unit,
-    onAddRequested: () -> Unit,
+    onAddFromUrl: () -> Unit,
+    onScanQr: () -> Unit,
+    onImportFromFile: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    item {
-        Spacer(Modifier.height(4.dp))
+    val selected = state.profiles.firstOrNull { it.selected }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding() + 16.dp,
+            )
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         SectionHeader(stringResource(R.string.subs_title))
-    }
-    if (state.profiles.isEmpty()) {
-        item { EmptyState(onAdd = onAddRequested) }
-    } else {
-        items(state.profiles, key = { it.id }) { profile ->
-            ProfileCard(
-                profile = profile,
-                onSelect = { onSelect(profile.id) },
-                onEdit = { onEdit(profile) },
-                onEditYaml = { onEditYaml(profile.id) },
-                onExport = { onExport(profile) },
-                onRefresh = { onRefresh(profile.id) },
-                onShareQr = { onShareQr(profile) },
-                onDelete = { onDelete(profile.id) },
+        ProfileList(profiles = state.profiles, onSelect = onSelect)
+
+        // The actions follow the check in the list above, so they never need
+        // to say which profile they act on. Nothing picked, nothing to act on.
+        if (selected != null) {
+            Spacer(Modifier.height(8.dp))
+            SectionHeader(stringResource(R.string.common_edit))
+            ProfileActions(
+                profile = selected,
+                onEdit = { onEdit(selected) },
+                onEditYaml = { onEditYaml(selected.id) },
+                onRefresh = { onRefresh(selected.id) },
+                onExport = { onExport(selected) },
+                onShareQr = { onShareQr(selected) },
+                onDelete = { onDelete(selected.id) },
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        SectionHeader(stringResource(R.string.common_add))
+        GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+            NavRow(
+                title = stringResource(R.string.subs_add_from_url),
+                icon = Icons.Filled.Link,
+                onClick = onAddFromUrl,
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.subs_scan_qr),
+                icon = Icons.Filled.QrCodeScanner,
+                onClick = onScanQr,
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.subs_import_from_file),
+                icon = Icons.Filled.FileOpen,
+                onClick = onImportFromFile,
             )
         }
     }
 }
 
 /**
- * Long operations (fetch, refresh-all, import) block interaction rather than
+ * Long operations (fetch, refresh, import) block interaction rather than
  * letting a second one start mid-flight.
  */
 @Composable
@@ -113,129 +162,140 @@ fun SubscriptionBusyOverlay(modifier: Modifier = Modifier) {
     }
 }
 
+/** One card, one row per profile; only one can be picked, so they read as radio buttons. */
 @Composable
-private fun EmptyState(onAdd: () -> Unit) {
-    GlassCard {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                Icons.Filled.CloudOff,
-                contentDescription = null,
-                tint = MaterialTheme.meow.mutedText.copy(alpha = 0.6f),
-                modifier = Modifier.size(40.dp),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.subs_none),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.meow.mutedText,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onAdd) { Text(stringResource(R.string.subs_add)) }
+private fun ProfileList(profiles: List<ProfileUi>, onSelect: (Long) -> Unit) {
+    GlassCard(
+        modifier = Modifier.selectableGroup(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        if (profiles.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = stringResource(R.string.subs_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.meow.mutedText,
+                )
+            }
+        }
+        profiles.forEachIndexed { index, profile ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.meow.border)
+            key(profile.id) {
+                ProfileRow(profile = profile, onSelect = { onSelect(profile.id) })
+            }
         }
     }
 }
 
 @Composable
-private fun ProfileCard(
+private fun ProfileRow(profile: ProfileUi, onSelect: () -> Unit) {
+    val colors = MaterialTheme.meow
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .selectable(selected = profile.selected, role = Role.RadioButton, onClick = onSelect)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = profile.name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (profile.userInfo.hasQuota || profile.userInfo.hasExpiry) {
+                PlanUsage(profile.userInfo)
+            }
+            if (profile.lastUpdated > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.subs_last_updated,
+                        Formatters.timestamp(profile.lastUpdated),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.mutedText,
+                )
+            }
+        }
+        // The row's selectable carries the state for accessibility services.
+        if (profile.selected) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = colors.accent)
+        }
+    }
+}
+
+/**
+ * Every action on [profile], the selected one, each a row of its own. A row
+ * only shows when it can work: a file import has no URL to refresh from or
+ * share, and a profile without YAML has nothing to edit or export.
+ */
+@Composable
+private fun ProfileActions(
     profile: ProfileUi,
-    onSelect: () -> Unit,
     onEdit: () -> Unit,
     onEditYaml: () -> Unit,
-    onExport: () -> Unit,
     onRefresh: () -> Unit,
+    onExport: () -> Unit,
     onShareQr: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val colors = MaterialTheme.meow
+    val border = MaterialTheme.meow.border
 
-    GlassCard(onClick = onSelect) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = if (profile.selected) {
-                    Icons.Filled.CheckCircle
-                } else {
-                    Icons.Filled.RadioButtonUnchecked
-                },
-                contentDescription = null,
-                tint = if (profile.selected) colors.accent else colors.mutedText.copy(alpha = 0.5f),
+    GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+        NavRow(
+            title = stringResource(R.string.subs_edit),
+            icon = Icons.Filled.Edit,
+            onClick = onEdit,
+        )
+        if (profile.hasYaml) {
+            HorizontalDivider(color = border)
+            NavRow(
+                title = stringResource(R.string.subs_edit_yaml),
+                icon = Icons.Filled.EditNote,
+                onClick = onEditYaml,
             )
-            Spacer(Modifier.size(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = profile.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (profile.url.isNotEmpty()) {
-                    Text(
-                        text = profile.url,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.mutedText,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (profile.userInfo.hasQuota || profile.userInfo.hasExpiry) {
-                    PlanUsage(profile.userInfo)
-                }
-                if (profile.lastUpdated > 0) {
-                    Text(
-                        text = stringResource(
-                            R.string.subs_last_updated,
-                            Formatters.timestamp(profile.lastUpdated),
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.mutedText,
-                    )
-                }
-            }
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = null, tint = colors.mutedText)
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.common_select)) },
-                        onClick = { menuOpen = false; onSelect() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.common_edit)) },
-                        onClick = { menuOpen = false; onEdit() },
-                    )
-                    if (profile.hasYaml) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subs_edit_yaml)) },
-                            onClick = { menuOpen = false; onEditYaml() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subs_export)) },
-                            onClick = { menuOpen = false; onExport() },
-                        )
-                    }
-                    if (profile.url.isNotEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_refresh)) },
-                            onClick = { menuOpen = false; onRefresh() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subs_share_qr)) },
-                            onClick = { menuOpen = false; onShareQr() },
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.common_delete)) },
-                        onClick = { menuOpen = false; confirmDelete = true },
-                    )
-                }
-            }
         }
+        if (profile.url.isNotEmpty()) {
+            HorizontalDivider(color = border)
+            NavRow(
+                title = stringResource(R.string.common_refresh),
+                icon = Icons.Filled.Refresh,
+                onClick = onRefresh,
+            )
+        }
+        if (profile.hasYaml) {
+            HorizontalDivider(color = border)
+            NavRow(
+                title = stringResource(R.string.subs_export),
+                icon = Icons.Filled.SaveAlt,
+                onClick = onExport,
+            )
+        }
+        if (profile.url.isNotEmpty()) {
+            HorizontalDivider(color = border)
+            NavRow(
+                title = stringResource(R.string.subs_share_qr),
+                icon = Icons.Filled.QrCode2,
+                onClick = onShareQr,
+            )
+        }
+        HorizontalDivider(color = border)
+        NavRow(
+            title = stringResource(R.string.common_delete),
+            icon = Icons.Filled.Delete,
+            onClick = { confirmDelete = true },
+            destructive = true,
+        )
     }
 
     if (confirmDelete) {
@@ -259,7 +319,7 @@ private fun ProfileCard(
 /**
  * The provider's `subscription-userinfo` figures: used of total over a thin
  * bar, then the expiry date. Each part renders only when the provider reported
- * it, so a plain config URL keeps the compact card.
+ * it, so a plain config URL keeps the compact row.
  */
 @Composable
 private fun PlanUsage(info: SubscriptionUserInfo) {
@@ -289,7 +349,7 @@ private fun PlanUsage(info: SubscriptionUserInfo) {
         val expiry = Formatters.date(info.expire)
         if (expiry.isNotEmpty()) {
             // Read at composition rather than ticking: the list recomposes on
-            // every profile emission and tab revisit, which is fresh enough
+            // every profile emission and page visit, which is fresh enough
             // for a day-granular date.
             val expired = info.isExpired(System.currentTimeMillis() / 1000)
             Text(

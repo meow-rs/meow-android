@@ -32,6 +32,9 @@ import io.github.madeye.meow.ui.theme.meow
  * When [enabled] is false the row dims and stops responding — used for the
  * engine-backed screens (Connections/Rules/Logs) while the VPN is down, so the
  * user doesn't tap into three screens that can only fail to load.
+ *
+ * [destructive] draws the icon and title in the danger colour, for a row like
+ * Delete whose action can't be undone.
  */
 @Composable
 fun NavRow(
@@ -40,11 +43,13 @@ fun NavRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    destructive: Boolean = false,
     subtitle: String? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.meow
     val alpha = if (enabled) 1f else 0.4f
+    val tint = if (destructive) colors.danger else colors.accent
     Row(
         modifier = modifier
             .heightIn(min = 48.dp)
@@ -56,13 +61,13 @@ fun NavRow(
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .background(colors.accent.copy(alpha = 0.10f * alpha), CircleShape),
+                .background(tint.copy(alpha = 0.10f * alpha), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = colors.accent.copy(alpha = alpha),
+                tint = tint.copy(alpha = alpha),
                 modifier = Modifier.size(17.dp),
             )
         }
@@ -70,7 +75,8 @@ fun NavRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                color = (if (destructive) colors.danger else MaterialTheme.colorScheme.onSurface)
+                    .copy(alpha = alpha),
             )
             if (subtitle != null) {
                 Text(

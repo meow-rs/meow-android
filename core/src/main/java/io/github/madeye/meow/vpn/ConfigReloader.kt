@@ -105,8 +105,8 @@ class ConfigReloader(
         try {
             return write()
         } finally {
-            // Also after a failure or cancellation: refresh-all can commit the
-            // selected profile before a later fetch throws.
+            // Also after a failure or cancellation: a block of several writes
+            // can commit one before a later step throws.
             onWritten(before)
         }
     }

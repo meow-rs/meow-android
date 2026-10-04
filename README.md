@@ -49,14 +49,15 @@ Network
   live connections, logs, rules, DNS cache, and traffic views
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
   - Home: VPN toggle, connection status, route mode (Rule / Global / Direct,
-    remembered across reconnects), and subscriptions: add/edit/remove, share/scan
+    remembered across reconnects) and the live Rules view; the top-right
+    button opens Subscriptions: switch profiles, add/edit/remove, share/scan
     them as QR codes, YAML editor, import/export config
   - Proxy Groups: proxy group & node selection, per-group latency tests
   - Utility: live Connections and DNS-cache views powered by the REST API,
     Traffic (real-time speed chart, session upload/download stats, daily
     history) and Logs, grouped as on the iOS app
-  - Settings: Version, live Rules view, network config, per-app VPN
-    proxy/bypass, connectivity diagnostics, about
+  - Settings: Version, network config, per-app VPN proxy/bypass,
+    connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN), Russian, Persian, Arabic, Vietnamese,
   Turkish, Burmese (Persian and Arabic right-to-left); on Android 13+ the
   language can be set per app in system settings

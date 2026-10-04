@@ -2,8 +2,6 @@ package io.github.madeye.meow.subscription
 
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.database.PrivateDatabase
-import io.github.madeye.meow.database.storeFetched
-import io.github.madeye.meow.vpn.ConfigReloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
@@ -76,7 +74,8 @@ object SubscriptionService {
     }
 
     /// Create a profile from a YAML string the user imported from a file. It
-    /// has no source URL, so refresh-from-URL skips it (see [refreshAll]).
+    /// has no source URL, so refresh-from-URL skips it (see
+    /// `ProfileRepository.refresh`).
     suspend fun addLocal(name: String, yamlContent: String): ClashProfile = withContext(Dispatchers.IO) {
         val profile = ClashProfile(
             name = name,
@@ -87,19 +86,5 @@ object SubscriptionService {
         )
         val id = PrivateDatabase.profileDao.insert(profile)
         profile.copy(id = id)
-    }
-
-    suspend fun refreshAll() = withContext(Dispatchers.IO) {
-        // One check around the whole batch, so a connected VPN restarts at
-        // most once, after every fetch has landed.
-        ConfigReloader.default.applying {
-            val profiles = PrivateDatabase.profileDao.getAll().filter { it.url.isNotEmpty() }
-            for (profile in profiles) {
-                try {
-                    val updated = fetchSubscription(profile)
-                    PrivateDatabase.profileDao.storeFetched(updated)
-                } catch (_: Exception) { }
-            }
-        }
     }
 }

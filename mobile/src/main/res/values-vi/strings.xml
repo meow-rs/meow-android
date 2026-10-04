@@ -14,7 +14,6 @@
     <string name="common_add">Thêm</string>
     <string name="common_delete">Xóa</string>
     <string name="common_edit">Chỉnh sửa</string>
-    <string name="common_select">Chọn</string>
     <string name="common_refresh">Làm mới</string>
     <string name="common_retry">Thử lại</string>
     <string name="common_discard">Loại bỏ</string>
@@ -136,7 +135,6 @@
     <string name="settings_general">Chung</string>
     <string name="settings_version">Phiên bản</string>
     <string name="settings_engine">Lõi</string>
-    <string name="settings_engine_section">Lõi</string>
     <string name="settings_engine_offline">Kết nối VPN để sử dụng</string>
     <string name="settings_network">Mạng</string>
     <string name="settings_dns_server">Máy chủ DNS</string>

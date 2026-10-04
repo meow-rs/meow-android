@@ -14,12 +14,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
@@ -32,6 +33,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,23 +43,26 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
 import io.github.madeye.meow.ui.components.GlassCard
+import io.github.madeye.meow.ui.components.NavRow
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 import java.util.Locale
 
 /**
- * The Home tab: the VPN switch and what it is doing, with the subscriptions
- * under it — the first tab of meow-ios. Proxy groups have a tab of their own.
+ * The Home tab: the VPN switch and what it is doing, then the way into the
+ * rules it routes by — the first tab of meow-ios. Subscriptions are a page of
+ * their own, opened from the app bar; proxy groups have a tab.
  *
- * @param subscriptions the subscription list's items, from the route that
- *   owns its dialogs and launchers.
+ * @param onOpenSubscriptions opens the Subscriptions page, also from the
+ *   prompt shown while no profile is selected.
  */
 @Composable
 fun HomeScreen(
@@ -67,9 +72,12 @@ fun HomeScreen(
     onSelectRouteMode: (RouteMode) -> Unit,
     exitIp: ExitIpUiState,
     onRefreshExitIp: () -> Unit,
-    subscriptions: LazyListScope.() -> Unit,
+    onOpenSubscriptions: () -> Unit,
+    onRules: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val offlineHint = stringResource(R.string.settings_engine_offline)
+
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -84,6 +92,12 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { StatusCard(state = state, onToggle = onToggle) }
+
+        // The switch stays disabled until a profile is selected, and the list
+        // to pick one from is on the Subscriptions page, so point there.
+        if (state.profileLoaded && !state.hasProfile) {
+            item { NoProfileCard(onAdd = onOpenSubscriptions) }
+        }
 
         if (state.isConnected) {
             item {
@@ -121,7 +135,19 @@ fun HomeScreen(
             )
         }
 
-        subscriptions()
+        // Rules reads the engine's controller API, so it is only reachable
+        // while the VPN is up.
+        item {
+            GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                NavRow(
+                    title = stringResource(R.string.rules_title),
+                    icon = Icons.AutoMirrored.Filled.List,
+                    onClick = onRules,
+                    enabled = state.isConnected,
+                    subtitle = offlineHint.takeUnless { state.isConnected },
+                )
+            }
+        }
     }
 }
 
@@ -183,6 +209,32 @@ private fun StatusCard(state: HomeUiState, onToggle: (Boolean) -> Unit) {
                         .semantics { contentDescription = toggleLabel },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NoProfileCard(onAdd: () -> Unit) {
+    GlassCard {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                Icons.Filled.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.meow.mutedText.copy(alpha = 0.6f),
+                modifier = Modifier.size(40.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.subs_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.meow.mutedText,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onAdd) { Text(stringResource(R.string.subs_add)) }
         }
     }
 }

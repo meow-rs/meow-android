@@ -25,7 +25,6 @@
     <string name="common_add">Add</string>
     <string name="common_delete">Delete</string>
     <string name="common_edit">Edit</string>
-    <string name="common_select">Select</string>
     <string name="common_refresh">Refresh</string>
     <string name="common_retry">Retry</string>
     <string name="common_discard">Discard</string>
@@ -147,7 +146,6 @@
     <string name="settings_general">General</string>
     <string name="settings_version">Version</string>
     <string name="settings_engine">Engine</string>
-    <string name="settings_engine_section">Engine</string>
     <string name="settings_engine_offline">Connect the VPN to use this</string>
     <string name="settings_network">Network</string>
     <string name="settings_dns_server">DNS Server</string>

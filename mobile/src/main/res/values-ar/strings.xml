@@ -26,7 +26,6 @@
     <string name="common_add">إضافة</string>
     <string name="common_delete">حذف</string>
     <string name="common_edit">تعديل</string>
-    <string name="common_select">تحديد</string>
     <string name="common_refresh">تحديث</string>
     <string name="common_retry">إعادة المحاولة</string>
     <string name="common_discard">تجاهل</string>
@@ -148,7 +147,6 @@
     <string name="settings_general">عام</string>
     <string name="settings_version">الإصدار</string>
     <string name="settings_engine">النواة</string>
-    <string name="settings_engine_section">النواة</string>
     <string name="settings_engine_offline">اتصل بشبكة VPN لاستخدام هذه الميزة</string>
     <string name="settings_network">الشبكة</string>
     <string name="settings_dns_server">خادم DNS</string>
