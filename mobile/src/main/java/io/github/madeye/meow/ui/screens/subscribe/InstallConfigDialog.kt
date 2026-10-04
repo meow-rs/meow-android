@@ -17,7 +17,8 @@ import io.github.madeye.meow.R
 import io.github.madeye.meow.ui.theme.meow
 
 /**
- * Asks before adding a subscription offered by an install-config link.
+ * Asks before adding a subscription offered by an install-config link or a
+ * scanned QR code.
  *
  * The link can come from any web page, so the user sees exactly what will be
  * fetched — the full URL, not just the name the page chose — before anything
@@ -28,11 +29,12 @@ fun InstallConfigDialog(
     link: InstallConfigLink.Valid,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    title: String = stringResource(R.string.subs_link_title),
 ) {
     val colors = MaterialTheme.meow
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.subs_link_title)) },
+        title = { Text(title) },
         text = {
             Column {
                 Text(

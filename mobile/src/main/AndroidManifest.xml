@@ -2,6 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- Scanning a subscription QR code. Asked for when the scanner opens. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- CAMERA would otherwise imply both features are required to install
+         the app at all; the scanner falls back to a picked image instead. -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
 
     <application
         android:name="io.github.madeye.meow.App"
@@ -42,6 +53,21 @@
                 <data android:host="install-config" />
             </intent-filter>
         </activity>
+
+        <!-- Subscription QR scanner; started for a result by the Subscribe tab. -->
+        <activity
+            android:name="io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity"
+            android:exported="false" />
+        <!-- Shares the subscription QR image; see res/xml/file_paths.xml. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!-- Quick Settings VPN toggle. It runs in :vpn, beside the service it
              toggles, to read the service state in-process; see VpnTileService.

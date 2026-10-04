@@ -3,6 +3,7 @@ package io.github.madeye.meow.ui.screens.subscribe
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLDecoder
+import java.net.URLEncoder
 
 /**
  * A `clash://install-config?url=<encoded>&name=<optional>` link — the de-facto
@@ -75,6 +76,31 @@ sealed interface InstallConfigLink {
             val name = params.firstOrNull { it.first == "name" }?.second?.let(::decodeName)
             return Valid(url = url, name = name ?: urlHost)
         }
+
+        /**
+         * The link that offers [url] under [name]: what a shared QR code holds,
+         * so a phone's camera app opens it straight in meow (or another Clash
+         * client), and [parse] reads it back unchanged.
+         */
+        fun of(url: String, name: String): String =
+            "clash://$HOST?url=${encode(url)}&name=${encode(name)}"
+
+        /**
+         * What a scanned QR code offers. Panels encode either an install-config
+         * link or the bare subscription URL; a bare URL is offered under its
+         * host, like a link without a name.
+         */
+        fun parseScanned(text: String): InstallConfigLink {
+            val trimmed = text.trim()
+            val scheme = trimmed.substringBefore(':', missingDelimiterValue = "")
+            if (scheme.lowercase() !in URL_PROTOCOLS) return parse(trimmed)
+            val host = httpHostOf(trimmed) ?: return Invalid(Reason.UNSUPPORTED_URL)
+            return Valid(url = trimmed, name = host)
+        }
+
+        /** encodeURIComponent's output, which every link parser reads: URLEncoder writes a space as '+'. */
+        private fun encode(value: String): String =
+            URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
         /**
          * Percent-decodes the url parameter, keeping '+' literal: a URL cannot

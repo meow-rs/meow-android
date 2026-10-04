@@ -69,6 +69,7 @@ fun SubscribeScreen(
     onEditYaml: (Long) -> Unit,
     onExport: (ProfileUi) -> Unit,
     onRefresh: (Long) -> Unit,
+    onShareQr: (ProfileUi) -> Unit,
     onDelete: (Long) -> Unit,
     onAddRequested: () -> Unit,
     modifier: Modifier = Modifier,
@@ -94,6 +95,7 @@ fun SubscribeScreen(
                         onEditYaml = { onEditYaml(profile.id) },
                         onExport = { onExport(profile) },
                         onRefresh = { onRefresh(profile.id) },
+                        onShareQr = { onShareQr(profile) },
                         onDelete = { onDelete(profile.id) },
                     )
                 }
@@ -151,6 +153,7 @@ private fun ProfileCard(
     onEditYaml: () -> Unit,
     onExport: () -> Unit,
     onRefresh: () -> Unit,
+    onShareQr: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -226,6 +229,10 @@ private fun ProfileCard(
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.common_refresh)) },
                             onClick = { menuOpen = false; onRefresh() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.subs_share_qr)) },
+                            onClick = { menuOpen = false; onShareQr() },
                         )
                     }
                     DropdownMenuItem(

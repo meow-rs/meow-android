@@ -213,6 +213,57 @@ class InstallConfigLinkTest {
         }
     }
 
+    @Test
+    fun `a built link parses back to the same url and name`() {
+        listOf(
+            sub to "My Sub",
+            "https://example.com/s?k=a+b&t=%2F#x" to "订阅 A+B & C=1",
+            "http://10.0.2.2:8080/config.yaml" to "100% #1",
+        ).forEach { (url, name) ->
+            val link = InstallConfigLink.of(url, name)
+            assertEquals(link, Valid(url = url, name = name), parse(link))
+            assertEquals(link, Valid(url = url, name = name), InstallConfigLink.parseScanned(link))
+        }
+    }
+
+    @Test
+    fun `a built link escapes everything a QR reader or browser could split on`() {
+        val link = InstallConfigLink.of("https://example.com/s?a=1&b=2", "x y")
+        assertEquals("clash://install-config?url=https%3A%2F%2Fexample.com%2Fs%3Fa%3D1%26b%3D2&name=x%20y", link)
+    }
+
+    @Test
+    fun `a scanned bare url is offered under its host`() {
+        assertEquals(Valid(url = sub, name = "sub.example.com"), InstallConfigLink.parseScanned(sub))
+        assertEquals(Valid(url = sub, name = "sub.example.com"), InstallConfigLink.parseScanned(" $sub\n"))
+        assertEquals(
+            Valid(url = "HTTP://example.com/s", name = "example.com"),
+            InstallConfigLink.parseScanned("HTTP://example.com/s"),
+        )
+    }
+
+    @Test
+    fun `a scanned bare url gets the same checks as a linked one`() {
+        listOf("https://", "https:///sub", "https://example.com/a b", "http://example.com:port/").forEach { text ->
+            assertEquals(text, Invalid(Reason.UNSUPPORTED_URL), InstallConfigLink.parseScanned(text))
+        }
+    }
+
+    @Test
+    fun `other scanned codes are not subscriptions`() {
+        listOf(
+            "WIFI:T:WPA;S:home;P:secret;;",
+            "ss://YWVzLTI1Ni1nY206cGFzcw@1.2.3.4:8388#node",
+            "vmess://eyJ2IjoiMiJ9",
+            "javascript:alert(1)",
+            "hello",
+            "",
+        ).forEach { text ->
+            assertEquals(text, Invalid(Reason.UNSUPPORTED_LINK), InstallConfigLink.parseScanned(text))
+        }
+        assertEquals(Invalid(Reason.MISSING_URL), InstallConfigLink.parseScanned("clash://install-config?name=x"))
+    }
+
     private fun parse(link: String) = InstallConfigLink.parse(link)
 
     /** Mirrors JS encodeURIComponent closely enough: URLEncoder only differs on spaces. */

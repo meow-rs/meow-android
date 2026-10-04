@@ -82,6 +82,8 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscribeEvent
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeScreen
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
+import io.github.madeye.meow.ui.screens.subscribe.SubscriptionQrDialog
+import io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
 import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
@@ -375,6 +377,12 @@ private fun SubscribeRoute(
     var dialogOpen by remember { mutableStateOf(false) }
     var addMenuOpen by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<ProfileUi?>(null) }
+    var qrFor by remember { mutableStateOf<ProfileUi?>(null) }
+    // The raw text, so it survives recreation; parsed again below.
+    var scanned by rememberSaveable { mutableStateOf<String?>(null) }
+    val scannedLink = remember(scanned) {
+        scanned?.let(InstallConfigLink::parseScanned) as? InstallConfigLink.Valid
+    }
 
     // Hoisted out of the callbacks: resolving resources through LocalContext
     // inside a lambda skips Compose's configuration tracking.
@@ -399,6 +407,11 @@ private fun SubscribeRoute(
             }
         }
     }
+
+    // The scanner only returns codes parseScanned accepts.
+    val scanLauncher = rememberLauncherForActivityResult(
+        SubscriptionScanActivity.Contract(),
+    ) { text -> if (text != null) scanned = text }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/x-yaml"),
@@ -460,6 +473,13 @@ private fun SubscribeRoute(
                         },
                     )
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.subs_scan_qr)) },
+                        onClick = {
+                            addMenuOpen = false
+                            scanLauncher.launch(Unit)
+                        },
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.subs_import_from_file)) },
                         onClick = {
                             addMenuOpen = false
@@ -481,6 +501,7 @@ private fun SubscribeRoute(
                 exportLauncher.launch("${profile.name}.yaml")
             },
             onRefresh = viewModel::refresh,
+            onShareQr = { qrFor = it },
             onDelete = viewModel::delete,
             onAddRequested = { dialogFor = null; dialogOpen = true },
         )
@@ -514,6 +535,20 @@ private fun SubscribeRoute(
                 viewModel.add(installLink.name, installLink.url)
             },
         )
+    }
+    scannedLink?.let { link ->
+        InstallConfigDialog(
+            link = link,
+            title = stringResource(R.string.subs_scan_confirm_title),
+            onDismiss = { scanned = null },
+            onConfirm = {
+                scanned = null
+                viewModel.add(link.name, link.url)
+            },
+        )
+    }
+    qrFor?.let { profile ->
+        SubscriptionQrDialog(profile = profile, onDismiss = { qrFor = null })
     }
     SnackbarHost(snackbarHost)
 }

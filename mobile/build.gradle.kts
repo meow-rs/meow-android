@@ -95,6 +95,11 @@ dependencies {
     implementation(libs.sora.editor)
     implementation(libs.sora.editor.textmate)
 
+    implementation(libs.zxing.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.compose)
+    implementation(libs.camera.lifecycle)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.compose.ui.test.junit4)

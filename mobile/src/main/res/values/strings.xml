@@ -29,6 +29,7 @@
     <string name="common_retry">Retry</string>
     <string name="common_discard">Discard</string>
     <string name="common_back">Back</string>
+    <string name="common_close">Close</string>
 
     <!-- Home -->
     <string name="home_not_connected">Not Connected</string>
@@ -98,6 +99,19 @@
     <string name="subs_link_bad_url">Only http and https subscription URLs can be added</string>
     <string name="subs_export_saved">Config exported</string>
     <string name="subs_export_failed">Export failed: %1$s</string>
+    <string name="subs_share_qr">Share as QR code</string>
+    <string name="subs_qr_share_image">Share image</string>
+    <string name="subs_qr_warning">Anyone who scans this code can use your subscription, access token included. Only share it with people you trust.</string>
+    <string name="subs_qr_too_long">This subscription URL is too long for a QR code</string>
+    <string name="subs_scan_qr">Scan QR code</string>
+    <string name="subs_scan_hint">Point the camera at a subscription QR code</string>
+    <string name="subs_scan_from_image">Choose image</string>
+    <string name="subs_scan_no_code">No QR code found in the image</string>
+    <string name="subs_scan_not_subscription">Not a subscription QR code</string>
+    <string name="subs_scan_camera_denied">Scanning needs the camera. You can also choose an image of the QR code.</string>
+    <string name="subs_scan_allow_camera">Allow camera</string>
+    <string name="subs_scan_no_camera">The camera is unavailable. Choose an image of the QR code instead.</string>
+    <string name="subs_scan_confirm_title">Add subscription from QR code?</string>
 
     <!-- YAML editor -->
     <string name="yaml_valid">Valid config</string>

@@ -50,7 +50,8 @@ Network
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
   - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
     reconnects), proxy group & node selection, connection status
-  - Subscribe: Add/edit/remove subscriptions, YAML editor, import/export config
+  - Subscribe: Add/edit/remove subscriptions, share/scan them as QR codes,
+    YAML editor, import/export config
   - Utility: live Connections and DNS-cache views powered by the REST API,
     Traffic (real-time speed chart, session upload/download stats, daily
     history) and Logs, grouped as on the iOS app

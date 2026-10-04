@@ -19,6 +19,7 @@
     <string name="common_retry">重试</string>
     <string name="common_discard">放弃</string>
     <string name="common_back">返回</string>
+    <string name="common_close">关闭</string>
 
     <!-- Home -->
     <string name="home_not_connected">未连接</string>
@@ -88,6 +89,19 @@
     <string name="subs_link_bad_url">只能添加 http 或 https 订阅链接</string>
     <string name="subs_export_saved">配置已导出</string>
     <string name="subs_export_failed">导出失败：%1$s</string>
+    <string name="subs_share_qr">二维码分享</string>
+    <string name="subs_qr_share_image">分享图片</string>
+    <string name="subs_qr_warning">扫描此二维码的人都能使用你的订阅（含访问令牌），请只分享给信任的人。</string>
+    <string name="subs_qr_too_long">订阅地址过长，无法生成二维码</string>
+    <string name="subs_scan_qr">扫描二维码</string>
+    <string name="subs_scan_hint">将摄像头对准订阅二维码</string>
+    <string name="subs_scan_from_image">从相册选择</string>
+    <string name="subs_scan_no_code">图片中未找到二维码</string>
+    <string name="subs_scan_not_subscription">不是订阅二维码</string>
+    <string name="subs_scan_camera_denied">扫码需要相机权限，也可以从相册选择二维码图片。</string>
+    <string name="subs_scan_allow_camera">允许使用相机</string>
+    <string name="subs_scan_no_camera">相机不可用，请从相册选择二维码图片。</string>
+    <string name="subs_scan_confirm_title">从二维码添加订阅？</string>
 
     <!-- YAML editor -->
     <string name="yaml_valid">配置有效</string>

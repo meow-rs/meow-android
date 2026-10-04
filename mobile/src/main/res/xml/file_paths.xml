@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the FileProvider in AndroidManifest.xml may hand to other apps:
+     only the scratch directory shared images are written to. -->
+<paths>
+    <cache-path name="shared" path="shared/" />
+</paths>
