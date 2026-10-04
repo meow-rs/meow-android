@@ -1,4 +1,4 @@
-package io.github.madeye.meow.ui.screens.home
+package io.github.madeye.meow.ui.screens.proxies
 
 import androidx.compose.runtime.Immutable
 import io.github.madeye.meow.api.MemberDelay

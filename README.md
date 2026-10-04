@@ -48,10 +48,10 @@ Network
 - **REST API**: Embedded external controller (`127.0.0.1:9090`) drives the
   live connections, logs, rules, DNS cache, and traffic views
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
-  - Home: VPN toggle, route mode (Rule / Global / Direct, remembered across
-    reconnects), proxy group & node selection, connection status
-  - Subscribe: Add/edit/remove subscriptions, share/scan them as QR codes,
-    YAML editor, import/export config
+  - Home: VPN toggle, connection status, route mode (Rule / Global / Direct,
+    remembered across reconnects), and subscriptions: add/edit/remove, share/scan
+    them as QR codes, YAML editor, import/export config
+  - Proxy Groups: proxy group & node selection, per-group latency tests
   - Utility: live Connections and DNS-cache views powered by the REST API,
     Traffic (real-time speed chart, session upload/download stats, daily
     history) and Logs, grouped as on the iOS app

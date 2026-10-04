@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -57,13 +56,16 @@ import io.github.madeye.meow.R
 import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
 import io.github.madeye.meow.ui.components.GlassCard
+import io.github.madeye.meow.ui.components.SectionHeader
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 
-@Composable
-fun SubscribeScreen(
+/**
+ * The subscription list, as items under Home's cards: a section header, then
+ * one card per profile, or an add prompt while there are none.
+ */
+fun LazyListScope.subscriptionItems(
     state: SubscribeUiState,
-    contentPadding: PaddingValues,
     onSelect: (Long) -> Unit,
     onEdit: (ProfileUi) -> Unit,
     onEditYaml: (Long) -> Unit,
@@ -72,76 +74,68 @@ fun SubscribeScreen(
     onShareQr: (ProfileUi) -> Unit,
     onDelete: (Long) -> Unit,
     onAddRequested: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        if (state.profiles.isEmpty()) {
-            EmptyState(contentPadding = contentPadding, onAdd = onAddRequested)
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = contentPadding.calculateTopPadding(),
-                    bottom = contentPadding.calculateBottomPadding() + 16.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(state.profiles, key = { it.id }) { profile ->
-                    ProfileCard(
-                        profile = profile,
-                        onSelect = { onSelect(profile.id) },
-                        onEdit = { onEdit(profile) },
-                        onEditYaml = { onEditYaml(profile.id) },
-                        onExport = { onExport(profile) },
-                        onRefresh = { onRefresh(profile.id) },
-                        onShareQr = { onShareQr(profile) },
-                        onDelete = { onDelete(profile.id) },
-                    )
-                }
-            }
+    item {
+        Spacer(Modifier.height(4.dp))
+        SectionHeader(stringResource(R.string.subs_title))
+    }
+    if (state.profiles.isEmpty()) {
+        item { EmptyState(onAdd = onAddRequested) }
+    } else {
+        items(state.profiles, key = { it.id }) { profile ->
+            ProfileCard(
+                profile = profile,
+                onSelect = { onSelect(profile.id) },
+                onEdit = { onEdit(profile) },
+                onEditYaml = { onEditYaml(profile.id) },
+                onExport = { onExport(profile) },
+                onRefresh = { onRefresh(profile.id) },
+                onShareQr = { onShareQr(profile) },
+                onDelete = { onDelete(profile.id) },
+            )
         }
+    }
+}
 
-        if (state.busy) {
-            // Long operations (fetch, refresh-all, import) block interaction
-            // rather than letting a second one start mid-flight.
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                GlassCard(modifier = Modifier.size(72.dp)) {
-                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
-                }
-            }
+/**
+ * Long operations (fetch, refresh-all, import) block interaction rather than
+ * letting a second one start mid-flight.
+ */
+@Composable
+fun SubscriptionBusyOverlay(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        GlassCard(modifier = Modifier.size(72.dp)) {
+            CircularProgressIndicator(modifier = Modifier.size(28.dp))
         }
     }
 }
 
 @Composable
-private fun EmptyState(contentPadding: PaddingValues, onAdd: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            Icons.Filled.CloudOff,
-            contentDescription = null,
-            tint = MaterialTheme.meow.mutedText.copy(alpha = 0.6f),
-            modifier = Modifier.size(56.dp),
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = stringResource(R.string.subs_none),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.meow.mutedText,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(16.dp))
-        TextButton(onClick = onAdd) { Text(stringResource(R.string.subs_add)) }
+private fun EmptyState(onAdd: () -> Unit) {
+    GlassCard {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                Icons.Filled.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.meow.mutedText.copy(alpha = 0.6f),
+                modifier = Modifier.size(40.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.subs_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.meow.mutedText,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onAdd) { Text(stringResource(R.string.subs_add)) }
+        }
     }
 }
 

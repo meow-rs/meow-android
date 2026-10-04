@@ -28,6 +28,7 @@ class ExitIpViewModelTest {
     private val vpn = MutableStateFlow(State.Stopped)
     private val enabled = MutableStateFlow<Boolean?>(true)
     private var routedViaVpn = true
+    private val routeChanges = RouteChanges()
 
     private var lookups = 0
     private var cancelled = 0
@@ -61,6 +62,7 @@ class ExitIpViewModelTest {
             vpnState = vpn,
             enabled = enabled,
             routedViaVpn = { routedViaVpn },
+            routeChanges = routeChanges.events,
         )
         // uiState is WhileSubscribed, as it is under the real screen.
         backgroundScope.launch { vm.uiState.collect {} }
@@ -164,7 +166,7 @@ class ExitIpViewModelTest {
         assertEquals(1, lookups)
 
         repeat(3) {
-            vm.onRouteChanged()
+            routeChanges.notifyChanged()
             advanceTimeBy(ExitIpViewModel.SETTLE_MS / 2)
             runCurrent()
         }
@@ -176,10 +178,10 @@ class ExitIpViewModelTest {
 
     @Test
     fun `a route switch while disconnected is not a trigger`() = runTest {
-        val vm = viewModel()
+        viewModel()
         settle()
 
-        vm.onRouteChanged()
+        routeChanges.notifyChanged()
         advanceUntilIdle()
 
         assertEquals(1, lookups)

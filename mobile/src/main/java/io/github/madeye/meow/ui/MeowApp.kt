@@ -4,7 +4,9 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -71,6 +73,8 @@ import io.github.madeye.meow.ui.screens.logs.LogsScreen
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyScreen
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
+import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsScreen
+import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesScreen
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsScreen
@@ -79,12 +83,13 @@ import io.github.madeye.meow.ui.screens.subscribe.InstallConfigDialog
 import io.github.madeye.meow.ui.screens.subscribe.InstallConfigLink
 import io.github.madeye.meow.ui.screens.subscribe.ProfileUi
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeEvent
-import io.github.madeye.meow.ui.screens.subscribe.SubscribeScreen
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
+import io.github.madeye.meow.ui.screens.subscribe.SubscriptionBusyOverlay
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionQrDialog
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
+import io.github.madeye.meow.ui.screens.subscribe.subscriptionItems
 import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorScreen
@@ -180,18 +185,17 @@ private fun MeowNavHost(
 
     NavHost(navController = navController, startDestination = Dest.Home) {
         composable<Dest.Home> {
-            HomeRoute(snackbarHost = snackbarHost, autoConnect = autoConnect) {
-                BottomBar(navController, onTab)
-            }
-        }
-        composable<Dest.Subscribe> {
-            SubscribeRoute(
+            HomeRoute(
                 snackbarHost = snackbarHost,
+                autoConnect = autoConnect,
                 installLink = installLink,
                 onInstallLinkHandled = onInstallLinkHandled,
                 onEditYaml = { navController.navigate(Dest.YamlEditor(it)) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
+        }
+        composable<Dest.ProxyGroups> {
+            ProxyGroupsRoute(bottomBar = { BottomBar(navController, onTab) })
         }
         composable<Dest.Utility> {
             UtilityRoute(
@@ -224,17 +228,16 @@ private fun MeowNavHost(
         composable<Dest.Dns> { DnsRoute(onBack = navController::popBackStack) }
     }
 
-    // A link is answered on the Subscribe tab, where the new subscription then
-    // shows up. If that tab is already open it is left alone, even under the
-    // YAML editor (only reachable from it): switching tabs recreates the editor
-    // and would drop unsaved edits, so the prompt waits until the user is back
-    // on the list.
+    // A link is answered on Home, where the new subscription then shows up. If
+    // Home is already open it is left alone, even under the YAML editor (only
+    // reachable from it): switching tabs recreates the editor and would drop
+    // unsaved edits, so the prompt waits until the user is back on the list.
     LaunchedEffect(installLink) {
         if (installLink == null) return@LaunchedEffect
         val current = navController.currentDestination
-        val onSubscribe = current?.hasRoute(Dest.Subscribe::class) == true ||
+        val onHome = current?.hasRoute(Dest.Home::class) == true ||
             current?.hasRoute(Dest.YamlEditor::class) == true
-        if (!onSubscribe) navController.navigateToTab(Dest.Subscribe)
+        if (!onHome) navController.navigateToTab(Dest.Home)
     }
 }
 
@@ -285,6 +288,9 @@ private fun NavHostController.navigateToTab(dest: Dest) {
 private fun HomeRoute(
     snackbarHost: SnackbarHostState,
     autoConnect: Boolean,
+    installLink: InstallConfigLink?,
+    onInstallLinkHandled: () -> Unit,
+    onEditYaml: (Long) -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel(factory = AppGraph.viewModelFactory)
@@ -316,12 +322,6 @@ private fun HomeRoute(
     // The :vpn process can be killed while backgrounded, leaving stale state.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
 
-    // The node and route-mode pickers live on this screen, so the exit-IP
-    // card only has to hear about switches while it is composed.
-    LaunchedEffect(viewModel, exitIp) {
-        viewModel.routeChanged.collect { exitIp.onRouteChanged() }
-    }
-
     // Preserves the harness contract: launch with auto_connect and the VPN
     // starts once the service reports it has settled.
     var autoConnectHandled by rememberSaveable { mutableStateOf(false) }
@@ -332,25 +332,25 @@ private fun HomeRoute(
         }
     }
 
-    MeowScaffold(
-        title = stringResource(R.string.app_name),
+    SubscriptionsHost(
+        snackbarHost = snackbarHost,
+        installLink = installLink,
+        onInstallLinkHandled = onInstallLinkHandled,
+        onEditYaml = onEditYaml,
         bottomBar = bottomBar,
-    ) { padding ->
+    ) { padding, subscriptions ->
         HomeScreen(
             state = state,
             contentPadding = padding,
             onToggle = { checked ->
                 if (checked) connect() else viewModel.onDisconnect(context)
             },
-            onToggleExpanded = viewModel::onToggleExpanded,
-            onSelectNode = viewModel::onSelectNode,
-            onTestGroup = viewModel::onTestGroup,
             onSelectRouteMode = viewModel::onSelectRouteMode,
             exitIp = exitIpState,
             onRefreshExitIp = exitIp::refresh,
+            subscriptions = subscriptions,
         )
     }
-    SnackbarHost(snackbarHost)
 }
 
 private fun startVpnService(context: android.content.Context) {
@@ -359,13 +359,19 @@ private fun startVpnService(context: android.content.Context) {
     io.github.madeye.meow.bg.VpnService.start(context)
 }
 
+/**
+ * Home's scaffold, with everything the subscription list needs around it: the
+ * refresh and add actions, the file and QR launchers, the dialogs. [content]
+ * lays the list's items out under Home's own cards.
+ */
 @Composable
-private fun SubscribeRoute(
+private fun SubscriptionsHost(
     snackbarHost: SnackbarHostState,
     installLink: InstallConfigLink?,
     onInstallLinkHandled: () -> Unit,
     onEditYaml: (Long) -> Unit,
     bottomBar: @Composable () -> Unit,
+    content: @Composable (PaddingValues, LazyListScope.() -> Unit) -> Unit,
 ) {
     val viewModel: SubscribeViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -453,7 +459,7 @@ private fun SubscribeRoute(
     }
 
     MeowScaffold(
-        title = stringResource(R.string.subs_title),
+        title = stringResource(R.string.app_name),
         bottomBar = bottomBar,
         actions = {
             IconButton(onClick = viewModel::refreshAll) {
@@ -490,21 +496,25 @@ private fun SubscribeRoute(
             }
         },
     ) { padding ->
-        SubscribeScreen(
-            state = state,
-            contentPadding = padding,
-            onSelect = viewModel::select,
-            onEdit = { dialogFor = it; dialogOpen = true },
-            onEditYaml = onEditYaml,
-            onExport = { profile ->
-                pendingExport = profile
-                exportLauncher.launch("${profile.name}.yaml")
-            },
-            onRefresh = viewModel::refresh,
-            onShareQr = { qrFor = it },
-            onDelete = viewModel::delete,
-            onAddRequested = { dialogFor = null; dialogOpen = true },
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            content(padding) {
+                subscriptionItems(
+                    state = state,
+                    onSelect = viewModel::select,
+                    onEdit = { dialogFor = it; dialogOpen = true },
+                    onEditYaml = onEditYaml,
+                    onExport = { profile ->
+                        pendingExport = profile
+                        exportLauncher.launch("${profile.name}.yaml")
+                    },
+                    onRefresh = viewModel::refresh,
+                    onShareQr = { qrFor = it },
+                    onDelete = viewModel::delete,
+                    onAddRequested = { dialogFor = null; dialogOpen = true },
+                )
+            }
+            if (state.busy) SubscriptionBusyOverlay()
+        }
     }
 
     if (dialogOpen) {
@@ -551,6 +561,25 @@ private fun SubscribeRoute(
         SubscriptionQrDialog(profile = profile, onDismiss = { qrFor = null })
     }
     SnackbarHost(snackbarHost)
+}
+
+@Composable
+private fun ProxyGroupsRoute(bottomBar: @Composable () -> Unit) {
+    val viewModel: ProxyGroupsViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // On every visit too, not only app resume: see ProxyGroupsViewModel.onResume.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
+
+    MeowScaffold(title = stringResource(R.string.proxy_groups_title), bottomBar = bottomBar) { padding ->
+        ProxyGroupsScreen(
+            state = state,
+            contentPadding = padding,
+            onToggleExpanded = viewModel::onToggleExpanded,
+            onSelectNode = viewModel::onSelectNode,
+            onTestGroup = viewModel::onTestGroup,
+        )
+    }
 }
 
 @Composable

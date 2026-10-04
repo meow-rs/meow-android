@@ -4,7 +4,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">首页</string>
-    <string name="tab_subscribe">订阅</string>
+    <string name="tab_proxy_groups">代理分组</string>
     <string name="tab_utility">工具</string>
     <string name="tab_settings">设置</string>
 
@@ -29,7 +29,6 @@
     <string name="home_disconnected">已断开</string>
     <string name="home_reconnecting_profile">正在使用更新后的配置重新连接…</string>
     <string name="home_profile_rejected">更新后的配置有误，继续使用当前连接</string>
-    <string name="home_no_subscription_hint">未选择订阅\n请前往订阅页面添加</string>
     <string name="home_upload">上传</string>
     <string name="home_download">下载</string>
     <string name="home_vpn_toggle">开关 VPN</string>
@@ -48,7 +47,10 @@
 
     <!-- Proxy groups -->
     <string name="proxy_groups_title">代理分组</string>
-    <string name="proxy_no_groups">未找到代理分组。\n连接 VPN 以加载分组。</string>
+    <string name="proxy_no_groups">未找到代理分组。</string>
+    <string name="proxy_no_subscription_hint">未选择订阅\n请在首页添加</string>
+    <string name="proxy_groups_disconnected">在首页连接 VPN 后将显示代理分组。</string>
+    <string name="proxy_groups_connecting">正在连接，引擎启动后将显示代理分组。</string>
     <string name="proxy_url_test_all">全部测速</string>
     <string name="proxy_testing">正在测速…</string>
     <string name="proxy_delay_ms">%1$d 毫秒</string>

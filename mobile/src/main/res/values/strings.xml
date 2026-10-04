@@ -14,7 +14,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">Home</string>
-    <string name="tab_subscribe">Subscribe</string>
+    <string name="tab_proxy_groups">Proxy Groups</string>
     <string name="tab_utility">Utility</string>
     <string name="tab_settings">Settings</string>
 
@@ -39,7 +39,6 @@
     <string name="home_disconnected">Disconnected</string>
     <string name="home_reconnecting_profile">Reconnecting with the updated profile…</string>
     <string name="home_profile_rejected">Updated profile has errors — keeping the current connection</string>
-    <string name="home_no_subscription_hint">No subscription selected.\nGo to the Subscribe tab to add one.</string>
     <string name="home_upload">Upload</string>
     <string name="home_download">Download</string>
     <string name="home_vpn_toggle">Toggle VPN</string>
@@ -58,7 +57,10 @@
 
     <!-- Proxy groups -->
     <string name="proxy_groups_title">Proxy Groups</string>
-    <string name="proxy_no_groups">No proxy groups found.\nConnect the VPN to load groups.</string>
+    <string name="proxy_no_groups">No proxy groups found.</string>
+    <string name="proxy_no_subscription_hint">No subscription selected.\nAdd one on the Home tab.</string>
+    <string name="proxy_groups_disconnected">Connect the VPN on the Home tab to load proxy groups.</string>
+    <string name="proxy_groups_connecting">Connecting — groups appear once the engine is up.</string>
     <string name="proxy_url_test_all">URL Test All</string>
     <string name="proxy_testing">Testing latency…</string>
     <string name="proxy_delay_ms">%1$d ms</string>

@@ -1,9 +1,6 @@
 package io.github.madeye.meow.ui.screens.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,22 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -38,39 +29,39 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
-import io.github.madeye.meow.ui.components.DelayBadge
 import io.github.madeye.meow.ui.components.GlassCard
-import io.github.madeye.meow.ui.components.SectionHeader
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 
+/**
+ * The Home tab: the VPN switch and what it is doing, with the subscriptions
+ * under it — the first tab of meow-ios. Proxy groups have a tab of their own.
+ *
+ * @param subscriptions the subscription list's items, from the route that
+ *   owns its dialogs and launchers.
+ */
 @Composable
 fun HomeScreen(
     state: HomeUiState,
     contentPadding: PaddingValues,
     onToggle: (Boolean) -> Unit,
-    onToggleExpanded: (String) -> Unit,
-    onSelectNode: (String, String) -> Unit,
-    onTestGroup: (String) -> Unit,
     onSelectRouteMode: (RouteMode) -> Unit,
     exitIp: ExitIpUiState,
     onRefreshExitIp: () -> Unit,
+    subscriptions: LazyListScope.() -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -124,40 +115,7 @@ fun HomeScreen(
             )
         }
 
-        item {
-            Spacer(Modifier.height(4.dp))
-            SectionHeader(stringResource(R.string.proxy_groups_title))
-        }
-
-        if (state.groups.isEmpty()) {
-            item {
-                GlassCard {
-                    Text(
-                        text = stringResource(
-                            if (state.hasProfile) {
-                                R.string.proxy_no_groups
-                            } else {
-                                R.string.home_no_subscription_hint
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.meow.mutedText,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    )
-                }
-            }
-        } else {
-            items(state.groups, key = { it.name }) { group ->
-                ProxyGroupCard(
-                    group = group,
-                    expanded = state.expandedGroup == group.name,
-                    onToggleExpanded = { onToggleExpanded(group.name) },
-                    onSelectNode = { node -> onSelectNode(group.name, node) },
-                    onTest = { onTestGroup(group.name) },
-                )
-            }
-        }
+        subscriptions()
     }
 }
 
@@ -292,119 +250,6 @@ private fun TrafficTile(
             text = stringResource(R.string.traffic_total, Formatters.bytes(total)),
             style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
             color = MaterialTheme.meow.mutedText,
-        )
-    }
-}
-
-@Composable
-private fun ProxyGroupCard(
-    group: ProxyGroupUi,
-    expanded: Boolean,
-    onToggleExpanded: () -> Unit,
-    onSelectNode: (String) -> Unit,
-    onTest: () -> Unit,
-) {
-    val colors = MaterialTheme.meow
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "chevron",
-    )
-
-    GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggleExpanded)
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = group.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${group.type} · ${group.now}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.mutedText,
-                )
-            }
-            val testProgress = group.testProgress
-            if (testProgress != null) {
-                // Fills as members report in; eased so a burst of results
-                // doesn't make it jump.
-                val shown by animateFloatAsState(targetValue = testProgress, label = "testProgress")
-                val testingLabel = stringResource(R.string.proxy_testing)
-                // The button's footprint, so the chevron doesn't shift.
-                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        progress = { shown },
-                        modifier = Modifier
-                            .size(18.dp)
-                            .semantics { contentDescription = testingLabel },
-                        strokeWidth = 2.dp,
-                    )
-                }
-            } else {
-                IconButton(onClick = onTest) {
-                    Icon(
-                        Icons.Filled.Bolt,
-                        contentDescription = stringResource(R.string.proxy_url_test_all),
-                        tint = colors.accent,
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.Filled.ExpandMore,
-                contentDescription = null,
-                tint = colors.mutedText,
-                modifier = Modifier.rotate(chevronRotation),
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column {
-                HorizontalDivider(color = colors.border)
-                group.nodes.forEach { node ->
-                    ProxyNodeRow(node = node, onClick = { onSelectNode(node.name) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit) {
-    val colors = MaterialTheme.meow
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = if (node.selected) {
-                Icons.Filled.CheckCircle
-            } else {
-                Icons.Filled.RadioButtonUnchecked
-            },
-            contentDescription = null,
-            tint = if (node.selected) colors.accent else colors.mutedText.copy(alpha = 0.5f),
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = node.name, style = MaterialTheme.typography.bodyMedium)
-            if (node.type.isNotEmpty()) {
-                Text(
-                    text = node.type,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.mutedText,
-                )
-            }
-        }
-        DelayBadge(
-            delayMs = (node.delay as? NodeDelay.Measured)?.ms,
-            loading = node.delay == NodeDelay.Testing,
-            timedOut = node.delay == NodeDelay.TimedOut,
         )
     }
 }

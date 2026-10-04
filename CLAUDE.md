@@ -108,8 +108,10 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 
 ### Compose UI (`mobile/src/main/java/io/github/madeye/meow/ui/`)
 
-- **MeowApp.kt**: navigation-compose host. Four tabs (Home, Subscribe, Traffic,
-  Settings); Connections/Rules/Logs/Per-App Proxy/YAML editor are pushed routes.
+- **MeowApp.kt**: navigation-compose host. Four tabs as on meow-ios (Home — VPN
+  switch over the subscriptions —, Proxy Groups, Utility, Settings);
+  Connections/DNS/Traffic/Logs (from Utility), Rules/Per-App Proxy (from Settings)
+  and the YAML editor are pushed routes.
   Sets `testTagsAsResourceId` so `test-e2e.sh` can match on stable resource ids.
 - **theme/**: brand tokens ported from meow-ios (`GlassCard.swift`). Fixed palette —
   no Material You dynamic color.

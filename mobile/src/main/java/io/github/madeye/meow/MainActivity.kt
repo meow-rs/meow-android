@@ -32,7 +32,7 @@ import timber.log.Timber
  * the `.MainActivity` class name, and the `auto_connect` boolean extra.
  *
  * Also the entry point for `clash://install-config` links (see
- * [InstallConfigLink]); the UI confirms them on the Subscribe tab.
+ * [InstallConfigLink]); the UI confirms them on Home, over the subscription list.
  */
 class MainActivity : ComponentActivity() {
 

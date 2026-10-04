@@ -20,9 +20,11 @@ import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
 import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
+import io.github.madeye.meow.ui.screens.home.RouteChanges
 import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
+import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
@@ -68,6 +70,9 @@ object AppGraph {
     val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
 
+    /** Node and route-mode switches, for the exit-IP card; see [RouteChanges]. */
+    val routeChanges: RouteChanges by lazy { RouteChanges() }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         // Touching this here starts the speed-sample collector, so the chart has
@@ -80,14 +85,18 @@ object AppGraph {
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
             when (modelClass) {
                 HomeViewModel::class.java ->
-                    HomeViewModel(vpn, profiles, api, analytics, routeModes)
+                    HomeViewModel(vpn, profiles, api, analytics, routeModes, routeChanges)
 
                 ExitIpViewModel::class.java -> ExitIpViewModel(
                     lookup = exitIpLookup::lookup,
                     vpnState = vpn.state,
                     enabled = showExitIp.enabled,
                     routedViaVpn = appContext::defaultNetworkIsVpn,
+                    routeChanges = routeChanges.events,
                 )
+
+                ProxyGroupsViewModel::class.java ->
+                    ProxyGroupsViewModel(vpn, profiles, api, analytics, routeChanges)
 
                 SubscribeViewModel::class.java ->
                     SubscribeViewModel(profiles, configValidator, analytics)

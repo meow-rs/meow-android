@@ -11,6 +11,7 @@ import io.github.madeye.meow.net.ExitIp
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,7 @@ sealed interface ExitIpUiState {
  *
  * Kept apart from [HomeViewModel] because its triggers are its own: a check
  * runs when the tunnel comes up or goes down, after a node or route-mode
- * switch ([onRouteChanged]), and on tap. Triggers inside [SETTLE_MS] of each
+ * switch ([routeChanges]), and on tap. Triggers inside [SETTLE_MS] of each
  * other collapse into one check, and a new trigger cancels the check in
  * flight — its answer would describe the route being left.
  */
@@ -52,6 +53,8 @@ class ExitIpViewModel(
     private val enabled: StateFlow<Boolean?>,
     /** Whether this app's own sockets currently go through the VPN. */
     private val routedViaVpn: () -> Boolean,
+    /** Node and route-mode switches that reached the running engine. */
+    routeChanges: Flow<Unit>,
 ) : ViewModel() {
 
     companion object {
@@ -93,16 +96,18 @@ class ExitIpViewModel(
                     }
                 }
         }
+        // Collected for as long as Home is on the back stack, so a node picked
+        // on the Proxy Groups tab is already being re-checked on the way back.
+        viewModelScope.launch {
+            routeChanges.collect {
+                if (enabled.value == true && route == Route.Tunnel) schedule(SETTLE_MS)
+            }
+        }
     }
 
     /** A tap on the card. */
     fun refresh() {
         if (enabled.value == true && route != null) schedule(0)
-    }
-
-    /** A node or route-mode switch has reached the running engine. */
-    fun onRouteChanged() {
-        if (enabled.value == true && route == Route.Tunnel) schedule(SETTLE_MS)
     }
 
     private fun schedule(delayMs: Long) {

@@ -1,4 +1,4 @@
-package io.github.madeye.meow.ui.screens.home
+package io.github.madeye.meow.ui.screens.proxies
 
 import io.github.madeye.meow.api.MemberDelay
 import io.github.madeye.meow.api.ProxyHistory
