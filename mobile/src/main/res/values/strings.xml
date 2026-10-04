@@ -157,6 +157,16 @@
     <string name="settings_source_code">Source Code</string>
     <string name="settings_source_url">github.com/madeye/meow</string>
     <string name="settings_version_unavailable">Not available</string>
+    <string name="settings_check_updates">Check for updates</string>
+    <string name="settings_updates_github">Asks GitHub for the latest release</string>
+    <string name="settings_updates_play">Opens Meow on Google Play</string>
+    <string name="settings_update_latest">You are on the latest version (%1$s)</string>
+    <string name="settings_update_failed">Update check failed: %1$s</string>
+    <string name="settings_update_available">Meow %1$s is available</string>
+    <string name="settings_update_download">Download</string>
+    <string name="settings_update_view">View release</string>
+    <string name="settings_update_later">Later</string>
+    <string name="settings_update_no_app">No app can open the link</string>
 
     <!-- Logs -->
     <string name="logs_title">Logs</string>

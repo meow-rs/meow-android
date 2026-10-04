@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.github.madeye.meow.BuildConfig
 import io.github.madeye.meow.R
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.components.NavRow
@@ -50,6 +53,7 @@ fun SettingsScreen(
     onPerAppProxy: () -> Unit,
     onRules: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
+    onCheckForUpdates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unavailable = stringResource(R.string.settings_version_unavailable)
@@ -78,6 +82,22 @@ fun SettingsScreen(
                 icon = Icons.Filled.Memory,
                 title = stringResource(R.string.settings_engine),
                 value = state.engineVersion.ifEmpty { unavailable },
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            // The subtitle names where a tap goes: the GitHub check sends the
+            // user's address to GitHub.
+            NavRow(
+                title = stringResource(R.string.settings_check_updates),
+                icon = Icons.Filled.SystemUpdate,
+                onClick = onCheckForUpdates,
+                subtitle = stringResource(
+                    if (BuildConfig.PLAY_STORE) R.string.settings_updates_play else R.string.settings_updates_github,
+                ),
+                trailing = if (state.checkingForUpdate) {
+                    { CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp) }
+                } else {
+                    null
+                },
             )
         }
 

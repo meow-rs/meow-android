@@ -147,6 +147,16 @@
     <string name="settings_source_code">源代码</string>
     <string name="settings_source_url">github.com/madeye/meow</string>
     <string name="settings_version_unavailable">不可用</string>
+    <string name="settings_check_updates">检查更新</string>
+    <string name="settings_updates_github">从 GitHub 查询最新版本</string>
+    <string name="settings_updates_play">在 Google Play 中打开 Meow</string>
+    <string name="settings_update_latest">已是最新版本（%1$s）</string>
+    <string name="settings_update_failed">检查更新失败：%1$s</string>
+    <string name="settings_update_available">Meow %1$s 已发布</string>
+    <string name="settings_update_download">下载</string>
+    <string name="settings_update_view">查看发布页</string>
+    <string name="settings_update_later">稍后</string>
+    <string name="settings_update_no_app">没有可以打开该链接的应用</string>
 
     <!-- Logs -->
     <string name="logs_title">日志</string>

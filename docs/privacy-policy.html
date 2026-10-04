@@ -52,6 +52,7 @@
 <h2>Third-Party Services</h2>
 <p>The App does not integrate any third-party services that collect user data. DNS queries are resolved via DNS-over-HTTPS (DoH) through your configured proxy to protect your privacy.</p>
 <p><strong>Exit IP lookup.</strong> While "Show exit IP" is on (Settings &gt; Network; off by default), the Home screen asks a public geo-IP service which address your traffic leaves from: <code>api.ip.sb</code>, falling back to <code>ipwho.is</code> and then <code>ipinfo.io</code>. The request carries no identifiers or app data, but like any request it reveals your public IP address (the proxy's exit address while connected, your own while disconnected) to that service, which returns the IP, country and network operator shown on Home. The result is not stored. Turn the setting off to stop these requests.</p>
+<p><strong>Update check.</strong> In the version downloaded from GitHub, tapping "Check for updates" (Settings &gt; General) asks <code>api.github.com</code> for the App's latest release; the App never checks on its own. The request carries nothing but the App's version number, but like any request it reveals your public IP address to GitHub. If there is a newer version, "Download" opens it in your browser. The Google Play version never contacts GitHub for this: it opens the App's Play Store listing instead.</p>
 
 <h2>VPN Permission</h2>
 <p>The App requests Android's VPN permission to create a local VPN tunnel on your device. This is required to route traffic through your configured proxy servers. No traffic is sent to us.</p>

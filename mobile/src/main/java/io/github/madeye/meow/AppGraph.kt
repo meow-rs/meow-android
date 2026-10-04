@@ -31,6 +31,7 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.traffic.TrafficViewModel
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
 import io.github.madeye.meow.ui.util.AppVersions
+import io.github.madeye.meow.update.GitHubReleases
 import io.github.madeye.meow.vpn.ConfigReloader
 import io.github.madeye.meow.vpn.SpeedSampleStore
 import io.github.madeye.meow.vpn.VpnStateRepository
@@ -104,8 +105,20 @@ object AppGraph {
                 TrafficViewModel::class.java ->
                     TrafficViewModel(vpn, trafficHistory, speedSamples)
 
-                SettingsViewModel::class.java ->
-                    SettingsViewModel(appVersions, vpn, showExitIp)
+                SettingsViewModel::class.java -> SettingsViewModel(
+                    appVersions,
+                    vpn,
+                    showExitIp,
+                    // Null in the Play build, which may only update through
+                    // Play. Built here, not in a lazy property: that delegate
+                    // is created with AppGraph, so R8 would keep the client.
+                    latestRelease = if (BuildConfig.PLAY_STORE) {
+                        null
+                    } else {
+                        GitHubReleases(userAgent = "meow-android/${BuildConfig.VERSION_NAME}")::latest
+                    },
+                    installedVersion = BuildConfig.VERSION_NAME,
+                )
 
                 PerAppProxyViewModel::class.java ->
                     PerAppProxyViewModel(perApp, installedApps, analytics)

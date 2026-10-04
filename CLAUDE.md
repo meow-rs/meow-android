@@ -105,6 +105,11 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   through `ProfileRepository.refresh` — the manual refresh path. Store a download with
   `ProfileDao.storeFetched`, never `update(row)`: writing back the row read before the fetch
   reverts whatever changed meanwhile, e.g. a profile switch (`selected` is per row).
+- **update/**: `GitHubReleases` reads the latest GitHub release for Settings' "Check for
+  updates". Only the `playRelease` build type sets `BuildConfig.PLAY_STORE`, and there the
+  row just opens the Play listing: Play policy allows no other update channel, so keep every
+  GitHub/APK path behind that constant (R8 then strips it) and never add
+  `REQUEST_INSTALL_PACKAGES`.
 
 ### Compose UI (`mobile/src/main/java/io/github/madeye/meow/ui/`)
 

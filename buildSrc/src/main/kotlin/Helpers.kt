@@ -72,6 +72,11 @@ fun Project.setupApp() {
         // placeholder; the playRelease buildType (used for Google Play uploads)
         // overrides it to "false" so Firebase Analytics never collects.
         defaultConfig.manifestPlaceholders["analyticsEnabled"] = "true"
+        // Where the app updates from: GitHub Releases, except in playRelease,
+        // where Play policy allows no channel but Play itself. Decided by the
+        // build type, not by sniffing the installer at runtime, so R8 can
+        // drop the GitHub path from the Play build entirely.
+        defaultConfig.buildConfigField("boolean", "PLAY_STORE", "false")
 
         buildTypes {
             getByName("debug") {
@@ -85,11 +90,13 @@ fun Project.setupApp() {
                 proguardFile("proguard-rules.pro")
             }
             // Google Play distribution build — same as release but with
-            // Firebase Analytics collection disabled at the manifest level.
+            // Firebase Analytics collection disabled at the manifest level,
+            // and updates left to Play.
             create("playRelease") {
                 initWith(getByName("release"))
                 matchingFallbacks += "release"
                 manifestPlaceholders["analyticsEnabled"] = "false"
+                buildConfigField("boolean", "PLAY_STORE", "true")
             }
         }
         packagingOptions.jniLibs.useLegacyPackaging = true
