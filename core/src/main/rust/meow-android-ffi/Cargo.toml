@@ -99,3 +99,6 @@ mimalloc = { version = "0.1", default-features = false }
 # land in an upstream lwip release.
 [patch.crates-io]
 lwip = { git = "https://github.com/madeye/lwip", rev = "dab00c540cf0606fee14ddd99cfa6ec79d33681d" }
+
+[dev-dependencies]
+async-trait = "0.1"

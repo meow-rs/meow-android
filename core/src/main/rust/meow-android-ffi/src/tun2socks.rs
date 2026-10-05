@@ -554,18 +554,7 @@ fn spawn_udp_reply_reader(
     tunnel_inner: Arc<meow_tunnel::tunnel::TunnelInner>,
 ) {
     tokio::spawn(async move {
-        let relay = async {
-            let mut buf = vec![0u8; 4 * 1024];
-            while let Ok((n, _from)) = session.conn.read_packet(&mut buf).await {
-                // Replies are activity too: the NAT sweeper's idle clock is
-                // otherwise only bumped by outbound datagrams.
-                session.touch();
-                let msg: UdpMsg = (buf[..n].to_vec(), app_dst, app_src);
-                if reply_tx.try_send(msg).is_err() {
-                    break;
-                }
-            }
-        };
+        let relay = relay_udp_replies(&session, app_src, app_dst, &reply_tx);
         tokio::pin!(relay);
         // The read is polled in place rather than raced against a timeout:
         // cancelling a read mid-datagram would desync a stream-framed
@@ -601,6 +590,25 @@ fn spawn_udp_reply_reader(
             readers.remove(&key);
         }
     });
+}
+
+// Keep a single in-place read for stream-framed adapters. A full-size buffer
+// avoids both silent truncation and buffer-too-small errors on legal replies.
+async fn relay_udp_replies(
+    session: &UdpSession,
+    app_src: SocketAddr,
+    app_dst: SocketAddr,
+    reply_tx: &mpsc::Sender<UdpMsg>,
+) {
+    let mut buf = vec![0u8; 65535];
+    while let Ok((n, _from)) = session.conn.read_packet(&mut buf).await {
+        // Replies are activity too: refresh the NAT sweeper's idle clock.
+        session.touch();
+        let msg: UdpMsg = (buf[..n].to_vec(), app_dst, app_src);
+        if reply_tx.try_send(msg).is_err() {
+            break;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -781,6 +789,68 @@ mod tests {
     use super::*;
     use std::time::Instant;
 
+    struct ReplyConn {
+        packets: Mutex<std::collections::VecDeque<Vec<u8>>>,
+        reject_small_buffer: bool,
+    }
+
+    #[async_trait::async_trait]
+    impl meow_common::ProxyPacketConn for ReplyConn {
+        async fn read_packet(&self, buf: &mut [u8]) -> meow_common::Result<(usize, SocketAddr)> {
+            let packet = self.packets.lock().pop_front();
+            let Some(packet) = packet else {
+                return Err(io::Error::from(io::ErrorKind::BrokenPipe).into());
+            };
+            if self.reject_small_buffer && packet.len() > buf.len() {
+                return Err(io::Error::from(io::ErrorKind::InvalidInput).into());
+            }
+            let n = packet.len().min(buf.len());
+            buf[..n].copy_from_slice(&packet[..n]);
+            Ok((n, "127.0.0.1:53".parse().unwrap()))
+        }
+
+        async fn write_packet(&self, _: &[u8], _: &SocketAddr) -> meow_common::Result<usize> {
+            unreachable!("reply-only test connection")
+        }
+
+        fn local_addr(&self) -> meow_common::Result<SocketAddr> {
+            Ok("127.0.0.1:40000".parse().unwrap())
+        }
+
+        fn close(&self) -> meow_common::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn large_udp_replies_are_intact_and_the_flow_survives() {
+        // Cover adapters that truncate and adapters that reject undersized
+        // buffers. Include both IP families' maximum payloads and a later
+        // small reply on the same flow; neither corruption nor teardown is OK.
+        for reject_small_buffer in [false, true] {
+            let packets: Vec<Vec<u8>> = [65507, 65527, 4097, 32]
+                .into_iter()
+                .map(|size| (0..size).map(|i| (i % 251) as u8).collect())
+                .collect();
+            let session = UdpSession::new(
+                Box::new(ReplyConn {
+                    packets: Mutex::new(packets.clone().into()),
+                    reject_small_buffer,
+                }),
+                Arc::from("test"),
+            );
+            let app_src = "172.19.0.2:40000".parse().unwrap();
+            let app_dst = "198.51.100.1:53".parse().unwrap();
+            let (tx, mut rx) = mpsc::channel(4);
+            relay_udp_replies(&session, app_src, app_dst, &tx).await;
+            for payload in packets {
+                let (received, from, to) = rx.try_recv().expect("flow lost a reply");
+                assert_eq!(received, payload);
+                assert_eq!((from, to), (app_dst, app_src));
+            }
+        }
+    }
+
     // The tests share the session globals.
     static SERIAL: Mutex<()> = Mutex::new(());
 
@@ -825,6 +895,7 @@ mod tests {
     }
 
     /// Voluntary context switches of the runtime's threads so far.
+    #[cfg(target_os = "linux")]
     fn worker_wakeups() -> u64 {
         let mut total = 0;
         for task in std::fs::read_dir("/proc/self/task").unwrap().flatten() {
@@ -846,6 +917,7 @@ mod tests {
     /// An idle VPN must leave the CPU asleep. Polling the fd every 200 µs
     /// cost ~1400 context switches a second here; what remains (~8) is
     /// mostly lwIP's own 250 ms timer.
+    #[cfg(target_os = "linux")]
     #[test]
     fn an_idle_session_does_not_wake_the_cpu() {
         let _serial = SERIAL.lock();

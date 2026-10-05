@@ -95,3 +95,7 @@ jobs:
         working-directory: core/src/main/rust/meow-android-ffi
         run: cargo fmt --all --check
 
+
+      - name: Rust unit tests
+        working-directory: core/src/main/rust/meow-android-ffi
+        run: cargo test --lib
