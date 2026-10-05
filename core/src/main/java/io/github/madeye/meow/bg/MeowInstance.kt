@@ -6,6 +6,8 @@ import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.preference.RouteModeStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
@@ -60,13 +62,17 @@ class MeowInstance(val profile: ClashProfile) {
     private var prevRx: Long = 0
     private var lastUpdate: Long = 0
 
-    fun start(configDir: File, vpnService: android.net.VpnService) {
+    // JNI startup blocks while loading remote proxy/rule providers. Keep it
+    // off the service's main thread so lifecycle callbacks remain responsive.
+    // Await completion before establishing the TUN; cancellation still waits
+    // for native startup to unwind before BaseService tears the engine down.
+    suspend fun start(configDir: File, context: Context) = withContext(Dispatchers.IO) {
         // Seed the engine home dir with bundled GeoX databases so meow-rs
         // never has to reach the network on first start — the upstream
         // pre-VPN fetch in meow-config goes via raw github.com which is
         // unreliable on censored / metered links. APK assets are populated
         // at build time by the `:core:downloadGeoxAssets` Gradle task.
-        copyGeoxAssets(vpnService, configDir)
+        copyGeoxAssets(context, configDir)
         // Note: nativeSetHomeDir is also called below; prepareEngineHome and
         // this start() path share copyGeoxAssets via the companion object.
 
