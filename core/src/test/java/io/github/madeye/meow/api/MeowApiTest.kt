@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
@@ -283,6 +284,47 @@ class MeowApiTest {
         assertEquals("/proxies/Tokyo%2001/delay", request.requestUrl!!.encodedPath)
         assertEquals(MeowApi.DELAY_TEST_URL, request.requestUrl!!.queryParameter("url"))
         assertEquals("5000", request.requestUrl!!.queryParameter("timeout"))
+    }
+
+    @Test
+    fun `testProxyDelay retries a 503 and returns the delay`() = runTest {
+        enqueue("""{"message": "An error occurred in the delay test"}""", code = 503)
+        enqueue("""{"delay": 123}""")
+
+        assertEquals(123, api.testProxyDelay("Tokyo 01"))
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `testProxyDelay throws only after the last retry on a persistent 503`() = runTest {
+        repeat(4) { enqueue("""{"message": "An error occurred in the delay test"}""", code = 503) }
+
+        // Inside runTest so the backoff sits on virtual time; assertThrows
+        // would need a runBlocking block that pays the 3.5 s ramp for real.
+        try {
+            api.testProxyDelay("Tokyo 01")
+            fail("a persistent 503 should throw")
+        } catch (e: MeowApiException.Http) {
+            assertEquals(503, e.code)
+            assertEquals("testProxyDelay", e.operation)
+        }
+
+        // One initial attempt plus three retries.
+        assertEquals(4, server.requestCount)
+    }
+
+    @Test
+    fun `testProxyDelay does not retry a 504`() = runTest {
+        enqueue("""{"message": "Timeout"}""", code = 504)
+
+        try {
+            api.testProxyDelay("Tokyo 01")
+            fail("a 504 should throw")
+        } catch (e: MeowApiException.Http) {
+            assertEquals(504, e.code)
+        }
+
+        assertEquals(1, server.requestCount)
     }
 
     @Test

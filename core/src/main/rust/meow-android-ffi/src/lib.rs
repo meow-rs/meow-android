@@ -57,12 +57,13 @@ pub(crate) fn get_runtime() -> &'static tokio::runtime::Runtime {
         // Worker count left at the tokio default (one per CPU). Blocking
         // pool capped at 2 so background work (file I/O, redb writes, geoip
         // mmdb scans) can't explode RSS via tokio's default 512-thread cap.
-        // Per-thread stack capped at 512 KB (default 2 MB) — async leaf
-        // tasks don't recurse deeply, and this saves ~3 MB RSS per thread
-        // once the blocking pool warms up.
+        // Per-thread stack stays at the tokio default (2 MB): capping it at
+        // 512 KB overflowed on the latency-probe call chain (url_test →
+        // adapter dial → DNS resolver → tracing → android_logger → logcat)
+        // and SIGSEGV'd the :vpn process. Stacks are demand-paged, so the
+        // real RSS cost is only the pages actually touched.
         tokio::runtime::Builder::new_multi_thread()
             .max_blocking_threads(2)
-            .thread_stack_size(512 * 1024)
             .enable_all()
             .build()
             .expect("Failed to create tokio runtime")
