@@ -173,6 +173,27 @@ data class Rule(
 internal data class RulesResponse(val rules: List<Rule> = emptyList())
 
 /**
+ * One `rule-providers:` entry, as `GET /providers/rules` reports it.
+ * [behavior], [format] and [vehicleType] are the config's own keywords
+ * (`domain`/`ipcidr`/`classical`, `yaml`/`text`/`mrs`, `HTTP`/`File`/`Inline`);
+ * [type] is always `Rule`. [updatedAt] is an RFC 3339 UTC instant, or empty
+ * when the engine has no time for the provider, e.g. an inline one.
+ */
+@Serializable
+data class RuleProviderInfo(
+    val name: String = "",
+    val type: String = "",
+    val behavior: String = "",
+    val format: String = "",
+    val ruleCount: Int = 0,
+    val updatedAt: String = "",
+    val vehicleType: String = "",
+)
+
+@Serializable
+internal data class RuleProvidersResponse(val providers: Map<String, RuleProviderInfo> = emptyMap())
+
+/**
  * One cached lookup from `GET /dns/results`: the engine's live DNS cache,
  * sorted by name. [ttl] is the seconds left before the entry expires, not the
  * record's original TTL; [fromServer] is the upstream that answered, absent for

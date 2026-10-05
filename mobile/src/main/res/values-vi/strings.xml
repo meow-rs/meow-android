@@ -85,6 +85,19 @@
     <string name="subs_expires">Hết hạn vào %1$s</string>
     <string name="subs_expired">Đã hết hạn vào %1$s</string>
     <string name="subs_refresh_failed">Không thể làm mới: %1$s</string>
+    <string name="subs_update_rule_sets">Cập nhật bộ quy tắc</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="other">%1$d bộ quy tắc</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="other">%1$d bộ quy tắc · cập nhật lúc %2$s</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="other">Đã cập nhật %1$d bộ quy tắc</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="other">Không thể cập nhật %1$d bộ quy tắc</item>
+    </plurals>
     <string name="subs_imported">Đã nhập “%1$s”</string>
     <string name="subs_import_failed">Không thể nhập: %1$s</string>
     <string name="subs_link_title">Thêm gói đăng ký từ liên kết?</string>

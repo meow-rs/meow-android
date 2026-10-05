@@ -90,6 +90,19 @@
     <string name="subs_expires">%1$s တွင် သက်တမ်းကုန်မည်</string>
     <string name="subs_expired">%1$s တွင် သက်တမ်းကုန်ခဲ့သည်</string>
     <string name="subs_refresh_failed">ပြန်လည်ဆန်းသစ်၍ မရပါ: %1$s</string>
+    <string name="subs_update_rule_sets">စည်းမျဉ်းအစုများ အပ်ဒိတ်လုပ်ရန်</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="other">စည်းမျဉ်းအစု %1$d ခု</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="other">စည်းမျဉ်းအစု %1$d ခု · အပ်ဒိတ်: %2$s</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="other">စည်းမျဉ်းအစု %1$d ခု အပ်ဒိတ်လုပ်ပြီးပါပြီ</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="other">စည်းမျဉ်းအစု %1$d ခု အပ်ဒိတ်လုပ်၍ မရပါ</item>
+    </plurals>
     <string name="subs_imported">“%1$s” ကို တင်သွင်းပြီးပါပြီ</string>
     <string name="subs_import_failed">တင်သွင်း၍ မရပါ: %1$s</string>
     <string name="subs_link_title">လင့်ခ်မှ စာရင်းသွင်းမှု ထည့်မလား။</string>

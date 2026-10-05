@@ -85,6 +85,19 @@
     <string name="subs_expires">%1$s 到期</string>
     <string name="subs_expired">已于 %1$s 到期</string>
     <string name="subs_refresh_failed">刷新失败：%1$s</string>
+    <string name="subs_update_rule_sets">更新规则集</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="other">%1$d 个规则集</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="other">%1$d 个规则集 · 更新于 %2$s</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="other">已更新 %1$d 个规则集</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="other">%1$d 个规则集更新失败</item>
+    </plurals>
     <string name="subs_imported">已导入 \"%1$s\"</string>
     <string name="subs_import_failed">导入失败：%1$s</string>
     <string name="subs_link_title">从外部链接添加订阅？</string>

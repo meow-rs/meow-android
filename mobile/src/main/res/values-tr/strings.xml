@@ -85,6 +85,23 @@
     <string name="subs_expires">Süresi %1$s tarihinde doluyor</string>
     <string name="subs_expired">Süresi %1$s tarihinde doldu</string>
     <string name="subs_refresh_failed">Yenilenemedi: %1$s</string>
+    <string name="subs_update_rule_sets">Kural setlerini güncelle</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="one">%1$d kural seti</item>
+        <item quantity="other">%1$d kural seti</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="one">%1$d kural seti · %2$s tarihinde güncellendi</item>
+        <item quantity="other">%1$d kural seti · %2$s tarihinde güncellendi</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="one">%1$d kural seti güncellendi</item>
+        <item quantity="other">%1$d kural seti güncellendi</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="one">%1$d kural seti güncellenemedi</item>
+        <item quantity="other">%1$d kural seti güncellenemedi</item>
+    </plurals>
     <string name="subs_imported">“%1$s” içe aktarıldı</string>
     <string name="subs_import_failed">İçe aktarılamadı: %1$s</string>
     <string name="subs_link_title">Bağlantıdan abonelik eklensin mi?</string>

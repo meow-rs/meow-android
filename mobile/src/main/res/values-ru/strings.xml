@@ -85,6 +85,31 @@
     <string name="subs_expires">Истекает %1$s</string>
     <string name="subs_expired">Истекла %1$s</string>
     <string name="subs_refresh_failed">Не удалось обновить: %1$s</string>
+    <string name="subs_update_rule_sets">Обновить наборы правил</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="one">%1$d набор правил</item>
+        <item quantity="few">%1$d набора правил</item>
+        <item quantity="many">%1$d наборов правил</item>
+        <item quantity="other">%1$d набора правил</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="one">%1$d набор правил · обновлено %2$s</item>
+        <item quantity="few">%1$d набора правил · обновлено %2$s</item>
+        <item quantity="many">%1$d наборов правил · обновлено %2$s</item>
+        <item quantity="other">%1$d набора правил · обновлено %2$s</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="one">Обновлён %1$d набор правил</item>
+        <item quantity="few">Обновлено %1$d набора правил</item>
+        <item quantity="many">Обновлено %1$d наборов правил</item>
+        <item quantity="other">Обновлено %1$d набора правил</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="one">Не удалось обновить %1$d набор правил</item>
+        <item quantity="few">Не удалось обновить %1$d набора правил</item>
+        <item quantity="many">Не удалось обновить %1$d наборов правил</item>
+        <item quantity="other">Не удалось обновить %1$d набора правил</item>
+    </plurals>
     <string name="subs_imported">Импортировано: «%1$s»</string>
     <string name="subs_import_failed">Ошибка импорта: %1$s</string>
     <string name="subs_link_title">Добавить подписку по ссылке?</string>

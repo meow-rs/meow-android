@@ -90,8 +90,10 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 
 - **MeowApi.kt**: OkHttp + kotlinx-serialization client for the embedded engine's
   Clash-compatible controller (`http://127.0.0.1:9090`, started by `MeowInstance`).
-  Proxies/groups, delay probes, rules, connections, configs, and the `/logs`
-  websocket (500ms→30s reconnect ramp). `baseUrl` is injectable for tests.
+  Proxies/groups, delay probes, rules, rule providers (`updateRuleProvider` gets its
+  own 90 s read timeout: the engine answers only after the download), connections,
+  configs, and the `/logs` websocket (500ms→30s reconnect ramp). `baseUrl` is
+  injectable for tests.
 - **MeowApiModels.kt**: `/proxies` is a heterogeneous map discriminated by a field
   *value*, so it is parsed by hand; `ProxyHistory.time` accepts both the Go string
   and Rust `SystemTime` encodings.
@@ -127,7 +129,11 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   Settings) are pushed routes. `SubscriptionsRoute` owns the subscription dialogs and
   launchers and answers `clash://install-config` links, which `MeowNavHost`
   routes to it; its ViewModel lives on Home's back-stack entry, so an add or
-  refresh survives leaving the page.
+  refresh survives leaving the page. A profile whose YAML has top-level
+  `rule-providers:` gets an "Update rule sets" action (`subscribe/RuleSets.kt`,
+  like Surge's "Update External Resources"): while connected it PUTs every HTTP
+  rule provider of the running engine, four at a time, and reports the result in
+  one snackbar. The Rules page itself only lists rules, `RULE-SET` ones included.
   Sets `testTagsAsResourceId` so `test-e2e.sh` can match on stable resource ids.
 - **theme/**: brand tokens ported from meow-ios (`GlassCard.swift`). Fixed palette —
   no Material You dynamic color.

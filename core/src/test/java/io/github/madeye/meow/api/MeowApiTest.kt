@@ -358,6 +358,30 @@ class MeowApiTest {
         assertEquals("/connections/abc-123", request.requestUrl!!.encodedPath)
     }
 
+    @Test
+    fun `updateRuleProvider PUTs the name as one encoded segment`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.updateRuleProvider("国内 规则/CN")
+
+        val request = server.takeRequest()
+        assertEquals("PUT", request.method)
+        assertEquals("/providers/rules/%E5%9B%BD%E5%86%85%20%E8%A7%84%E5%88%99%2FCN", request.path)
+        assertEquals(listOf("providers", "rules", "国内 规则/CN"), request.requestUrl!!.pathSegments)
+        assertEquals(0L, request.bodySize)
+    }
+
+    @Test
+    fun `updateRuleProvider surfaces a failed download`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(503))
+
+        val error = assertThrows(MeowApiException.Http::class.java) {
+            kotlinx.coroutines.runBlocking { api.updateRuleProvider("ads") }
+        }
+        assertEquals("updateRuleProvider", error.operation)
+        assertEquals(503, error.code)
+    }
+
     // -------------------------------------------------------------------------
     // Decoding
     // -------------------------------------------------------------------------
@@ -371,6 +395,41 @@ class MeowApiTest {
         assertEquals(1, rules.size)
         assertEquals("DOMAIN", rules[0].type)
         assertEquals("DIRECT", rules[0].proxy)
+    }
+
+    @Test
+    fun `ruleProviders sorts by name and falls back to the map key`() = runTest {
+        enqueue(
+            """
+            {"providers": {
+              "zeta": {"name": "zeta", "type": "Rule", "behavior": "domain", "format": "mrs", "ruleCount": 120,
+                       "updatedAt": "2026-10-05T01:02:03Z", "vehicleType": "HTTP"},
+              "Ads":  {"name": "", "type": "Rule", "behavior": "classical", "format": "yaml", "ruleCount": 3,
+                       "updatedAt": "", "vehicleType": "Inline"},
+              "beta": {"behavior": "ipcidr", "vehicleType": "File", "somethingNew": 1}
+            }}
+            """.trimIndent(),
+        )
+
+        val providers = api.ruleProviders()
+
+        assertEquals("/providers/rules", server.takeRequest().requestUrl!!.encodedPath)
+        assertEquals(listOf("Ads", "beta", "zeta"), providers.map { it.name })
+        assertEquals(
+            RuleProviderInfo(
+                name = "zeta",
+                type = "Rule",
+                behavior = "domain",
+                format = "mrs",
+                ruleCount = 120,
+                updatedAt = "2026-10-05T01:02:03Z",
+                vehicleType = "HTTP",
+            ),
+            providers[2],
+        )
+        assertEquals("Inline", providers[0].vehicleType)
+        assertEquals(0, providers[1].ruleCount)
+        assertEquals("", providers[1].updatedAt)
     }
 
     @Test

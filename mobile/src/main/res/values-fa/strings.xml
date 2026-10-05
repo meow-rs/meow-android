@@ -93,6 +93,23 @@
     <string name="subs_expires">انقضا: \u2068%1$s\u2069</string>
     <string name="subs_expired">در \u2068%1$s\u2069 منقضی شد</string>
     <string name="subs_refresh_failed">تازه‌سازی ناموفق بود: \u2068%1$s\u2069</string>
+    <string name="subs_update_rule_sets">به‌روزرسانی مجموعه قوانین</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="one">%1$d مجموعه قوانین</item>
+        <item quantity="other">%1$d مجموعه قوانین</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="one">%1$d مجموعه قوانین · به‌روزرسانی: \u2068%2$s\u2069</item>
+        <item quantity="other">%1$d مجموعه قوانین · به‌روزرسانی: \u2068%2$s\u2069</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="one">%1$d مجموعه قوانین به‌روز شد</item>
+        <item quantity="other">%1$d مجموعه قوانین به‌روز شد</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="one">به‌روزرسانی %1$d مجموعه قوانین ناموفق بود</item>
+        <item quantity="other">به‌روزرسانی %1$d مجموعه قوانین ناموفق بود</item>
+    </plurals>
     <string name="subs_imported">«\u2068%1$s\u2069» وارد شد</string>
     <string name="subs_import_failed">وارد کردن ناموفق بود: \u2068%1$s\u2069</string>
     <string name="subs_link_title">اشتراک از این لینک افزوده شود؟</string>

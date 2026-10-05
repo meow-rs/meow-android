@@ -86,6 +86,17 @@ class MeowApi(
         Dispatcher().apply { maxRequestsPerHost = PROBE_CONCURRENCY }
     }
 
+    /**
+     * [updateRuleProvider]'s client. The engine answers that call only after
+     * downloading the provider, and gives the download 15 s to connect and
+     * 60 s to read, so [client]'s 10 s read timeout would abandon an ordinary
+     * refresh of a large list while the engine is still working on it. Built
+     * once from [client], so it shares its connection pool and dispatcher.
+     */
+    private val providerUpdateClient by lazy {
+        client.newBuilder().readTimeout(90, TimeUnit.SECONDS).build()
+    }
+
     // -------------------------------------------------------------------------
     // Proxies
     // -------------------------------------------------------------------------
@@ -206,6 +217,44 @@ class MeowApi(
     suspend fun rules(): List<Rule> {
         val body = get("/rules", operation = "rules")
         return decode("rules") { json.decodeFromString(RulesResponse.serializer(), body).rules }
+    }
+
+    /**
+     * The profile's `rule-providers:`, sorted by name, case-insensitively.
+     * The engine keeps them in a map and sends that map as is, so the order
+     * the config declares them in is gone by the time it arrives; sorting
+     * keeps the list from reshuffling between refreshes. A value without a
+     * name of its own takes its map key.
+     */
+    suspend fun ruleProviders(): List<RuleProviderInfo> {
+        val body = get("/providers/rules", operation = "ruleProviders")
+        return decode("ruleProviders") {
+            json.decodeFromString(RuleProvidersResponse.serializer(), body).providers
+                .map { (key, provider) -> if (provider.name.isBlank()) provider.copy(name = key) else provider }
+                .sortedWith(
+                    compareBy<RuleProviderInfo, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+                        // Names differing only in case must not swap places between refreshes.
+                        .thenBy { it.name },
+                )
+        }
+    }
+
+    /**
+     * Re-downloads an HTTP rule provider; the engine re-reads a File one and
+     * has nothing to do for an inline one. It answers only once that is done:
+     * 204, 404 for a name it does not know, 503 when the download failed. Both
+     * failures surface as [MeowApiException.Http].
+     */
+    suspend fun updateRuleProvider(name: String) {
+        val request = Request.Builder()
+            .url(
+                baseUrl.newBuilder()
+                    .addPathSegment("providers").addPathSegment("rules").addPathSegment(name)
+                    .build(),
+            )
+            .put(ByteArray(0).toRequestBody())
+            .build()
+        execute(request, "updateRuleProvider", okCodes = setOf(200, 204), client = providerUpdateClient)
     }
 
     suspend fun connections(): ConnectionsSnapshot {

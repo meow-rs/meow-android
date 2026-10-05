@@ -97,6 +97,39 @@
     <string name="subs_expires">تنتهي الصلاحية في \u2068%1$s\u2069</string>
     <string name="subs_expired">انتهت الصلاحية في \u2068%1$s\u2069</string>
     <string name="subs_refresh_failed">تعذّر التحديث: \u2068%1$s\u2069</string>
+    <string name="subs_update_rule_sets">تحديث مجموعات القواعد</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="zero">%1$d مجموعة قواعد</item>
+        <item quantity="one">%1$d مجموعة قواعد</item>
+        <item quantity="two">%1$d مجموعتا قواعد</item>
+        <item quantity="few">%1$d مجموعات قواعد</item>
+        <item quantity="many">%1$d مجموعة قواعد</item>
+        <item quantity="other">%1$d مجموعة قواعد</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="zero">%1$d مجموعة قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+        <item quantity="one">%1$d مجموعة قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+        <item quantity="two">%1$d مجموعتا قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+        <item quantity="few">%1$d مجموعات قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+        <item quantity="many">%1$d مجموعة قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+        <item quantity="other">%1$d مجموعة قواعد · تاريخ التحديث: \u2068%2$s\u2069</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="zero">تم تحديث %1$d مجموعة قواعد</item>
+        <item quantity="one">تم تحديث %1$d مجموعة قواعد</item>
+        <item quantity="two">تم تحديث %1$d مجموعتي قواعد</item>
+        <item quantity="few">تم تحديث %1$d مجموعات قواعد</item>
+        <item quantity="many">تم تحديث %1$d مجموعة قواعد</item>
+        <item quantity="other">تم تحديث %1$d مجموعة قواعد</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="zero">تعذّر تحديث %1$d مجموعة قواعد</item>
+        <item quantity="one">تعذّر تحديث %1$d مجموعة قواعد</item>
+        <item quantity="two">تعذّر تحديث %1$d مجموعتي قواعد</item>
+        <item quantity="few">تعذّر تحديث %1$d مجموعات قواعد</item>
+        <item quantity="many">تعذّر تحديث %1$d مجموعة قواعد</item>
+        <item quantity="other">تعذّر تحديث %1$d مجموعة قواعد</item>
+    </plurals>
     <string name="subs_imported">تم استيراد «\u2068%1$s\u2069»</string>
     <string name="subs_import_failed">تعذّر الاستيراد: \u2068%1$s\u2069</string>
     <string name="subs_link_title">هل تريد إضافة الاشتراك من هذا الرابط؟</string>

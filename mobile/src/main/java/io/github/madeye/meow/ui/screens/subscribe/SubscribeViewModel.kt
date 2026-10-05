@@ -8,6 +8,8 @@ import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.subscription.AutoUpdateSchedule
 import io.github.madeye.meow.subscription.SubscriptionUserInfo
+import java.io.IOException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,6 +17,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -36,12 +40,16 @@ data class ProfileUi(
     val autoUpdate: Boolean,
     val updateIntervalHours: Int,
     val hasLocalEdits: Boolean,
+    /** The config has `rule-providers:`; see [declaresRuleSets]. */
+    val declaresRuleSets: Boolean,
 )
 
 @Immutable
 data class SubscribeUiState(
     val profiles: List<ProfileUi> = emptyList(),
     val busy: Boolean = false,
+    /** The running profile's rule sets, for the selected one's "Update rule sets" row. */
+    val ruleSets: RuleSetsUi = RuleSetsUi(),
 )
 
 /**
@@ -57,12 +65,15 @@ sealed interface SubscribeEvent {
     data class ImportFailed(val reason: String) : SubscribeEvent
     data class RefreshFailed(val reason: String) : SubscribeEvent
     data class Failure(val reason: String) : SubscribeEvent
+    data class RuleSetsUpdated(val count: Int) : SubscribeEvent
+    data class RuleSetsUpdateFailed(val count: Int) : SubscribeEvent
 }
 
 class SubscribeViewModel(
     private val profiles: ProfileRepository,
     private val validator: ConfigValidator,
     private val analytics: Analytics,
+    private val ruleSets: RuleSetUpdater,
 ) : ViewModel() {
 
     private val busy = MutableStateFlow(false)
@@ -70,26 +81,33 @@ class SubscribeViewModel(
     private val _events = MutableSharedFlow<SubscribeEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<SubscribeEvent> = _events.asSharedFlow()
 
-    val uiState: StateFlow<SubscribeUiState> =
-        combine(profiles.observeAll(), busy) { list, isBusy ->
-            SubscribeUiState(
-                profiles = list.map {
-                    ProfileUi(
-                        id = it.id,
-                        name = it.name,
-                        url = it.url,
-                        selected = it.selected,
-                        lastUpdated = it.lastUpdated,
-                        hasYaml = it.yamlContent.isNotEmpty(),
-                        hasBackup = it.yamlBackup.isNotEmpty(),
-                        userInfo = it.userInfo,
-                        autoUpdate = it.autoUpdate,
-                        updateIntervalHours = it.updateIntervalHours,
-                        hasLocalEdits = AutoUpdateSchedule.hasLocalEdits(it),
-                    )
-                },
-                busy = isBusy,
+    /**
+     * Mapped apart from [uiState] so the YAML scans (configs run to
+     * megabytes) rerun only when Room has news, not on every busy or
+     * rule-set change, and off the main thread.
+     */
+    private val profileList = profiles.observeAll().map { list ->
+        list.map {
+            ProfileUi(
+                id = it.id,
+                name = it.name,
+                url = it.url,
+                selected = it.selected,
+                lastUpdated = it.lastUpdated,
+                hasYaml = it.yamlContent.isNotEmpty(),
+                hasBackup = it.yamlBackup.isNotEmpty(),
+                userInfo = it.userInfo,
+                autoUpdate = it.autoUpdate,
+                updateIntervalHours = it.updateIntervalHours,
+                hasLocalEdits = AutoUpdateSchedule.hasLocalEdits(it),
+                declaresRuleSets = declaresRuleSets(it.yamlContent),
             )
+        }
+    }.flowOn(Dispatchers.Default)
+
+    val uiState: StateFlow<SubscribeUiState> =
+        combine(profileList, busy, ruleSets.state) { list, isBusy, sets ->
+            SubscribeUiState(profiles = list, busy = isBusy, ruleSets = sets)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SubscribeUiState())
 
     fun add(
@@ -152,6 +170,21 @@ class SubscribeViewModel(
             } finally {
                 busy.value = false
             }
+        }
+    }
+
+    /**
+     * Updates the running profile's rule sets. Not [withBusy]: the row shows
+     * its own progress, and the other actions stay usable meanwhile.
+     */
+    fun updateRuleSets() {
+        viewModelScope.launch {
+            val event = try {
+                ruleSets.updateAll() ?: return@launch
+            } catch (e: IOException) {
+                SubscribeEvent.Failure(e.reason())
+            }
+            _events.tryEmit(event)
         }
     }
 

@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
@@ -55,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +87,7 @@ fun SubscriptionsScreen(
     onEditYaml: (Long) -> Unit,
     onDuplicate: (id: Long, name: String) -> Unit,
     onRefresh: (Long) -> Unit,
+    onUpdateRuleSets: () -> Unit,
     onExport: (ProfileUi) -> Unit,
     onShareQr: (ProfileUi) -> Unit,
     onDelete: (Long) -> Unit,
@@ -117,10 +120,12 @@ fun SubscriptionsScreen(
             SectionHeader(stringResource(R.string.common_edit))
             ProfileActions(
                 profile = selected,
+                ruleSets = state.ruleSets,
                 onEdit = { onEdit(selected) },
                 onEditYaml = { onEditYaml(selected.id) },
                 onDuplicate = { onDuplicate(selected.id, nameOfCopy) },
                 onRefresh = { onRefresh(selected.id) },
+                onUpdateRuleSets = onUpdateRuleSets,
                 onExport = { onExport(selected) },
                 onShareQr = { onShareQr(selected) },
                 onDelete = { onDelete(selected.id) },
@@ -246,14 +251,19 @@ private fun ProfileRow(profile: ProfileUi, onSelect: () -> Unit) {
  * A subscription's config is read-only, as on Surge: every download replaces
  * it, so its YAML row only views it, and editing starts from a copy, which is
  * a local profile.
+ *
+ * "Update rule sets" shows for a config with `rule-providers:` and works on
+ * the running engine; see [RuleSetsRow].
  */
 @Composable
 private fun ProfileActions(
     profile: ProfileUi,
+    ruleSets: RuleSetsUi,
     onEdit: () -> Unit,
     onEditYaml: () -> Unit,
     onDuplicate: () -> Unit,
     onRefresh: () -> Unit,
+    onUpdateRuleSets: () -> Unit,
     onExport: () -> Unit,
     onShareQr: () -> Unit,
     onDelete: () -> Unit,
@@ -293,6 +303,10 @@ private fun ProfileActions(
                 icon = Icons.Filled.Refresh,
                 onClick = onRefresh,
             )
+        }
+        if (profile.declaresRuleSets && !ruleSets.nothingToUpdate) {
+            HorizontalDivider(color = border)
+            RuleSetsRow(state = ruleSets, onClick = onUpdateRuleSets)
         }
         if (profile.hasYaml) {
             HorizontalDivider(color = border)
@@ -335,6 +349,43 @@ private fun ProfileActions(
             },
         )
     }
+}
+
+/**
+ * "Update rule sets". Disabled while the VPN is down, as Home's Rules row is:
+ * rule sets are the running engine's, and only it can download them. While
+ * up, the subtitle counts the HTTP rule sets and gives the oldest of their
+ * update times, so every set is at least that fresh; a listing that failed
+ * leaves the row usable without it. During an update the row is disabled
+ * and shows its progress in place of the chevron.
+ */
+@Composable
+private fun RuleSetsRow(state: RuleSetsUi, onClick: () -> Unit) {
+    val summary = state.summary
+    val subtitle = when {
+        !state.connected -> stringResource(R.string.settings_engine_offline)
+        summary == null -> null
+        summary.oldestUpdateMillis == null ->
+            pluralStringResource(R.plurals.subs_rule_sets_count, summary.count, summary.count)
+        else -> pluralStringResource(
+            R.plurals.subs_rule_sets_count_updated,
+            summary.count,
+            summary.count,
+            Formatters.timestamp(summary.oldestUpdateMillis),
+        )
+    }
+    NavRow(
+        title = stringResource(R.string.subs_update_rule_sets),
+        icon = Icons.Filled.CloudDownload,
+        onClick = onClick,
+        enabled = state.connected && !state.updating,
+        subtitle = subtitle,
+        trailing = if (state.updating) {
+            { CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp) }
+        } else {
+            null
+        },
+    )
 }
 
 /**

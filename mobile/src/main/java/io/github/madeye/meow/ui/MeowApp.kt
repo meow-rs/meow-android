@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -445,6 +446,8 @@ private fun SubscriptionsRoute(
     val updatedFmt = stringResource(R.string.subs_updated)
     val duplicatedFmt = stringResource(R.string.subs_duplicated)
     val refreshFailedFmt = stringResource(R.string.subs_refresh_failed)
+    // Plurals need the count, so they are resolved when an event lands.
+    val resources = LocalResources.current
     val linkRejected = (installLink as? InstallConfigLink.Invalid)
         ?.let { stringResource(it.reason.messageRes()) }
 
@@ -491,6 +494,10 @@ private fun SubscriptionsRoute(
                 is SubscribeEvent.ImportFailed -> String.format(importFailedFmt, event.reason)
                 is SubscribeEvent.RefreshFailed -> String.format(refreshFailedFmt, event.reason)
                 is SubscribeEvent.Failure -> event.reason
+                is SubscribeEvent.RuleSetsUpdated ->
+                    resources.getQuantityString(R.plurals.subs_rule_sets_updated, event.count, event.count)
+                is SubscribeEvent.RuleSetsUpdateFailed ->
+                    resources.getQuantityString(R.plurals.subs_rule_sets_update_failed, event.count, event.count)
             }
             snackbarHost.showSnackbar(message)
         }
@@ -518,6 +525,7 @@ private fun SubscriptionsRoute(
                 onEditYaml = onEditYaml,
                 onDuplicate = viewModel::duplicate,
                 onRefresh = viewModel::refresh,
+                onUpdateRuleSets = viewModel::updateRuleSets,
                 onExport = { profile ->
                     pendingExport = profile
                     exportLauncher.launch("${profile.name}.yaml")

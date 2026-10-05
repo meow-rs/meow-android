@@ -27,6 +27,7 @@ import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
+import io.github.madeye.meow.ui.screens.subscribe.RuleSetUpdater
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.traffic.TrafficViewModel
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
@@ -99,8 +100,16 @@ object AppGraph {
                 ProxyGroupsViewModel::class.java ->
                     ProxyGroupsViewModel(vpn, profiles, api, analytics, routeChanges)
 
-                SubscribeViewModel::class.java ->
-                    SubscribeViewModel(profiles, configValidator, analytics)
+                SubscribeViewModel::class.java -> SubscribeViewModel(
+                    profiles,
+                    configValidator,
+                    analytics,
+                    RuleSetUpdater(
+                        vpnState = vpn.state,
+                        listProviders = api::ruleProviders,
+                        updateProvider = api::updateRuleProvider,
+                    ),
+                )
 
                 TrafficViewModel::class.java ->
                     TrafficViewModel(vpn, trafficHistory, speedSamples)

@@ -96,6 +96,23 @@
     <string name="subs_expires">Expires %1$s</string>
     <string name="subs_expired">Expired on %1$s</string>
     <string name="subs_refresh_failed">Refresh failed: %1$s</string>
+    <string name="subs_update_rule_sets">Update rule sets</string>
+    <plurals name="subs_rule_sets_count">
+        <item quantity="one">%1$d rule set</item>
+        <item quantity="other">%1$d rule sets</item>
+    </plurals>
+    <plurals name="subs_rule_sets_count_updated">
+        <item quantity="one">%1$d rule set · updated %2$s</item>
+        <item quantity="other">%1$d rule sets · updated %2$s</item>
+    </plurals>
+    <plurals name="subs_rule_sets_updated">
+        <item quantity="one">Updated %1$d rule set</item>
+        <item quantity="other">Updated %1$d rule sets</item>
+    </plurals>
+    <plurals name="subs_rule_sets_update_failed">
+        <item quantity="one">Could not update %1$d rule set</item>
+        <item quantity="other">Could not update %1$d rule sets</item>
+    </plurals>
     <string name="subs_imported">Imported \"%1$s\"</string>
     <string name="subs_import_failed">Import failed: %1$s</string>
     <string name="subs_link_title">Add subscription from link?</string>
