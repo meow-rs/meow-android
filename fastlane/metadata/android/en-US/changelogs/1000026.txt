@@ -1,0 +1,5 @@
+- Refreshed native interface with proxy groups, DNS tools, QR subscription sharing, and more languages.
+- Updated networking engine to meow-rs v0.22.0.
+- Fixed startup freezes while loading remote providers and preserved large UDP replies.
+- Improved per-app routing with system-app visibility and reliable saved selections.
+- Added subscription auto-updates, rule-set refresh, and VPN Quick Settings controls.
