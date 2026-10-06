@@ -40,6 +40,9 @@ fun MeowScaffold(
     ) {
         Scaffold(
             containerColor = Color.Transparent,
+            // contentColorFor(Transparent) is Unspecified — pin onSurface so
+            // default Text renders readable instead of black on dark.
+            contentColor = MaterialTheme.colorScheme.onSurface,
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 TopAppBar(
