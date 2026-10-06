@@ -166,8 +166,15 @@ fun SubscriptionBusyOverlay(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        GlassCard(modifier = Modifier.size(72.dp)) {
-            CircularProgressIndicator(modifier = Modifier.size(28.dp))
+        // No card padding: the indicator centres in the full 72dp, not in
+        // the shrunken content area.
+        GlassCard(
+            modifier = Modifier.size(72.dp),
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
         }
     }
 }
