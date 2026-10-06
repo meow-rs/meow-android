@@ -39,4 +39,9 @@ object DataStore {
         get() = prefs.getBoolean("showExitIp", false)
         set(value) = prefs.edit().putBoolean("showExitIp", value).apply()
 
+    /** Light/dark override; a [ThemeMode] wire value. */
+    var themeMode: String
+        get() = prefs.getString("themeMode", "system") ?: "system"
+        set(value) = prefs.edit().putString("themeMode", value).apply()
+
 }

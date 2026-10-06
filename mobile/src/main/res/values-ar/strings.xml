@@ -206,6 +206,10 @@
     <string name="settings_update_view">عرض الإصدار</string>
     <string name="settings_update_later">لاحقًا</string>
     <string name="settings_update_no_app">لا يوجد تطبيق يمكنه فتح الرابط</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="theme_mode_system">حسب النظام</string>
+    <string name="theme_mode_light">فاتح</string>
+    <string name="theme_mode_dark">داكن</string>
 
     <!-- Logs -->
     <string name="logs_title">السجلات</string>

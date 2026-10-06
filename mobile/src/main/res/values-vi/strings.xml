@@ -174,6 +174,10 @@
     <string name="settings_update_view">Xem bản phát hành</string>
     <string name="settings_update_later">Để sau</string>
     <string name="settings_update_no_app">Không có ứng dụng nào mở được liên kết này</string>
+    <string name="settings_theme">Giao diện</string>
+    <string name="theme_mode_system">Theo hệ thống</string>
+    <string name="theme_mode_light">Sáng</string>
+    <string name="theme_mode_dark">Tối</string>
 
     <!-- Logs -->
     <string name="logs_title">Nhật ký</string>

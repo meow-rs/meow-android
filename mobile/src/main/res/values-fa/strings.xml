@@ -186,6 +186,10 @@
     <string name="settings_update_view">مشاهدهٔ نسخه</string>
     <string name="settings_update_later">بعداً</string>
     <string name="settings_update_no_app">برنامه‌ای برای باز کردن لینک پیدا نشد</string>
+    <string name="settings_theme">ظاهر</string>
+    <string name="theme_mode_system">پیروی از سیستم</string>
+    <string name="theme_mode_light">روشن</string>
+    <string name="theme_mode_dark">تیره</string>
 
     <!-- Logs -->
     <string name="logs_title">گزارش‌ها</string>

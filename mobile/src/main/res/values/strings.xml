@@ -189,6 +189,10 @@
     <string name="settings_update_view">View release</string>
     <string name="settings_update_later">Later</string>
     <string name="settings_update_no_app">No app can open the link</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="theme_mode_system">Follow system</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
 
     <!-- Logs -->
     <string name="logs_title">Logs</string>

@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.preference.ExitIpPreference
+import io.github.madeye.meow.preference.ThemeMode
+import io.github.madeye.meow.preference.ThemeModePreference
 import io.github.madeye.meow.ui.util.AppVersions
 import io.github.madeye.meow.update.AppRelease
 import io.github.madeye.meow.update.isNewerVersion
@@ -24,6 +26,7 @@ data class SettingsUiState(
     val appVersion: String = "",
     val engineVersion: String = "",
     val showExitIp: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** An update check is waiting on GitHub. */
     val checkingForUpdate: Boolean = false,
     /** A newer release the last check found, until the user answers its dialog. */
@@ -42,6 +45,7 @@ sealed interface SettingsEvent {
 class SettingsViewModel(
     private val versions: AppVersions,
     private val exitIp: ExitIpPreference,
+    private val theme: ThemeModePreference,
     /**
      * The newest GitHub release. Null in the Play build, which may only
      * update through Play: the route opens the store listing instead.
@@ -62,11 +66,13 @@ class SettingsViewModel(
         exitIp.enabled,
         checking,
         update,
-    ) { (app, engine), showExitIp, isChecking, newer ->
+        theme.mode,
+    ) { (app, engine), showExitIp, isChecking, newer, mode ->
         SettingsUiState(
             appVersion = app,
             engineVersion = engine,
             showExitIp = showExitIp == true,
+            themeMode = mode ?: ThemeMode.SYSTEM,
             checkingForUpdate = isChecking,
             update = newer,
         )
@@ -77,6 +83,8 @@ class SettingsViewModel(
     }
 
     fun onShowExitIpChange(show: Boolean) = exitIp.set(show)
+
+    fun onThemeModeChange(mode: ThemeMode) = theme.set(mode)
 
     /** A tap on "Check for updates"; ignored while a check is already running. */
     fun checkForUpdates() {

@@ -186,6 +186,10 @@
     <string name="settings_update_view">Открыть выпуск</string>
     <string name="settings_update_later">Позже</string>
     <string name="settings_update_no_app">Нет приложения, которое может открыть ссылку</string>
+    <string name="settings_theme">Оформление</string>
+    <string name="theme_mode_system">Как в системе</string>
+    <string name="theme_mode_light">Светлая</string>
+    <string name="theme_mode_dark">Тёмная</string>
 
     <!-- Logs -->
     <string name="logs_title">Журнал</string>

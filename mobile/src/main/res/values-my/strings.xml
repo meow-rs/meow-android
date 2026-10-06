@@ -179,6 +179,10 @@
     <string name="settings_update_view">ထုတ်ဝေမှု ကြည့်ရန်</string>
     <string name="settings_update_later">နောက်မှ</string>
     <string name="settings_update_no_app">ဤလင့်ခ်ကို ဖွင့်နိုင်သည့် အက်ပ် မရှိပါ</string>
+    <string name="settings_theme">အသွင်အပြင်</string>
+    <string name="theme_mode_system">စနစ်အတိုင်း</string>
+    <string name="theme_mode_light">အလင်း</string>
+    <string name="theme_mode_dark">အမှောင်</string>
 
     <!-- Logs -->
     <string name="logs_title">မှတ်တမ်းများ</string>

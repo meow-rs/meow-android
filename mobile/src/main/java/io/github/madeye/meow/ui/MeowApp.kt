@@ -677,6 +677,7 @@ private fun SettingsRoute(
             contentPadding = padding,
             onPerAppProxy = onPerAppProxy,
             onShowExitIpChange = viewModel::onShowExitIpChange,
+            onThemeModeChange = viewModel::onThemeModeChange,
             onCheckForUpdates = {
                 // Play policy lets a Play build update only through Play, so
                 // it just opens the listing. The flag is a constant, so R8

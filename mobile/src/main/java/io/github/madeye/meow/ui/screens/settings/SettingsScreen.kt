@@ -12,25 +12,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -40,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.BuildConfig
 import io.github.madeye.meow.R
+import io.github.madeye.meow.preference.ThemeMode
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.components.NavRow
 import io.github.madeye.meow.ui.components.SectionHeader
@@ -52,10 +63,12 @@ fun SettingsScreen(
     contentPadding: PaddingValues,
     onPerAppProxy: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onCheckForUpdates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unavailable = stringResource(R.string.settings_version_unavailable)
+    var themeDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -97,6 +110,13 @@ fun SettingsScreen(
                     null
                 },
             )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.settings_theme),
+                icon = Icons.Filled.DarkMode,
+                onClick = { themeDialog = true },
+                subtitle = stringResource(state.themeMode.labelRes),
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -137,7 +157,51 @@ fun SettingsScreen(
             )
         }
     }
+
+    if (themeDialog) {
+        AlertDialog(
+            onDismissRequest = { themeDialog = false },
+            title = { Text(stringResource(R.string.settings_theme)) },
+            // Picking a row applies and closes; no confirm button.
+            confirmButton = {},
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    ThemeMode.entries.forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = mode == state.themeMode,
+                                    role = Role.RadioButton,
+                                ) {
+                                    onThemeModeChange(mode)
+                                    themeDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Null: the row's selectable owns the click.
+                            RadioButton(selected = mode == state.themeMode, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(mode.labelRes),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
+            },
+        )
+    }
 }
+
+/** The string naming the mode in Settings' row and picker. */
+private val ThemeMode.labelRes: Int
+    get() = when (this) {
+        ThemeMode.SYSTEM -> R.string.theme_mode_system
+        ThemeMode.LIGHT -> R.string.theme_mode_light
+        ThemeMode.DARK -> R.string.theme_mode_dark
+    }
 
 /** [NavRow]'s rhythm with a switch in place of the chevron; the whole row toggles. */
 @Composable

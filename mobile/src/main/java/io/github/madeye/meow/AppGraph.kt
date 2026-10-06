@@ -10,6 +10,7 @@ import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.net.ExitIpLookup
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
+import io.github.madeye.meow.preference.ThemeModePreference
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppRepository
@@ -75,6 +76,9 @@ object AppGraph {
     /** Node and route-mode switches, for the exit-IP card; see [RouteChanges]. */
     val routeChanges: RouteChanges by lazy { RouteChanges() }
 
+    /** Settings picks it; MainActivity's MeowTheme follows. */
+    val themeMode: ThemeModePreference by lazy { ThemeModePreference(scope) }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         // Touching this here starts the speed-sample collector, so the chart has
@@ -117,6 +121,7 @@ object AppGraph {
                 SettingsViewModel::class.java -> SettingsViewModel(
                     appVersions,
                     showExitIp,
+                    themeMode,
                     // Null in the Play build, which may only update through
                     // Play. Built here, not in a lazy property: that delegate
                     // is created with AppGraph, so R8 would keep the client.
