@@ -238,7 +238,11 @@
     <string name="perapp_hide_system">Скрывать системные приложения</string>
     <string name="perapp_select_all">Выбрать все</string>
     <string name="perapp_deselect_all">Снять выбор</string>
+    <string name="perapp_export">Экспорт</string>
+    <string name="perapp_import">Импорт из буфера обмена</string>
     <string name="perapp_save_failed">Не удалось сохранить выбор приложений</string>
+    <string name="perapp_imported">Импортировано приложений: %1$d, пропущено не установленных: %2$d</string>
+    <string name="perapp_import_invalid">Буфер обмена пуст или не содержит список приложений</string>
     <string name="perapp_status">%1$s — %2$s</string>
     <string name="perapp_disabled_hint">Не действует, пока не выбрано ни одного приложения</string>
     <string name="perapp_restart_required">переподключите VPN</string>

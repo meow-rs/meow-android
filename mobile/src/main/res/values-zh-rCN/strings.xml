@@ -223,7 +223,11 @@
     <string name="perapp_hide_system">隐藏系统应用</string>
     <string name="perapp_select_all">全选</string>
     <string name="perapp_deselect_all">取消全选</string>
+    <string name="perapp_export">导出</string>
+    <string name="perapp_import">从剪贴板导入</string>
     <string name="perapp_save_failed">无法保存应用选择</string>
+    <string name="perapp_imported">已导入 %1$d 个，跳过 %2$d 个未安装</string>
+    <string name="perapp_import_invalid">剪贴板为空或格式无效</string>
     <string name="perapp_status">%1$s，%2$s</string>
     <string name="perapp_disabled_hint">未选择应用时不生效</string>
     <string name="perapp_restart_required">重连 VPN 后生效</string>

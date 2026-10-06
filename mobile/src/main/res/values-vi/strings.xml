@@ -223,7 +223,11 @@
     <string name="perapp_hide_system">Ẩn ứng dụng hệ thống</string>
     <string name="perapp_select_all">Chọn tất cả</string>
     <string name="perapp_deselect_all">Bỏ chọn tất cả</string>
+    <string name="perapp_export">Xuất</string>
+    <string name="perapp_import">Nhập từ bảng nhớ tạm</string>
     <string name="perapp_save_failed">Không thể lưu lựa chọn ứng dụng</string>
+    <string name="perapp_imported">Đã nhập %1$d ứng dụng, bỏ qua %2$d chưa cài đặt</string>
+    <string name="perapp_import_invalid">Bảng nhớ tạm trống hoặc không phải danh sách ứng dụng</string>
     <string name="perapp_status">%1$s, %2$s</string>
     <string name="perapp_disabled_hint">Không có tác dụng khi chưa chọn ứng dụng nào</string>
     <string name="perapp_restart_required">kết nối lại VPN</string>

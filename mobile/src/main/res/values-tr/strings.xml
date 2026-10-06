@@ -228,7 +228,11 @@
     <string name="perapp_hide_system">Sistem uygulamalarını gizle</string>
     <string name="perapp_select_all">Tümünü seç</string>
     <string name="perapp_deselect_all">Tüm seçimleri kaldır</string>
+    <string name="perapp_export">Dışa aktar</string>
+    <string name="perapp_import">Panodan içe aktar</string>
     <string name="perapp_save_failed">Uygulama seçimi kaydedilemedi</string>
+    <string name="perapp_imported">%1$d uygulama içe aktarıldı, %2$d tanesi yüklü olmadığı için atlandı</string>
+    <string name="perapp_import_invalid">Pano boş veya bir uygulama listesi değil</string>
     <string name="perapp_status">%1$s, %2$s</string>
     <string name="perapp_disabled_hint">Uygulama seçilmediği sürece devre dışı</string>
     <string name="perapp_restart_required">VPN\'i yeniden bağlayın</string>

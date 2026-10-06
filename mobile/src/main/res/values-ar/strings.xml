@@ -260,7 +260,11 @@
     <string name="perapp_hide_system">إخفاء تطبيقات النظام</string>
     <string name="perapp_select_all">تحديد الكل</string>
     <string name="perapp_deselect_all">إلغاء تحديد الكل</string>
+    <string name="perapp_export">تصدير</string>
+    <string name="perapp_import">استيراد من الحافظة</string>
     <string name="perapp_save_failed">تعذر حفظ اختيار التطبيقات</string>
+    <string name="perapp_imported">تم استيراد %1$d تطبيقات وتخطي %2$d غير مثبتة</string>
+    <string name="perapp_import_invalid">الحافظة فارغة أو ليست قائمة تطبيقات</string>
     <string name="perapp_status">\u2068%1$s\u2069، \u2068%2$s\u2069</string>
     <string name="perapp_disabled_hint">معطّل إلى أن تحدِّد تطبيقًا واحدًا على الأقل</string>
     <string name="perapp_restart_required">أعِد اتصال VPN</string>

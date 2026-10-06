@@ -236,7 +236,11 @@
     <string name="perapp_hide_system">پنهان‌کردن برنامه‌های سیستمی</string>
     <string name="perapp_select_all">انتخاب همه</string>
     <string name="perapp_deselect_all">لغو انتخاب همه</string>
+    <string name="perapp_export">خروجی گرفتن</string>
+    <string name="perapp_import">وارد کردن از کلیپ‌بورد</string>
     <string name="perapp_save_failed">ذخیره انتخاب برنامه‌ها ممکن نشد</string>
+    <string name="perapp_imported">تعداد %1$d برنامه وارد شد، %2$d برنامهٔ نصب‌نشده نادیده گرفته شد</string>
+    <string name="perapp_import_invalid">کلیپ‌بورد خالی است یا فهرست برنامه نیست</string>
     <string name="perapp_status">\u2068%1$s\u2069 — \u2068%2$s\u2069</string>
     <string name="perapp_disabled_hint">تا وقتی برنامه‌ای انتخاب نشده، غیرفعال است</string>
     <string name="perapp_restart_required">اتصال مجدد VPN لازم است</string>

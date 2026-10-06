@@ -8,6 +8,7 @@ import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.repo.InstalledApp
 import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppConfig
+import io.github.madeye.meow.repo.PerAppListCodec
 import io.github.madeye.meow.repo.PerAppMode
 import io.github.madeye.meow.repo.PerAppRepository
 import kotlinx.coroutines.CancellationException
@@ -60,6 +61,15 @@ class PerAppProxyViewModel(
     sealed interface PerAppEvent {
         /** The persist threw; the route stays open so the user can retry. */
         data object SaveFailed : PerAppEvent
+
+        /**
+         * A clipboard import landed: [applied] packages staged, [skipped]
+         * named packages the device does not have installed.
+         */
+        data class Imported(val applied: Int, val skipped: Int) : PerAppEvent
+
+        /** The clipboard held nothing parseable as an app list. */
+        data object ImportInvalid : PerAppEvent
     }
 
     private val _events = MutableSharedFlow<PerAppEvent>(extraBufferCapacity = 4)
@@ -147,6 +157,43 @@ class PerAppProxyViewModel(
         config.value = config.value.copy(
             packages = config.value.packages - removing,
         )
+    }
+
+    /** The working selection in the share/import wire format. */
+    fun exportText(): String =
+        PerAppListCodec.encode(config.value.mode, config.value.packages)
+
+    /**
+     * Stages [text] into the working config — deliberately NOT persisted;
+     * the ✓ save remains the commit point, so a bad paste is still
+     * reversible. Packages are kept only when PackageManager knows them
+     * (exact match, never substring); a pasted mode line replaces the mode,
+     * a bare list keeps it.
+     */
+    fun importText(text: String?) {
+        val parsed = text?.let(PerAppListCodec::parse)
+        if (parsed == null) {
+            _events.tryEmit(PerAppEvent.ImportInvalid)
+            return
+        }
+        viewModelScope.launch {
+            val installed = installedApps.installedPackageNames()
+            // An empty census means enumeration failed, not that nothing is
+            // installed — the init prune reads it the same way. Apply the
+            // list verbatim rather than silently dropping all of it.
+            val applied = if (installed.isEmpty()) {
+                parsed.packages
+            } else {
+                parsed.packages intersect installed
+            }
+            config.value = config.value.copy(
+                mode = parsed.mode ?: config.value.mode,
+                packages = applied,
+            )
+            _events.emit(
+                PerAppEvent.Imported(applied.size, parsed.packages.size - applied.size),
+            )
+        }
     }
 
     fun save(onSaved: () -> Unit) {

@@ -239,7 +239,11 @@
     <string name="perapp_hide_system">Hide system apps</string>
     <string name="perapp_select_all">Select All</string>
     <string name="perapp_deselect_all">Deselect All</string>
+    <string name="perapp_export">Export</string>
+    <string name="perapp_import">Import from clipboard</string>
     <string name="perapp_save_failed">Couldn\'t save app selection</string>
+    <string name="perapp_imported">Imported %1$d apps, skipped %2$d not installed</string>
+    <string name="perapp_import_invalid">Clipboard is empty or not an app list</string>
     <string name="perapp_status">%1$s — %2$s</string>
     <string name="perapp_disabled_hint">Disabled while no apps are selected</string>
     <string name="perapp_restart_required">restart VPN to apply</string>

@@ -228,7 +228,11 @@
     <string name="perapp_hide_system">စနစ် အက်ပ်များ ဖျောက်ရန်</string>
     <string name="perapp_select_all">အားလုံး ရွေးရန်</string>
     <string name="perapp_deselect_all">ရွေးချယ်မှု အားလုံး ဖြုတ်ရန်</string>
+    <string name="perapp_export">ထုတ်ယူရန်</string>
+    <string name="perapp_import">ကလစ်ဘုတ်မှ တင်သွင်းရန်</string>
     <string name="perapp_save_failed">အက်ပ်ရွေးချယ်မှု သိမ်းဆည်း၍မရပါ</string>
+    <string name="perapp_imported">အက်ပ် %1$d ခု တင်သွင်းပြီး၊ မတည်ရှိသော %2$d ခုကို ကျော်သွားသည်</string>
+    <string name="perapp_import_invalid">ကလစ်ဘုတ်တွင် ဘာမှမရှိပါ သို့မဟုတ် အက်ပ်စာရင်း မဟုတ်ပါ</string>
     <string name="perapp_status">%1$s၊ %2$s</string>
     <string name="perapp_disabled_hint">အက်ပ် မရွေးထားသရွေ့ အလုပ်မလုပ်ပါ</string>
     <string name="perapp_restart_required">VPN ပြန်ချိတ်ဆက်ပါ</string>

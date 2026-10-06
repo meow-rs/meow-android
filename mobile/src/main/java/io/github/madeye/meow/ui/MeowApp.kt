@@ -1,6 +1,7 @@
 package io.github.madeye.meow.ui
 
 import android.app.Activity
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -710,12 +711,19 @@ private fun PerAppProxyRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit
     val viewModel: PerAppProxyViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var menuOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val clipboardText = rememberClipboardText()
 
     val saveFailed = stringResource(R.string.perapp_save_failed)
-    LaunchedEffect(viewModel, saveFailed) {
+    val importedFmt = stringResource(R.string.perapp_imported)
+    val importInvalid = stringResource(R.string.perapp_import_invalid)
+    LaunchedEffect(viewModel, saveFailed, importedFmt, importInvalid) {
         viewModel.events.collect { event ->
             val message = when (event) {
                 is PerAppProxyViewModel.PerAppEvent.SaveFailed -> saveFailed
+                is PerAppProxyViewModel.PerAppEvent.Imported ->
+                    String.format(importedFmt, event.applied, event.skipped)
+                is PerAppProxyViewModel.PerAppEvent.ImportInvalid -> importInvalid
             }
             snackbarHost.showSnackbar(message)
         }
@@ -726,7 +734,10 @@ private fun PerAppProxyRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit
         navigationIcon = { BackButton(onBack) },
         actions = {
             Box {
-                IconButton(onClick = { menuOpen = true }) {
+                // Gated like the ✓ button: during the initial load Export
+                // would emit the default empty config and Import would race
+                // the init-time load.
+                IconButton(onClick = { menuOpen = true }, enabled = !state.loading) {
                     Icon(
                         Icons.Filled.MoreVert,
                         contentDescription = stringResource(R.string.common_more_options),
@@ -788,6 +799,28 @@ private fun PerAppProxyRoute(snackbarHost: SnackbarHostState, onBack: () -> Unit
                         },
                         // Toggle stays open so the flipped label is visible.
                         onClick = viewModel::onToggleSystemApps,
+                    )
+                    // The store wire format verbatim; the share sheet hands
+                    // out copy-to-clipboard and save for free.
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.perapp_export)) },
+                        onClick = {
+                            menuOpen = false
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, viewModel.exportText())
+                            }
+                            context.startActivity(Intent.createChooser(send, null))
+                        },
+                    )
+                    // Stages into the working selection only — the ✓ button
+                    // stays the commit point.
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.perapp_import)) },
+                        onClick = {
+                            menuOpen = false
+                            viewModel.importText(clipboardText())
+                        },
                     )
                 }
             }
