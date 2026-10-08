@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build debug APK (arm64 only, release Rust for smaller .so)
-export JAVA_HOME=/path/to/jdk17
+export JAVA_HOME=/path/to/jdk  # 17–25
 ./gradlew :mobile:assembleDebug -PTARGET_ABI=arm64 -PCARGO_PROFILE=release
 
 # Build all ABIs
@@ -33,7 +33,9 @@ SKIP_EMULATOR_BOOT=true ./test-e2e.sh
 SKIP_EMULATOR_BOOT=true SS_HOST_FROM_EMU=<host-LAN-IP> ./test-e2e.sh
 ```
 
-**JDK 17 is required** — JDK 25 breaks Kotlin compiler. Set `JAVA_HOME` explicitly.
+**JDK 17–25.** CI uses 17. Gradle 8.14 could not start on JDK 25 — that was the old "JDK 25 breaks Kotlin" — but Gradle 9.1+ runs on it. Set `JAVA_HOME` explicitly.
+
+Gradle is pinned to 9.4.1, the newest release whose compatibility matrix still tests AGP 8.13 (9.5+ only tests AGP 9). Gradle 9 needs rust-android-gradle ≥ 0.10.0, because 0.9.6 calls `AbstractCopyTask.setFileMode`, which Gradle 9 removed.
 
 ## Lint Commands
 

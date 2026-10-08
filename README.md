@@ -70,18 +70,18 @@ Network
 
 ### Prerequisites
 
-- Android SDK (API 36) with NDK
+- Android SDK (API 36) with NDK 27.0.12077973 (AGP 8.13's default `ndkVersion`)
 - Rust toolchain with Android targets:
   ```
   rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
   ```
-- JDK 17
+- JDK 17–25
 
 ### Build
 
 ```bash
 # Build debug APK (arm64 only, release Rust)
-export JAVA_HOME=/path/to/jdk17
+export JAVA_HOME=/path/to/jdk
 ./gradlew :mobile:assembleDebug -PTARGET_ABI=arm64 -PCARGO_PROFILE=release
 ```
 
