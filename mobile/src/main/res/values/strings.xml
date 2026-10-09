@@ -175,6 +175,7 @@
     <string name="settings_dns_builtin">Plain TCP via tunnel</string>
     <string name="settings_show_exit_ip">Show exit IP</string>
     <string name="settings_show_exit_ip_desc">Looks up your public IP on Home via ip.sb, ipwho.is or ipinfo.io</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_about">About</string>
     <string name="settings_source_code">Source Code</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

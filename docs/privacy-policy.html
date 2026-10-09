@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meow - Privacy Policy</title>
+    <link rel="canonical" href="https://meow-rs.github.io/meow-android/privacy-policy.html">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -23,54 +24,50 @@
 <body>
 
 <h1>Meow - Privacy Policy</h1>
-<p class="updated">Last updated: October 4, 2026</p>
+<p class="updated">Last updated: October 9, 2026</p>
 
 <h2>Overview</h2>
-<p>Meow ("the App") is an open-source VPN client for Android. We respect your privacy and are committed to protecting it. This policy explains what data the App handles and how.</p>
+<p>Meow ("the App", Android package <code>io.github.madeye.meow</code>) is an open-source VPN client provided by Max Lv. We respect your privacy and are committed to protecting it. This policy explains what data the App handles and how.</p>
 
-<h2>Data Collection</h2>
-<p>Meow does <strong>not</strong> collect, store, or transmit any personal data. Specifically:</p>
+<h2>Data Handling</h2>
+<p>No account or registration is required. The App has no advertising SDKs. It processes network traffic on your device to provide the VPN features you request. The developer does not operate the proxy servers you configure. Diagnostic data and other external requests are described below.</p>
+
+<h2>Network Traffic and VPN Permission</h2>
+<p>The App requests Android's VPN permission to create a local VPN tunnel and route traffic according to your configuration. Traffic may go directly to its destination or through proxy servers you choose. Those providers and destination services can receive your IP address and connection information; what they can see also depends on the protocol and encryption you configure. Use providers you trust and consult their privacy policies.</p>
+<p>DNS requests follow the App's tunnel and configured resolver behavior. DNS is not guaranteed to use DNS-over-HTTPS. Subscription, proxy-provider and rule-set URLs are fetched to import or refresh your configuration, including scheduled subscription refreshes when enabled. Those servers receive your IP address, request headers and any credentials or tokens included in the URLs. Meow does not send these configurations to a developer-operated server.</p>
+
+<h2>Local Data, Retention and Deletion</h2>
 <ul>
-    <li>No account or registration is required.</li>
-    <li>No analytics, tracking, or telemetry is included.</li>
-    <li>No advertising SDKs are embedded.</li>
-    <li>No crash reports are sent to us.</li>
-    <li>No browsing history, DNS queries, or network traffic content is logged or recorded by the App.</li>
+    <li>Subscription URLs, proxy credentials, configuration profiles, downloaded provider/rule data, and settings are stored in the App's private storage.</li>
+    <li>The installed-app list is read on-device to let you select which apps use the VPN. Selected package names are stored locally, not uploaded as an app inventory.</li>
+    <li>Traffic statistics, active/recent connection details (which may include destination addresses and hostnames), DNS lookup results, and engine diagnostic logs are displayed locally. The recent-connections list and displayed log buffer are bounded and held in memory; they are not a developer-hosted browsing history.</li>
+    <li>Android backup is enabled. Depending on your device and system backup settings, Android may back up or transfer eligible app data. Manage these copies through your system backup settings.</li>
 </ul>
+<p>You can delete profiles in the App, clear recent connections, or clear app storage in Android settings. Clearing app storage or uninstalling removes the local app data, but does not delete exported files, system backups, or information already received by an external service. Files or QR codes you explicitly export/share are passed to the destination you choose.</p>
 
-<h2>Network Traffic</h2>
-<p>The App routes your device's network traffic through proxy servers that <strong>you</strong> configure via subscription URLs or manual configuration. The App itself does not operate any proxy servers and has no access to your traffic once it leaves your device.</p>
+<h2>Diagnostics and Distribution Channels</h2>
+<p>The Google Play build disables Firebase Analytics collection. GitHub release builds enable Firebase Analytics, which sends usage events (such as connect/disconnect, subscription actions, route-mode and proxy selection), including profile or proxy names on some events, and SDK-generated app/device and installation information to Google to understand feature use.</p>
+<p>Firebase Crashlytics is included and automatic crash reporting is enabled in the current Google Play and GitHub builds. It can send crash stack traces, app/device information and installation identifiers to Google so the developer can diagnose failures. Disabling Analytics does not disable Crashlytics. There is currently no in-app switch for crash reporting. Crash reports are separate from the local engine log viewer; the App does not explicitly attach that viewer's log buffer or traffic payloads to reports.</p>
+<p>Google processes these diagnostics under its applicable terms. Firebase documents that Crashlytics retains crash traces and associated identifiers for 90 days before beginning deletion. See <a href="https://firebase.google.com/support/privacy">Firebase's privacy and retention information</a> and <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>. Contact us for requests about diagnostic data; uninstalling does not retroactively delete reports already sent.</p>
 
-<h2>Local Data</h2>
-<p>The App stores the following data locally on your device only:</p>
-<ul>
-    <li>Proxy subscription URLs and configuration profiles you add.</li>
-    <li>Session traffic statistics (upload/download bytes) for display purposes.</li>
-</ul>
-<p>This data is stored in the app's private storage and is removed when you uninstall the App.</p>
-
-<h2>Third-Party Services</h2>
-<p>The App does not integrate any third-party services that collect user data. DNS queries are resolved via DNS-over-HTTPS (DoH) through your configured proxy to protect your privacy.</p>
-<p><strong>Exit IP lookup.</strong> While "Show exit IP" is on (Settings &gt; Network; off by default), the Home screen asks a public geo-IP service which address your traffic leaves from: <code>api.ip.sb</code>, falling back to <code>ipwho.is</code> and then <code>ipinfo.io</code>. The request carries no identifiers or app data, but like any request it reveals your public IP address (the proxy's exit address while connected, your own while disconnected) to that service, which returns the IP, country and network operator shown on Home. The result is not stored. Turn the setting off to stop these requests.</p>
-<p><strong>Update check.</strong> In the version downloaded from GitHub, tapping "Check for updates" (Settings &gt; General) asks <code>api.github.com</code> for the App's latest release; the App never checks on its own. The request carries nothing but the App's version number, but like any request it reveals your public IP address to GitHub. If there is a newer version, "Download" opens it in your browser. The Google Play version never contacts GitHub for this: it opens the App's Play Store listing instead.</p>
-
-<h2>VPN Permission</h2>
-<p>The App requests Android's VPN permission to create a local VPN tunnel on your device. This is required to route traffic through your configured proxy servers. No traffic is sent to us.</p>
+<h2>Other External Services</h2>
+<p><strong>Exit IP lookup.</strong> While "Show exit IP" is on (Settings &gt; Network; off by default), the Home screen asks a public geo-IP service which address your traffic leaves from: <code>api.ip.sb</code>, falling back to <code>ipwho.is</code> and then <code>ipinfo.io</code>. The request carries no identifiers or app data, but like any request it reveals your public IP address (the proxy's exit address when the lookup is routed through the VPN, or your own address when disconnected or when Meow bypasses the VPN) to that service, which returns the IP, country and network operator shown on Home. The result is kept in memory for display, not saved to disk. Turn the setting off to stop these requests.</p>
+<p><strong>Update check.</strong> In the version downloaded from GitHub, tapping "Check for updates" (Settings &gt; General) asks <code>api.github.com</code> for the App's latest release; the App never checks on its own. The request includes an app/version user agent, but like any request it reveals your public IP address to GitHub. If there is a newer version, "Download" opens it in your browser. The Google Play version never contacts GitHub for this: it opens the App's Play Store listing instead.</p>
 
 <h2>Camera Permission</h2>
-<p>The App asks for camera access only when you open the QR code scanner on the Subscriptions page (the button at the top right of the Home tab), to read a subscription QR code, and you can decline and pick an image of the code instead. Camera frames and picked images are decoded on your device; they are never stored or sent anywhere. A subscription QR code you share is generated on your device and leaves it only through the app you choose in the share sheet.</p>
+<p>The App asks for camera access only when you open the QR code scanner on the Subscriptions page (the button at the top right of the Home tab), to read a subscription QR code, and you can decline and pick an image of the code instead. Camera frames and picked images are decoded on your device; they are not uploaded by the scanner. Shared QR images are temporarily written to the App's cache for sharing. A subscription QR code you share is generated on your device and leaves it only through the app you choose in the share sheet.</p>
 
 <h2>Children's Privacy</h2>
-<p>The App does not knowingly collect any information from children under 13.</p>
+<p>The App is not directed to children under 13. If you believe a child has provided personal information, contact us using the address below.</p>
 
 <h2>Changes to This Policy</h2>
 <p>We may update this privacy policy from time to time. Changes will be posted on this page with an updated date.</p>
 
 <h2>Contact</h2>
-<p>If you have questions about this privacy policy, please open an issue on our <a href="https://github.com/madeye/meow">GitHub repository</a>.</p>
+<p>For privacy questions or data requests, contact Max Lv at <a href="mailto:m0d8ye@gmail.com">m0d8ye@gmail.com</a>. For public technical questions, use our <a href="https://github.com/meow-rs/meow-android/issues">GitHub issue tracker</a>. Do not post credentials or private configurations in public issues.</p>
 
 <h2>Open Source</h2>
-<p>Meow is open source. You can review the complete source code at <a href="https://github.com/madeye/meow">github.com/madeye/meow</a> to verify these privacy claims.</p>
+<p>Meow is open source. You can review the complete source code at <a href="https://github.com/meow-rs/meow-android">github.com/meow-rs/meow-android</a> to verify these privacy claims.</p>
 
 </body>
 </html>
