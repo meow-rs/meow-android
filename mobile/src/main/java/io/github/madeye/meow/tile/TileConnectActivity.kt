@@ -4,6 +4,7 @@ import android.net.VpnService
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import timber.log.Timber
 
 /**
  * Finishes a tile tap that needs an Activity in front: the VPN consent
@@ -20,7 +21,13 @@ class TileConnectActivity : ComponentActivity() {
     private val consent = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
-        if (result.resultCode == RESULT_OK) startVpnService()
+        if (result.resultCode == RESULT_OK) {
+            try {
+                startVpnService()
+            } catch (e: IllegalStateException) {
+                Timber.w(e, "startVpnService refused")
+            }
+        }
         finish()
     }
 
@@ -31,7 +38,11 @@ class TileConnectActivity : ComponentActivity() {
         val request = VpnService.prepare(this)
         if (request == null) {
             // Being in front lifts the background-start limit.
-            startVpnService()
+            try {
+                startVpnService()
+            } catch (e: IllegalStateException) {
+                Timber.w(e, "startVpnService refused")
+            }
             finish()
         } else {
             consent.launch(request)

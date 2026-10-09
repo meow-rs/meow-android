@@ -230,6 +230,11 @@ object BaseService {
                 Timber.w(e, "restart refused")
                 data.notification?.destroy()
                 data.notification = null
+            } catch (e: SecurityException) {
+                // Bad-process flag on the app: same refusal, same handling.
+                Timber.w(e, "restart refused")
+                data.notification?.destroy()
+                data.notification = null
             }
         }
 

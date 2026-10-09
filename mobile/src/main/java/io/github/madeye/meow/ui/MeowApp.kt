@@ -107,6 +107,7 @@ import io.github.madeye.meow.ui.util.writeText
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Root of the Compose UI: four tabs plus the pushed detail screens.
@@ -403,7 +404,13 @@ private fun HomeRoute(
 private fun startVpnService(context: android.content.Context) {
     // startForegroundService under the hood: the service answers its watchdog
     // with startForeground() on every onStartCommand path.
-    io.github.madeye.meow.bg.VpnService.start(context)
+    try {
+        io.github.madeye.meow.bg.VpnService.start(context)
+    } catch (e: IllegalStateException) {
+        // A refused start leaves the UI untouched: switch state follows the
+        // service's own stateChanged callback.
+        Timber.w(e, "startVpnService refused")
+    }
 }
 
 /**
