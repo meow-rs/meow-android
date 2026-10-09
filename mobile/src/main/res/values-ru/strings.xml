@@ -172,6 +172,7 @@
     <string name="settings_dns_builtin">TCP через туннель</string>
     <string name="settings_show_exit_ip">Показывать внешний IP</string>
     <string name="settings_show_exit_ip_desc">Определяет ваш внешний IP на вкладке «Главная» через ip.sb, ipwho.is или ipinfo.io</string>
+    <string name="settings_privacy_policy">Политика конфиденциальности</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_source_code">Исходный код</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

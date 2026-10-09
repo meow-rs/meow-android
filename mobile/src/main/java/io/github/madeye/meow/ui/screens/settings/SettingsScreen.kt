@@ -53,6 +53,7 @@ fun SettingsScreen(
     onPerAppProxy: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
     onCheckForUpdates: () -> Unit,
+    onPrivacyPolicy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unavailable = stringResource(R.string.settings_version_unavailable)
@@ -130,6 +131,12 @@ fun SettingsScreen(
         Spacer(Modifier.height(8.dp))
         SectionHeader(stringResource(R.string.settings_about))
         GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+            NavRow(
+                title = stringResource(R.string.settings_privacy_policy),
+                icon = Icons.Filled.Info,
+                onClick = onPrivacyPolicy,
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
             InfoRow(
                 icon = Icons.Filled.Code,
                 title = stringResource(R.string.settings_source_code),

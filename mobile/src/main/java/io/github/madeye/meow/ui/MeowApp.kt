@@ -677,6 +677,11 @@ private fun SettingsRoute(
             contentPadding = padding,
             onPerAppProxy = onPerAppProxy,
             onShowExitIpChange = viewModel::onShowExitIpChange,
+            onPrivacyPolicy = {
+                if (!context.openUrl("https://meow-rs.github.io/meow-android/privacy-policy.html")) {
+                    scope.launch { snackbarHost.showSnackbar(noApp) }
+                }
+            },
             onCheckForUpdates = {
                 // Play policy lets a Play build update only through Play, so
                 // it just opens the listing. The flag is a constant, so R8

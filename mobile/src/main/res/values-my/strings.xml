@@ -165,6 +165,7 @@
     <string name="settings_dns_builtin">Tunnel ဖြင့် TCP</string>
     <string name="settings_show_exit_ip">ထွက်ပေါက် IP ပြရန်</string>
     <string name="settings_show_exit_ip_desc">သင့် Public IP ကို ip.sb၊ ipwho.is သို့မဟုတ် ipinfo.io မှတစ်ဆင့် ရှာဖွေပြီး ပင်မတွင် ပြသည်</string>
+    <string name="settings_privacy_policy">ကိုယ်ရေးအချက်အလက် မူဝါဒ</string>
     <string name="settings_about">အကြောင်း</string>
     <string name="settings_source_code">ရင်းမြစ်ကုဒ်</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

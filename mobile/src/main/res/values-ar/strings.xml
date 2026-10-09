@@ -192,6 +192,7 @@
     <string name="settings_dns_builtin">عبر النفق (TCP عادي)</string>
     <string name="settings_show_exit_ip">عرض عنوان IP الخارجي</string>
     <string name="settings_show_exit_ip_desc">يستعلم عن عنوان IP العام لديك عبر ip.sb أو ipwho.is أو ipinfo.io ويعرضه في «الرئيسية»</string>
+    <string name="settings_privacy_policy">سياسة الخصوصية</string>
     <string name="settings_about">حول</string>
     <string name="settings_source_code">الشفرة المصدرية</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

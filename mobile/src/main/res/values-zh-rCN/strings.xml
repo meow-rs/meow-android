@@ -160,6 +160,7 @@
     <string name="settings_dns_builtin">通过隧道走纯 TCP</string>
     <string name="settings_show_exit_ip">显示出口 IP</string>
     <string name="settings_show_exit_ip_desc">在首页通过 ip.sb、ipwho.is 或 ipinfo.io 查询公网 IP</string>
+    <string name="settings_privacy_policy">隐私政策</string>
     <string name="settings_about">关于</string>
     <string name="settings_source_code">源代码</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

@@ -164,6 +164,7 @@
     <string name="settings_dns_builtin">Tünel üzerinden TCP</string>
     <string name="settings_show_exit_ip">Çıkış IP\'sini göster</string>
     <string name="settings_show_exit_ip_desc">Ana sayfada genel IP adresinizi ip.sb, ipwho.is veya ipinfo.io üzerinden sorgular</string>
+    <string name="settings_privacy_policy">Gizlilik Politikası</string>
     <string name="settings_about">Hakkında</string>
     <string name="settings_source_code">Kaynak kodu</string>
     <string name="settings_source_url">github.com/madeye/meow</string>

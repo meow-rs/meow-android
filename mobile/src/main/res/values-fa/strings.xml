@@ -172,6 +172,7 @@
     <string name="settings_dns_builtin">از طریق تونل با TCP ساده</string>
     <string name="settings_show_exit_ip">نمایش آی‌پی خروجی</string>
     <string name="settings_show_exit_ip_desc">آی‌پی عمومی شما را در صفحهٔ خانه از طریق ip.sb یا ipwho.is یا ipinfo.io بررسی می‌کند</string>
+    <string name="settings_privacy_policy">سیاست حفظ حریم خصوصی</string>
     <string name="settings_about">درباره</string>
     <string name="settings_source_code">کد منبع</string>
     <string name="settings_source_url">github.com/madeye/meow</string>
