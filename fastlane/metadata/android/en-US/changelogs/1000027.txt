@@ -1,0 +1,3 @@
+- Added a Privacy Policy link in Settings, available in all supported languages.
+- Updated privacy disclosures to describe diagnostics, local data, and network requests accurately.
+- Includes the startup, networking, and per-app routing improvements from 1.0.9.
