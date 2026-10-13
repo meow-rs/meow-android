@@ -37,13 +37,16 @@ fun InstallConfigDialog(
         title = { Text(title) },
         text = {
             Column {
-                Text(
-                    text = stringResource(R.string.subs_name),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = colors.mutedText,
-                )
-                Text(text = link.name, style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(12.dp))
+                // A link that names none is named when it is added.
+                if (link.name.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.subs_name),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.mutedText,
+                    )
+                    Text(text = link.name, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(12.dp))
+                }
                 Text(
                     text = stringResource(R.string.subs_url),
                     style = MaterialTheme.typography.labelMedium,

@@ -36,12 +36,12 @@ class InstallConfigLinkTest {
     @Test
     fun `double-encoded url is decoded twice`() {
         assertEquals(
-            Valid(url = sub, name = "sub.example.com"),
+            Valid(url = sub, name = ""),
             parse("clash://install-config?url=${enc(enc(sub))}"),
         )
         // An inner layer that left '+' raw: still a plus, not a space.
         assertEquals(
-            Valid(url = "https://example.com/s?k=a+b", name = "example.com"),
+            Valid(url = "https://example.com/s?k=a+b", name = ""),
             parse("clash://install-config?url=${enc("https%3A%2F%2Fexample.com%2Fs%3Fk%3Da+b")}"),
         )
     }
@@ -51,7 +51,7 @@ class InstallConfigLinkTest {
         // subconverter-style: the inner URL's escapes must survive the decode.
         val converter = "https://api.example.net/sub?target=clash&url=https%3A%2F%2Fa.example%2Fs"
         assertEquals(
-            Valid(url = converter, name = "api.example.net"),
+            Valid(url = converter, name = ""),
             parse("clash://install-config?url=${enc(converter)}"),
         )
     }
@@ -59,7 +59,7 @@ class InstallConfigLinkTest {
     @Test
     fun `an unencoded url with a single query parameter still works`() {
         assertEquals(
-            Valid(url = "https://example.com/sub?token=abc", name = "example.com"),
+            Valid(url = "https://example.com/sub?token=abc", name = ""),
             parse("clash://install-config?url=https://example.com/sub?token=abc"),
         )
     }
@@ -83,7 +83,7 @@ class InstallConfigLinkTest {
     @Test
     fun `the first url parameter wins`() {
         assertEquals(
-            Valid(url = "https://a.example/s", name = "a.example"),
+            Valid(url = "https://a.example/s", name = ""),
             parse("clash://install-config?url=https%3A%2F%2Fa.example%2Fs&url=https%3A%2F%2Fb.example%2Fs"),
         )
     }
@@ -91,20 +91,20 @@ class InstallConfigLinkTest {
     @Test
     fun `plain http and ports are accepted`() {
         assertEquals(
-            Valid(url = "http://10.0.2.2:8080/config.yaml", name = "10.0.2.2"),
+            Valid(url = "http://10.0.2.2:8080/config.yaml", name = ""),
             parse("clash://install-config?url=${enc("http://10.0.2.2:8080/config.yaml")}"),
         )
     }
 
     @Test
-    fun `missing or blank name falls back to the url host`() {
-        val host = Valid(url = sub, name = "sub.example.com")
-        assertEquals(host, parse("clash://install-config?url=${enc(sub)}"))
-        assertEquals(host, parse("clash://install-config?url=${enc(sub)}&name="))
-        assertEquals(host, parse("clash://install-config?url=${enc(sub)}&name=%20%20"))
-        assertEquals(host, parse("clash://install-config?url=${enc(sub)}&name"))
+    fun `missing or blank name is left empty for add to generate`() {
+        val unnamed = Valid(url = sub, name = "")
+        assertEquals(unnamed, parse("clash://install-config?url=${enc(sub)}"))
+        assertEquals(unnamed, parse("clash://install-config?url=${enc(sub)}&name="))
+        assertEquals(unnamed, parse("clash://install-config?url=${enc(sub)}&name=%20%20"))
+        assertEquals(unnamed, parse("clash://install-config?url=${enc(sub)}&name"))
         // A malformed escape loses the name, not the link.
-        assertEquals(host, parse("clash://install-config?url=${enc(sub)}&name=%zz"))
+        assertEquals(unnamed, parse("clash://install-config?url=${enc(sub)}&name=%zz"))
     }
 
     @Test
@@ -191,7 +191,7 @@ class InstallConfigLinkTest {
     @Test
     fun `surrounding whitespace is trimmed`() {
         assertEquals(
-            Valid(url = sub, name = "sub.example.com"),
+            Valid(url = sub, name = ""),
             parse("clash://install-config?url=${enc("  $sub \n")}"),
         )
     }
@@ -233,11 +233,11 @@ class InstallConfigLinkTest {
     }
 
     @Test
-    fun `a scanned bare url is offered under its host`() {
-        assertEquals(Valid(url = sub, name = "sub.example.com"), InstallConfigLink.parseScanned(sub))
-        assertEquals(Valid(url = sub, name = "sub.example.com"), InstallConfigLink.parseScanned(" $sub\n"))
+    fun `a scanned bare url is offered without a name`() {
+        assertEquals(Valid(url = sub, name = ""), InstallConfigLink.parseScanned(sub))
+        assertEquals(Valid(url = sub, name = ""), InstallConfigLink.parseScanned(" $sub\n"))
         assertEquals(
-            Valid(url = "HTTP://example.com/s", name = "example.com"),
+            Valid(url = "HTTP://example.com/s", name = ""),
             InstallConfigLink.parseScanned("HTTP://example.com/s"),
         )
     }

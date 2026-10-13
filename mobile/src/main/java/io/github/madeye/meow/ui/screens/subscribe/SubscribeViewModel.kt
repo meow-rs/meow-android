@@ -116,13 +116,14 @@ class SubscribeViewModel(
         autoUpdate: Boolean = true,
         intervalHours: Int = AutoUpdateSchedule.DEFAULT_INTERVAL_HOURS,
     ) = withBusy {
-        val added = profiles.add(name.ifBlank { url }, url)
+        val added = profiles.add(subscriptionName(name), url)
         profiles.setAutoUpdate(added.id, autoUpdate, intervalHours)
         selectIfNone(added.id)
         analytics.subscriptionAdd()
     }
 
-    fun update(id: Long, name: String, url: String, autoUpdate: Boolean, intervalHours: Int) = withBusy {
+    fun update(id: Long, entered: String, url: String, autoUpdate: Boolean, intervalHours: Int) = withBusy {
+        val name = subscriptionName(entered)
         val before = profiles.getById(id)
         profiles.setAutoUpdate(id, autoUpdate, intervalHours)
         // Saving normally re-downloads the config, but not when only the

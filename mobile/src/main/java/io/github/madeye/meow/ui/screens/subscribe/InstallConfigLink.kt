@@ -16,7 +16,10 @@ import java.net.URLEncoder
  */
 sealed interface InstallConfigLink {
 
-    /** [url] is an absolute http(s) URL; [name] is never blank. */
+    /**
+     * [url] is an absolute http(s) URL. [name] is empty when the link names
+     * none; adding it then generates one ([subscriptionName]).
+     */
     data class Valid(val url: String, val name: String) : InstallConfigLink
 
     data class Invalid(val reason: Reason) : InstallConfigLink
@@ -69,12 +72,10 @@ sealed interface InstallConfigLink {
 
             val url = decodeUrl(rawUrl) ?: return Invalid(Reason.UNSUPPORTED_URL)
             if (url.isEmpty()) return Invalid(Reason.MISSING_URL)
-            val urlHost = httpHostOf(url) ?: return Invalid(Reason.UNSUPPORTED_URL)
+            if (!isHttpUrl(url)) return Invalid(Reason.UNSUPPORTED_URL)
 
-            // Without a name the manual flow would store the whole URL as one;
-            // the host is what a user would type and reads better in the card.
             val name = params.firstOrNull { it.first == "name" }?.second?.let(::decodeName)
-            return Valid(url = url, name = name ?: urlHost)
+            return Valid(url = url, name = name.orEmpty())
         }
 
         /**
@@ -87,15 +88,15 @@ sealed interface InstallConfigLink {
 
         /**
          * What a scanned QR code offers. Panels encode either an install-config
-         * link or the bare subscription URL; a bare URL is offered under its
-         * host, like a link without a name.
+         * link or the bare subscription URL; a bare URL is offered without a
+         * name, like a link that names none.
          */
         fun parseScanned(text: String): InstallConfigLink {
             val trimmed = text.trim()
             val scheme = trimmed.substringBefore(':', missingDelimiterValue = "")
             if (scheme.lowercase() !in URL_PROTOCOLS) return parse(trimmed)
-            val host = httpHostOf(trimmed) ?: return Invalid(Reason.UNSUPPORTED_URL)
-            return Valid(url = trimmed, name = host)
+            if (!isHttpUrl(trimmed)) return Invalid(Reason.UNSUPPORTED_URL)
+            return Valid(url = trimmed, name = "")
         }
 
         /** encodeURIComponent's output, which every link parser reads: URLEncoder writes a space as '+'. */
@@ -121,22 +122,21 @@ sealed interface InstallConfigLink {
         }
 
         /**
-         * The host of [url] if it is an absolute http(s) URL, else null.
+         * Whether [url] is an absolute http(s) URL with a host.
          *
          * `java.net.URL` is what `SubscriptionService` fetches with, so anything
          * accepted here is fetchable there. Whitespace and control characters
          * are rejected up front: URL would accept them, and a line break would
          * let a page lay out a fake second URL in the confirmation dialog.
          */
-        private fun httpHostOf(url: String): String? {
-            if (url.any { it.isWhitespace() || it.isISOControl() }) return null
+        private fun isHttpUrl(url: String): Boolean {
+            if (url.any { it.isWhitespace() || it.isISOControl() }) return false
             val parsed = try {
                 URL(url)
             } catch (_: MalformedURLException) {
-                return null
+                return false
             }
-            if (parsed.protocol !in URL_PROTOCOLS) return null
-            return parsed.host.takeUnless { it.isNullOrEmpty() }
+            return parsed.protocol in URL_PROTOCOLS && !parsed.host.isNullOrEmpty()
         }
 
         /**
