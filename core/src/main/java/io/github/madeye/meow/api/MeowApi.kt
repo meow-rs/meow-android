@@ -162,7 +162,7 @@ class MeowApi(
     suspend fun testProxyDelay(
         name: String,
         url: String = DELAY_TEST_URL,
-        timeoutMs: Int = 5_000,
+        timeoutMs: Int = GroupDelayTester.PROBE_TIMEOUT_MS,
     ): Int {
         val requestUrl = baseUrl.newBuilder()
             .addPathSegment("proxies").addPathSegment(name).addPathSegment("delay")

@@ -82,8 +82,13 @@ class GroupDelayTester(
         }
 
     companion object {
-        /** Per member. The old whole-group call shared 60 s across every member. */
-        const val PROBE_TIMEOUT_MS = 5_000
+        /**
+         * Per member, and it covers the whole probe: the dial, the proxy's own
+         * handshake and the request. mihomo's 5 s group default leaves a cold
+         * dial over a mobile network little headroom, so a slow but working
+         * node would show as timed out.
+         */
+        const val PROBE_TIMEOUT_MS = 8_000
 
         private const val URL_TEST = "URLTest"
         private const val FALLBACK = "Fallback"

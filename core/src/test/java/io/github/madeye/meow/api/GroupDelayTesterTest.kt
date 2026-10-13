@@ -177,7 +177,7 @@ class GroupDelayTesterTest {
         assertEquals("GET /proxies/Auto/delay", requests.last().route())
         for (probe in requests.drop(1)) {
             assertEquals("https://cp.cloudflare.com/", probe.requestUrl!!.queryParameter("url"))
-            assertEquals("5000", probe.requestUrl!!.queryParameter("timeout"))
+            assertEquals("8000", probe.requestUrl!!.queryParameter("timeout"))
         }
     }
 
