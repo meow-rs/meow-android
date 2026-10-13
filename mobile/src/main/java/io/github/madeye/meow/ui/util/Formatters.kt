@@ -16,6 +16,7 @@ import kotlin.math.abs
 object Formatters {
 
     private val UNITS = arrayOf("B", "KB", "MB", "GB", "TB")
+    private val BIT_UNITS = arrayOf("bps", "Kbps", "Mbps", "Gbps")
 
     /** e.g. `1.2 GB`, `340 KB`, `88 B`. */
     fun bytes(value: Long): String {
@@ -31,6 +32,18 @@ object Formatters {
 
     /** e.g. `1.2 MB/s`. */
     fun rate(bytesPerSecond: Long): String = "${bytes(bytesPerSecond)}/s"
+
+    /** e.g. `85.3 Mbps`, `940 Kbps`: decimal steps, as link speeds are quoted. */
+    fun bitRate(bitsPerSecond: Double): String {
+        var amount = abs(bitsPerSecond)
+        var unit = 0
+        while (amount >= 1000 && unit < BIT_UNITS.lastIndex) {
+            amount /= 1000
+            unit++
+        }
+        val digits = if (unit == 0 || amount >= 100) 0 else 1
+        return String.format(Locale.US, "%.${digits}f %s", amount, BIT_UNITS[unit])
+    }
 
     /**
      * Compact form for chart axes, where horizontal space is scarce:

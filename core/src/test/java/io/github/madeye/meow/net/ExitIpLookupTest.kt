@@ -62,9 +62,11 @@ class ExitIpLookupTest {
         totalTimeoutMs: Long = ExitIpLookup.TOTAL_TIMEOUT_MS,
     ) = ExitIpLookup(
         sources = sources.toList(),
-        client = ExitIpLookup.defaultClient().newBuilder()
-            .callTimeout(attemptTimeoutMs, TimeUnit.MILLISECONDS)
-            .build(),
+        fetcher = ExitIpLookup.okHttpFetcher(
+            ExitIpLookup.defaultClient().newBuilder()
+                .callTimeout(attemptTimeoutMs, TimeUnit.MILLISECONDS)
+                .build(),
+        ),
         totalTimeoutMs = totalTimeoutMs,
     )
 

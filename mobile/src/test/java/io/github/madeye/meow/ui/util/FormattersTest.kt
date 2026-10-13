@@ -31,4 +31,12 @@ class FormattersTest {
     fun `date is blank past what java time can represent`() {
         assertEquals("", Formatters.date(Long.MAX_VALUE, ZoneOffset.UTC))
     }
+
+    @Test
+    fun `bitRate steps by thousands like link speeds`() {
+        assertEquals("850 bps", Formatters.bitRate(850.0))
+        assertEquals("940 Kbps", Formatters.bitRate(940_000.0))
+        assertEquals("85.3 Mbps", Formatters.bitRate(85_300_000.0))
+        assertEquals("1.2 Gbps", Formatters.bitRate(1_200_000_000.0))
+    }
 }

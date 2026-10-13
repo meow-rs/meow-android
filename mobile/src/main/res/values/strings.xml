@@ -67,6 +67,30 @@
     <string name="proxy_testing">Testing latency…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">Timeout</string>
+    <string name="proxy_node_details">Details</string>
+    <string name="proxy_detail_type">Proxy Type</string>
+    <string name="proxy_detail_udp">UDP Relay</string>
+    <string name="proxy_detail_supported">Supported</string>
+    <string name="proxy_detail_unsupported">Not supported</string>
+    <string name="proxy_detail_connect_hint">Connect the VPN on the Home tab to run tests.</string>
+    <string name="proxy_detail_tcp_latency">TCP Relay Latency</string>
+    <string name="proxy_detail_udp_latency">UDP Relay Latency</string>
+    <string name="proxy_detail_exit_ip">External IP Address</string>
+    <string name="proxy_detail_nat">NAT Type</string>
+    <string name="proxy_detail_download">Download Bandwidth</string>
+    <string name="proxy_detail_upload">Upload Bandwidth</string>
+    <string name="proxy_detail_test">Test</string>
+    <string name="proxy_detail_testing">Testing…</string>
+    <string name="proxy_detail_tap_to_test">Tap to test</string>
+    <string name="proxy_detail_failed">Failed</string>
+    <string name="proxy_detail_udp_unsupported">This node does not relay UDP</string>
+    <string name="proxy_detail_nat_full_cone">Full Cone (NAT1)</string>
+    <string name="proxy_detail_nat_restricted_cone">Restricted Cone (NAT2)</string>
+    <string name="proxy_detail_nat_port_restricted_cone">Port Restricted Cone (NAT3)</string>
+    <string name="proxy_detail_nat_cone">Cone (filtering unknown)</string>
+    <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
+    <string name="proxy_detail_nat_unknown">Unknown</string>
+    <string name="proxy_detail_nat_source_hidden">The node\'s UDP relay does not report where replies come from, so its NAT type cannot be told</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Subscriptions</string>

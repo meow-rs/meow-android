@@ -13,6 +13,7 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.IMeowService
 import io.github.madeye.meow.aidl.IMeowServiceCallback
 import io.github.madeye.meow.aidl.TrafficStats
+import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.utils.Action
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -158,6 +159,14 @@ object BaseService {
             stopListeningForBandwidth(cb)
             callbacks.unregister(cb)
         }
+
+        // Runs on the calling binder thread, not Main: a probe blocks for as
+        // long as it measures.
+        override fun probeProxy(id: Long, proxy: String, kind: String, arg: String): String =
+            MeowCore.nativeProbeProxy(id, proxy, kind, arg)
+                ?: """{"error":"the probe returned no answer","code":"failed"}"""
+
+        override fun cancelProxyProbe(id: Long) = MeowCore.nativeCancelProxyProbe(id)
 
         fun stateChanged(s: State, msg: String?) = launch {
             val profileName = profileName

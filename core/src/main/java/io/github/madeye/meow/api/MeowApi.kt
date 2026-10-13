@@ -147,6 +147,15 @@ class MeowApi(
             emptyList()
         }
 
+    /** One proxy or group by name, for its detail page. */
+    suspend fun proxy(name: String): ProxyInfo {
+        val request = Request.Builder()
+            .url(baseUrl.newBuilder().addPathSegment("proxies").addPathSegment(name).build())
+            .build()
+        val body = execute(request, "proxy")
+        return decode("proxy") { ProxyInfo.parse(json.parseToJsonElement(body).jsonObject) }
+    }
+
     suspend fun selectProxy(group: String, name: String) {
         val payload = json.encodeToString(
             JsonObject.serializer(),

@@ -72,6 +72,8 @@ import io.github.madeye.meow.ui.screens.logs.LogsScreen
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyScreen
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
+import io.github.madeye.meow.ui.screens.proxies.ProxyDetailScreen
+import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsScreen
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesScreen
@@ -202,7 +204,10 @@ private fun MeowNavHost(
             )
         }
         composable<Dest.ProxyGroups> {
-            ProxyGroupsRoute(bottomBar = { BottomBar(navController, onTab) })
+            ProxyGroupsRoute(
+                onOpenNode = { node, testUrl -> navController.navigate(Dest.ProxyDetail(node, testUrl)) },
+                bottomBar = { BottomBar(navController, onTab) },
+            )
         }
         composable<Dest.Utility> {
             UtilityRoute(
@@ -259,6 +264,7 @@ private fun MeowNavHost(
         composable<Dest.Rules> { RulesRoute(onBack = navController::popBackStack) }
         composable<Dest.Logs> { LogsRoute(onBack = navController::popBackStack) }
         composable<Dest.Dns> { DnsRoute(onBack = navController::popBackStack) }
+        composable<Dest.ProxyDetail> { ProxyDetailRoute(onBack = navController::popBackStack) }
     }
 
     // A link is answered on the Subscriptions page, where the new subscription
@@ -600,7 +606,10 @@ private fun SubscriptionsRoute(
 }
 
 @Composable
-private fun ProxyGroupsRoute(bottomBar: @Composable () -> Unit) {
+private fun ProxyGroupsRoute(
+    onOpenNode: (node: String, testUrl: String?) -> Unit,
+    bottomBar: @Composable () -> Unit,
+) {
     val viewModel: ProxyGroupsViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -614,7 +623,18 @@ private fun ProxyGroupsRoute(bottomBar: @Composable () -> Unit) {
             onToggleExpanded = viewModel::onToggleExpanded,
             onSelectNode = viewModel::onSelectNode,
             onTestGroup = viewModel::onTestGroup,
+            onOpenNode = onOpenNode,
         )
+    }
+}
+
+@Composable
+private fun ProxyDetailRoute(onBack: () -> Unit) {
+    val viewModel: ProxyDetailViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    MeowScaffold(title = state.name, navigationIcon = { BackButton(onBack) }) { padding ->
+        ProxyDetailScreen(state = state, contentPadding = padding, onTest = viewModel::test)
     }
 }
 

@@ -3,6 +3,7 @@ package io.github.madeye.meow.api
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -69,6 +70,24 @@ data class Proxy(
 ) {
     /** Delay of the most recent probe; 0 when never tested or timed out. */
     val latestDelay: Int get() = history.lastOrNull()?.delay ?: 0
+}
+
+/** One proxy or group as `GET /proxies/{name}` describes it. */
+data class ProxyInfo(
+    val name: String,
+    val type: String,
+    /** Whether it relays UDP; false when the engine does not say. */
+    val udp: Boolean,
+    val history: List<ProxyHistory>,
+) {
+    companion object {
+        internal fun parse(json: JsonObject): ProxyInfo = ProxyInfo(
+            name = json.string("name"),
+            type = json.string("type"),
+            udp = runCatching { json["udp"]?.jsonPrimitive?.booleanOrNull }.getOrNull() ?: false,
+            history = json.historyList(),
+        )
+    }
 }
 
 data class ProxyGroup(

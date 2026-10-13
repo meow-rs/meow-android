@@ -47,14 +47,23 @@ class ExitIpSource(val url: HttpUrl, internal val parse: (JsonObject) -> ExitIp)
 }
 
 /**
- * Asks public geo-IP services which address this device's traffic leaves from.
+ * Fetches one source's answer: the body of a 2xx response. A refusal, a
+ * timeout or no route at all is an [IOException].
+ */
+fun interface ExitIpFetcher {
+    suspend fun fetch(url: HttpUrl): String
+}
+
+/**
+ * Asks public geo-IP services which address traffic leaves from.
  *
- * Runs in the UI process, whose sockets go through the TUN like any other
- * app's (VpnService does not exclude the app's own uid), so while connected
- * the answer is the proxy's exit; while disconnected it is the direct one.
- * The exception is a per-app allow-list without Meow on it (or a bypass-list
- * with it): then even a connected lookup goes direct, and the caller has to
- * say so.
+ * By default the requests go out from the UI process, whose sockets go
+ * through the TUN like any other app's (VpnService does not exclude the
+ * app's own uid), so while connected the answer is the proxy's exit; while
+ * disconnected it is the direct one. The exception is a per-app allow-list
+ * without Meow on it (or a bypass-list with it): then even a connected lookup
+ * goes direct, and the caller has to say so. A proxy's detail page passes a
+ * [fetcher] that goes through that one proxy instead.
  *
  * Sources are tried in order rather than raced: a race would send every check
  * to every service, and each one sees the user's address. A source that
@@ -69,7 +78,7 @@ class ExitIpLookup(
         ExitIpSource.ipwhoIs(),
         ExitIpSource.ipinfo(),
     ),
-    private val client: OkHttpClient = defaultClient(),
+    private val fetcher: ExitIpFetcher = okHttpFetcher(),
     private val totalTimeoutMs: Long = TOTAL_TIMEOUT_MS,
 ) {
     companion object {
@@ -87,6 +96,19 @@ class ExitIpLookup(
             .connectionPool(ConnectionPool(0, 1, TimeUnit.SECONDS))
             .callTimeout(ATTEMPT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .build()
+
+        /** Fetches over [client], i.e. from this process's own sockets. */
+        fun okHttpFetcher(client: OkHttpClient = defaultClient()) = ExitIpFetcher { url ->
+            val request = Request.Builder()
+                .url(url)
+                .header("Accept", "application/json")
+                .build()
+            client.newCall(request).await().use { response ->
+                // Rate limits come back as 403 (ip.sb) or 429 (ipinfo.io).
+                if (!response.isSuccessful) throw IOException("${url.host} returned HTTP ${response.code}")
+                response.body?.string().orEmpty()
+            }
+        }
     }
 
     /** Throws [IOException] when no source answered usably in time. */
@@ -112,15 +134,7 @@ class ExitIpLookup(
     }
 
     private suspend fun fetch(source: ExitIpSource): ExitIp {
-        val request = Request.Builder()
-            .url(source.url)
-            .header("Accept", "application/json")
-            .build()
-        val body = client.newCall(request).await().use { response ->
-            // Rate limits come back as 403 (ip.sb) or 429 (ipinfo.io).
-            if (!response.isSuccessful) throw IOException("${source.url.host} returned HTTP ${response.code}")
-            response.body?.string().orEmpty()
-        }
+        val body = fetcher.fetch(source.url)
         return try {
             source.parse(Json.parseToJsonElement(body).jsonObject)
         } catch (e: IllegalArgumentException) {

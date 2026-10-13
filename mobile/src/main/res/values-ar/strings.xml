@@ -68,6 +68,30 @@
     <string name="proxy_testing">جارٍ اختبار زمن الاستجابة…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">انتهت المهلة</string>
+    <string name="proxy_node_details">التفاصيل</string>
+    <string name="proxy_detail_type">نوع البروكسي</string>
+    <string name="proxy_detail_udp">ترحيل UDP</string>
+    <string name="proxy_detail_supported">مدعوم</string>
+    <string name="proxy_detail_unsupported">غير مدعوم</string>
+    <string name="proxy_detail_connect_hint">اتصل بشبكة VPN من تبويب «الرئيسية» لتشغيل الاختبارات.</string>
+    <string name="proxy_detail_tcp_latency">زمن استجابة ترحيل TCP</string>
+    <string name="proxy_detail_udp_latency">زمن استجابة ترحيل UDP</string>
+    <string name="proxy_detail_exit_ip">عنوان IP الخارجي</string>
+    <string name="proxy_detail_nat">نوع NAT</string>
+    <string name="proxy_detail_download">سرعة التنزيل</string>
+    <string name="proxy_detail_upload">سرعة الرفع</string>
+    <string name="proxy_detail_test">اختبار</string>
+    <string name="proxy_detail_testing">جارٍ الاختبار…</string>
+    <string name="proxy_detail_tap_to_test">انقر للاختبار</string>
+    <string name="proxy_detail_failed">فشل</string>
+    <string name="proxy_detail_udp_unsupported">هذه العقدة لا تُرحّل UDP</string>
+    <string name="proxy_detail_nat_full_cone">مخروطي كامل (NAT1)</string>
+    <string name="proxy_detail_nat_restricted_cone">مخروطي مقيّد (NAT2)</string>
+    <string name="proxy_detail_nat_port_restricted_cone">مخروطي مقيّد بالمنفذ (NAT3)</string>
+    <string name="proxy_detail_nat_cone">مخروطي (التصفية غير معروفة)</string>
+    <string name="proxy_detail_nat_symmetric">متماثل (NAT4)</string>
+    <string name="proxy_detail_nat_unknown">غير معروف</string>
+    <string name="proxy_detail_nat_source_hidden">ترحيل UDP لهذه العقدة لا يُبلغ عن مصدر الردود، لذا يتعذّر تحديد نوع NAT</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">الاشتراكات</string>

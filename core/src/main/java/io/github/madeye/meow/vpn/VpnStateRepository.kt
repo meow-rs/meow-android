@@ -5,6 +5,7 @@ import android.content.Intent
 import io.github.madeye.meow.aidl.MeowConnection
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.bg.BaseService
+import io.github.madeye.meow.net.ProxyProbeTransport
 import io.github.madeye.meow.utils.Action
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ import kotlinx.coroutines.launch
 class VpnStateRepository(
     private val recorder: DailyTrafficRecorder = DailyTrafficRecorder(),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-) : MeowConnection.Callback {
+) : MeowConnection.Callback, ProxyProbeTransport {
 
     private val connection = MeowConnection(listenForBandwidth = true)
 
@@ -80,4 +81,9 @@ class VpnStateRepository(
     }
 
     override fun trafficPersisted(profileId: Long) = Unit
+
+    override fun probe(id: Long, proxy: String, kind: String, arg: String): String =
+        connection.probeProxy(id, proxy, kind, arg)
+
+    override fun cancel(id: Long) = connection.cancelProxyProbe(id)
 }

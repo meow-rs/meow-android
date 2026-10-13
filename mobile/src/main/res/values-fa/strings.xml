@@ -64,6 +64,30 @@
     <string name="proxy_testing">در حال تست تأخیر…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">پایان مهلت</string>
+    <string name="proxy_node_details">جزئیات</string>
+    <string name="proxy_detail_type">نوع پروکسی</string>
+    <string name="proxy_detail_udp">رله UDP</string>
+    <string name="proxy_detail_supported">پشتیبانی می‌شود</string>
+    <string name="proxy_detail_unsupported">پشتیبانی نمی‌شود</string>
+    <string name="proxy_detail_connect_hint">برای اجرای تست‌ها، VPN را از زبانهٔ خانه وصل کنید.</string>
+    <string name="proxy_detail_tcp_latency">تأخیر رله TCP</string>
+    <string name="proxy_detail_udp_latency">تأخیر رله UDP</string>
+    <string name="proxy_detail_exit_ip">آدرس IP خارجی</string>
+    <string name="proxy_detail_nat">نوع NAT</string>
+    <string name="proxy_detail_download">پهنای باند دانلود</string>
+    <string name="proxy_detail_upload">پهنای باند آپلود</string>
+    <string name="proxy_detail_test">تست</string>
+    <string name="proxy_detail_testing">در حال تست…</string>
+    <string name="proxy_detail_tap_to_test">برای تست ضربه بزنید</string>
+    <string name="proxy_detail_failed">ناموفق</string>
+    <string name="proxy_detail_udp_unsupported">این گره UDP را رله نمی‌کند</string>
+    <string name="proxy_detail_nat_full_cone">مخروطی کامل (NAT1)</string>
+    <string name="proxy_detail_nat_restricted_cone">مخروطی محدود (NAT2)</string>
+    <string name="proxy_detail_nat_port_restricted_cone">مخروطی با محدودیت پورت (NAT3)</string>
+    <string name="proxy_detail_nat_cone">مخروطی (فیلترینگ نامشخص)</string>
+    <string name="proxy_detail_nat_symmetric">متقارن (NAT4)</string>
+    <string name="proxy_detail_nat_unknown">نامشخص</string>
+    <string name="proxy_detail_nat_source_hidden">رله UDP این گره منبع پاسخ‌ها را گزارش نمی‌کند، بنابراین نوع NAT قابل تشخیص نیست</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">اشتراک‌ها</string>

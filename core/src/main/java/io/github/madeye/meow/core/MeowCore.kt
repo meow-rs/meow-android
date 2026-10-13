@@ -21,4 +21,12 @@ object MeowCore {
     external fun nativeGetLogs(): String
     external fun nativeTestDirectTcp(host: String, port: Int): String
     external fun nativeTestDnsResolver(dnsAddr: String): String
+
+    /**
+     * Runs one proxy-detail probe through [proxy] and returns its JSON answer,
+     * blocking until it ends; null only when the JVM could not take the
+     * answer. [nativeCancelProxyProbe] with the same [id] ends it early.
+     */
+    external fun nativeProbeProxy(id: Long, proxy: String, kind: String, arg: String): String?
+    external fun nativeCancelProxyProbe(id: Long)
 }

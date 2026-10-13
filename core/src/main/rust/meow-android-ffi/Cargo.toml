@@ -56,6 +56,13 @@ android_logger = "0.14"
 # YAML / serialization
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
+serde_json = "1"
+
+# Proxy detail probes (src/probe): HTTP heads, cancellation, random payloads
+# and ids. All already in the engine's dependency graph.
+httparse = "1"
+tokio-util = "0.7"
+rand = "0.9"
 
 # Low-level
 libc = "0.2"

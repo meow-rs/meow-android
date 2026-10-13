@@ -56,6 +56,30 @@
     <string name="proxy_testing">Đang kiểm tra độ trễ…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">Hết giờ</string>
+    <string name="proxy_node_details">Chi tiết</string>
+    <string name="proxy_detail_type">Loại proxy</string>
+    <string name="proxy_detail_udp">Chuyển tiếp UDP</string>
+    <string name="proxy_detail_supported">Hỗ trợ</string>
+    <string name="proxy_detail_unsupported">Không hỗ trợ</string>
+    <string name="proxy_detail_connect_hint">Kết nối VPN ở thẻ Trang chủ để chạy kiểm tra.</string>
+    <string name="proxy_detail_tcp_latency">Độ trễ chuyển tiếp TCP</string>
+    <string name="proxy_detail_udp_latency">Độ trễ chuyển tiếp UDP</string>
+    <string name="proxy_detail_exit_ip">Địa chỉ IP bên ngoài</string>
+    <string name="proxy_detail_nat">Loại NAT</string>
+    <string name="proxy_detail_download">Băng thông tải xuống</string>
+    <string name="proxy_detail_upload">Băng thông tải lên</string>
+    <string name="proxy_detail_test">Kiểm tra</string>
+    <string name="proxy_detail_testing">Đang kiểm tra…</string>
+    <string name="proxy_detail_tap_to_test">Chạm để kiểm tra</string>
+    <string name="proxy_detail_failed">Thất bại</string>
+    <string name="proxy_detail_udp_unsupported">Nút này không chuyển tiếp UDP</string>
+    <string name="proxy_detail_nat_full_cone">Full Cone (NAT1)</string>
+    <string name="proxy_detail_nat_restricted_cone">Restricted Cone (NAT2)</string>
+    <string name="proxy_detail_nat_port_restricted_cone">Port Restricted Cone (NAT3)</string>
+    <string name="proxy_detail_nat_cone">Cone (chưa rõ cách lọc)</string>
+    <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
+    <string name="proxy_detail_nat_unknown">Không rõ</string>
+    <string name="proxy_detail_nat_source_hidden">Bộ chuyển tiếp UDP của nút không báo nguồn gói trả lời nên không xác định được loại NAT</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Gói đăng ký</string>

@@ -3,6 +3,7 @@ package io.github.madeye.meow.ui.screens.proxies
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -42,7 +45,11 @@ import io.github.madeye.meow.ui.components.DelayBadge
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.meow
 
-/** The Proxy Groups tab, after meow-ios's: one expandable card per group. */
+/**
+ * The Proxy Groups tab, after meow-ios's: one expandable card per group. A
+ * tap on a node selects it; a long press opens its detail page
+ * ([onOpenNode], with the group's test URL).
+ */
 @Composable
 fun ProxyGroupsScreen(
     state: ProxyGroupsUiState,
@@ -50,6 +57,7 @@ fun ProxyGroupsScreen(
     onToggleExpanded: (String) -> Unit,
     onSelectNode: (String, String) -> Unit,
     onTestGroup: (String) -> Unit,
+    onOpenNode: (node: String, testUrl: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -73,6 +81,7 @@ fun ProxyGroupsScreen(
                     expanded = state.expandedGroup == group.name,
                     onToggleExpanded = { onToggleExpanded(group.name) },
                     onSelectNode = { node -> onSelectNode(group.name, node) },
+                    onOpenNode = { node -> onOpenNode(node, group.testUrl) },
                     onTest = { onTestGroup(group.name) },
                 )
             }
@@ -106,6 +115,7 @@ private fun ProxyGroupCard(
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
     onSelectNode: (String) -> Unit,
+    onOpenNode: (String) -> Unit,
     onTest: () -> Unit,
 ) {
     val colors = MaterialTheme.meow
@@ -167,7 +177,11 @@ private fun ProxyGroupCard(
             Column {
                 HorizontalDivider(color = colors.border)
                 group.nodes.forEach { node ->
-                    ProxyNodeRow(node = node, onClick = { onSelectNode(node.name) })
+                    ProxyNodeRow(
+                        node = node,
+                        onClick = { onSelectNode(node.name) },
+                        onLongClick = { onOpenNode(node.name) },
+                    )
                 }
             }
         }
@@ -175,12 +189,20 @@ private fun ProxyGroupCard(
 }
 
 @Composable
-private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit) {
+private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit, onLongClick: () -> Unit) {
     val colors = MaterialTheme.meow
+    val haptics = LocalHapticFeedback.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClickLabel = stringResource(R.string.proxy_node_details),
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                },
+            )
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

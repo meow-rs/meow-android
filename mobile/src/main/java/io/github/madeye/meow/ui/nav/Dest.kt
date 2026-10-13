@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  * Navigation destinations.
  *
  * Four tabs, laid out as on meow-ios: Home (the VPN switch), which pushes
- * Subscriptions — and from there the YAML editor — and Rules; Proxy Groups;
- * Utility, which pushes the monitoring screens (Connections / DNS / Traffic /
+ * Subscriptions — and from there the YAML editor — and Rules; Proxy Groups,
+ * which pushes a node's detail page; Utility, which pushes the monitoring screens (Connections / DNS / Traffic /
  * Logs); and Settings, which pushes Per-App Proxy.
  */
 sealed interface Dest {
@@ -42,6 +42,9 @@ sealed interface Dest {
     @Serializable data object Logs : Dest
 
     @Serializable data object Dns : Dest
+
+    /** [testUrl]: the health-check URL of the group the node was opened from, if it has one. */
+    @Serializable data class ProxyDetail(val name: String, val testUrl: String? = null) : Dest
 }
 
 data class TabDestination(

@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
 import io.github.madeye.meow.bg.BaseService
+import java.io.IOException
 import timber.log.Timber
 
 class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceConnection,
@@ -19,7 +20,8 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
     }
 
     private var callback: Callback? = null
-    private var service: IMeowService? = null
+    // Volatile: proxy probes read it from IO threads.
+    @Volatile private var service: IMeowService? = null
     private var callbackRegistered = false
     // Remembered so onServiceDisconnected can rebind and resume the callback
     // registration (state + traffic) when the :vpn process restarts.
@@ -98,6 +100,28 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
                 Timber.w(e, "bindService refused")
                 false
             }
+        }
+    }
+
+    /**
+     * Runs one proxy-detail probe in `:vpn` and returns its JSON answer,
+     * blocking until it ends. Throws [IOException] when the service is not
+     * bound or its process died mid-probe.
+     */
+    fun probeProxy(id: Long, proxy: String, kind: String, arg: String): String {
+        val service = service ?: throw IOException("the VPN service is not bound")
+        return try {
+            service.probeProxy(id, proxy, kind, arg)
+        } catch (e: RemoteException) {
+            throw IOException("the VPN service went away", e)
+        } ?: throw IOException("the VPN service gave no answer")
+    }
+
+    fun cancelProxyProbe(id: Long) {
+        try {
+            service?.cancelProxyProbe(id)
+        } catch (_: RemoteException) {
+            // Gone with its process, and its probes with it.
         }
     }
 

@@ -16,6 +16,7 @@
 mod diagnostics;
 mod engine;
 mod logging;
+mod probe;
 mod protect;
 mod tun2socks;
 
@@ -487,6 +488,9 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
     _env: JNIEnv,
     _class: JClass,
 ) {
+    // A probe holds a route snapshot, so it would keep dialing through the
+    // stopped engine's proxies until its own budget ran out.
+    probe::cancel_all();
     tun2socks::stop();
     protect::clear();
     *DNS_RESOLVER.write() = None;

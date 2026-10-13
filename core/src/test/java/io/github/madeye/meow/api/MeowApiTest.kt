@@ -10,6 +10,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -271,6 +272,30 @@ class MeowApiTest {
 
         assertEquals("https://cp.cloudflare.com/", groups.getValue("Auto").testUrl)
         assertNull(groups.getValue("Proxy").testUrl)
+    }
+
+    @Test
+    fun `proxy reads one node's type and UDP support by its encoded name`() = runTest {
+        enqueue(
+            """
+            {"name": "Tokyo 01", "type": "Snell", "alive": true, "udp": true,
+             "history": [{"time": "2026-10-13T08:00:00Z", "delay": 88}]}
+            """.trimIndent(),
+        )
+
+        val proxy = api.proxy("Tokyo 01")
+
+        assertEquals("Snell", proxy.type)
+        assertTrue(proxy.udp)
+        assertEquals(listOf(88), proxy.history.map { it.delay })
+        assertEquals("/proxies/Tokyo%2001", server.takeRequest().requestUrl!!.encodedPath)
+    }
+
+    @Test
+    fun `proxy reads a missing udp flag as unsupported`() = runTest {
+        enqueue("""{"name": "web", "type": "Http", "history": []}""")
+
+        assertFalse(api.proxy("web").udp)
     }
 
     @Test

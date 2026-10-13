@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.navigation.toRoute
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.net.ExitIpLookup
+import io.github.madeye.meow.net.ProxyProber
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
 import io.github.madeye.meow.preference.ThemeModePreference
@@ -25,6 +27,8 @@ import io.github.madeye.meow.ui.screens.home.RouteChanges
 import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
+import io.github.madeye.meow.ui.nav.Dest
+import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
@@ -73,6 +77,9 @@ object AppGraph {
     val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
 
+    /** A proxy detail page's tests, run in `:vpn` over the activity's binding. */
+    val proxyProber: ProxyProber by lazy { ProxyProber(vpn) }
+
     /** Node and route-mode switches, for the exit-IP card; see [RouteChanges]. */
     val routeChanges: RouteChanges by lazy { RouteChanges() }
 
@@ -103,6 +110,18 @@ object AppGraph {
 
                 ProxyGroupsViewModel::class.java ->
                     ProxyGroupsViewModel(vpn, profiles, api, analytics, routeChanges)
+
+                ProxyDetailViewModel::class.java -> {
+                    val route = extras.createSavedStateHandle().toRoute<Dest.ProxyDetail>()
+                    ProxyDetailViewModel(
+                        name = route.name,
+                        testUrl = route.testUrl,
+                        vpnState = vpn.state,
+                        describe = api::proxy,
+                        tcpDelay = { name, url -> api.testProxyDelay(name, url) },
+                        prober = proxyProber,
+                    )
+                }
 
                 SubscribeViewModel::class.java -> SubscribeViewModel(
                     profiles,

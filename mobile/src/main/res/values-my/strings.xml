@@ -61,6 +61,30 @@
     <string name="proxy_testing">ကြန့်ကြာချိန် စစ်ဆေးနေသည်…</string>
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">အချိန်ကုန်</string>
+    <string name="proxy_node_details">အသေးစိတ်</string>
+    <string name="proxy_detail_type">ပရောက်စီ အမျိုးအစား</string>
+    <string name="proxy_detail_udp">UDP ထပ်ဆင့်ပို့ခြင်း</string>
+    <string name="proxy_detail_supported">ပံ့ပိုးသည်</string>
+    <string name="proxy_detail_unsupported">မပံ့ပိုးပါ</string>
+    <string name="proxy_detail_connect_hint">စစ်ဆေးမှုများ လုပ်ရန် ပင်မ တဘ်တွင် VPN ချိတ်ဆက်ပါ။</string>
+    <string name="proxy_detail_tcp_latency">TCP ထပ်ဆင့် ကြန့်ကြာချိန်</string>
+    <string name="proxy_detail_udp_latency">UDP ထပ်ဆင့် ကြန့်ကြာချိန်</string>
+    <string name="proxy_detail_exit_ip">ပြင်ပ IP လိပ်စာ</string>
+    <string name="proxy_detail_nat">NAT အမျိုးအစား</string>
+    <string name="proxy_detail_download">ဒေါင်းလုဒ် bandwidth</string>
+    <string name="proxy_detail_upload">အပ်လုဒ် bandwidth</string>
+    <string name="proxy_detail_test">စစ်ဆေးရန်</string>
+    <string name="proxy_detail_testing">စစ်ဆေးနေသည်…</string>
+    <string name="proxy_detail_tap_to_test">စစ်ဆေးရန် နှိပ်ပါ</string>
+    <string name="proxy_detail_failed">မအောင်မြင်ပါ</string>
+    <string name="proxy_detail_udp_unsupported">ဤ node သည် UDP ကို ထပ်ဆင့်မပို့ပါ</string>
+    <string name="proxy_detail_nat_full_cone">Full Cone (NAT1)</string>
+    <string name="proxy_detail_nat_restricted_cone">Restricted Cone (NAT2)</string>
+    <string name="proxy_detail_nat_port_restricted_cone">Port Restricted Cone (NAT3)</string>
+    <string name="proxy_detail_nat_cone">Cone (filtering မသိရ)</string>
+    <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
+    <string name="proxy_detail_nat_unknown">မသိရ</string>
+    <string name="proxy_detail_nat_source_hidden">ဤ node ၏ UDP ထပ်ဆင့်ပို့မှုသည် ပြန်စာ၏ ရင်းမြစ်ကို မဖော်ပြသဖြင့် NAT အမျိုးအစားကို မသိနိုင်ပါ</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">စာရင်းသွင်းမှုများ</string>
