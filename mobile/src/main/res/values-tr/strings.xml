@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Meow</string>
 
     <!-- Tabs -->
@@ -73,13 +73,17 @@
     <string name="proxy_detail_tap_to_test">Test etmek için dokunun</string>
     <string name="proxy_detail_failed">Başarısız</string>
     <string name="proxy_detail_udp_unsupported">Bu düğüm UDP aktarmıyor</string>
-    <string name="proxy_detail_nat_full_cone">Tam koni (NAT1)</string>
+    <string name="proxy_detail_nat_full_cone" tools:ignore="Typos">Tam koni (NAT1)</string>
     <string name="proxy_detail_nat_restricted_cone">Kısıtlı koni (NAT2)</string>
     <string name="proxy_detail_nat_port_restricted_cone">Port kısıtlı koni (NAT3)</string>
     <string name="proxy_detail_nat_cone">Koni (filtreleme bilinmiyor)</string>
     <string name="proxy_detail_nat_symmetric">Simetrik (NAT4)</string>
     <string name="proxy_detail_nat_unknown">Bilinmiyor</string>
     <string name="proxy_detail_nat_source_hidden">Düğümün UDP aktarımı yanıtların kaynağını bildirmiyor, bu yüzden NAT türü belirlenemiyor</string>
+    <string name="proxy_groups_tips">İpuçları</string>
+    <string name="proxy_groups_tips_tap">Bir düğüme geçmek için ona dokunun.</string>
+    <string name="proxy_groups_tips_long_press">Ayrıntılarını açmak ve yalnızca onu test etmek için bir düğüme uzun basın:</string>
+    <string name="proxy_groups_tips_connect">Testler için VPN bağlı olmalıdır.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Abonelikler</string>

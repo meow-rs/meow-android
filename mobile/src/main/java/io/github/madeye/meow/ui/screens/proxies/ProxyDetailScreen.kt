@@ -232,7 +232,7 @@ private fun DetailLine(text: String) {
     )
 }
 
-private val ProxyProbe.title: Int
+internal val ProxyProbe.title: Int
     @StringRes get() = when (this) {
         ProxyProbe.TcpLatency -> R.string.proxy_detail_tcp_latency
         ProxyProbe.UdpLatency -> R.string.proxy_detail_udp_latency

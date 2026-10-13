@@ -9,7 +9,7 @@
   Every values-xx translation must carry every key here; StringsParityTest
   enforces it.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Meow</string>
     <color name="ic_launcher_background">#27BCFD</color>
 
@@ -84,13 +84,17 @@
     <string name="proxy_detail_tap_to_test">Tap to test</string>
     <string name="proxy_detail_failed">Failed</string>
     <string name="proxy_detail_udp_unsupported">This node does not relay UDP</string>
-    <string name="proxy_detail_nat_full_cone">Full Cone (NAT1)</string>
+    <string name="proxy_detail_nat_full_cone" tools:ignore="Typos">Full Cone (NAT1)</string>
     <string name="proxy_detail_nat_restricted_cone">Restricted Cone (NAT2)</string>
     <string name="proxy_detail_nat_port_restricted_cone">Port Restricted Cone (NAT3)</string>
     <string name="proxy_detail_nat_cone">Cone (filtering unknown)</string>
     <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
     <string name="proxy_detail_nat_unknown">Unknown</string>
     <string name="proxy_detail_nat_source_hidden">The node\'s UDP relay does not report where replies come from, so its NAT type cannot be told</string>
+    <string name="proxy_groups_tips">Tips</string>
+    <string name="proxy_groups_tips_tap">Tap a node to switch to it.</string>
+    <string name="proxy_groups_tips_long_press">Long-press a node to open its details and test it on its own:</string>
+    <string name="proxy_groups_tips_connect">Tests need the VPN connected.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Subscriptions</string>

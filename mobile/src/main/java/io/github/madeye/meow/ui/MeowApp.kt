@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -75,6 +76,7 @@ import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyDetailScreen
 import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsScreen
+import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsTipsDialog
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesScreen
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
@@ -615,8 +617,17 @@ private fun ProxyGroupsRoute(
 
     // On every visit too, not only app resume: see ProxyGroupsViewModel.onResume.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
+    var showTips by rememberSaveable { mutableStateOf(false) }
 
-    MeowScaffold(title = stringResource(R.string.proxy_groups_title), bottomBar = bottomBar) { padding ->
+    MeowScaffold(
+        title = stringResource(R.string.proxy_groups_title),
+        bottomBar = bottomBar,
+        actions = {
+            IconButton(onClick = { showTips = true }, modifier = Modifier.testTag("proxy_groups_tips")) {
+                Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.proxy_groups_tips))
+            }
+        },
+    ) { padding ->
         ProxyGroupsScreen(
             state = state,
             contentPadding = padding,
@@ -626,6 +637,7 @@ private fun ProxyGroupsRoute(
             onOpenNode = onOpenNode,
         )
     }
+    if (showTips) ProxyGroupsTipsDialog(onDismiss = { showTips = false })
 }
 
 @Composable

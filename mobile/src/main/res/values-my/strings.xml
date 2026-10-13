@@ -85,6 +85,10 @@
     <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
     <string name="proxy_detail_nat_unknown">မသိရ</string>
     <string name="proxy_detail_nat_source_hidden">ဤ node ၏ UDP ထပ်ဆင့်ပို့မှုသည် ပြန်စာ၏ ရင်းမြစ်ကို မဖော်ပြသဖြင့် NAT အမျိုးအစားကို မသိနိုင်ပါ</string>
+    <string name="proxy_groups_tips">အကြံပြုချက်များ</string>
+    <string name="proxy_groups_tips_tap">node တစ်ခုသို့ ပြောင်းရန် ၎င်းကို နှိပ်ပါ။</string>
+    <string name="proxy_groups_tips_long_press">node တစ်ခု၏ အသေးစိတ်ကို ဖွင့်ပြီး ၎င်းတစ်ခုတည်းကို စစ်ဆေးရန် ကြာကြာ ဖိထားပါ -</string>
+    <string name="proxy_groups_tips_connect">စစ်ဆေးရန် VPN ချိတ်ဆက်ထားရပါမည်။</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">စာရင်းသွင်းမှုများ</string>

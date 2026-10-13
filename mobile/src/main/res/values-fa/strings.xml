@@ -88,6 +88,10 @@
     <string name="proxy_detail_nat_symmetric">متقارن (NAT4)</string>
     <string name="proxy_detail_nat_unknown">نامشخص</string>
     <string name="proxy_detail_nat_source_hidden">رله UDP این گره منبع پاسخ‌ها را گزارش نمی‌کند، بنابراین نوع NAT قابل تشخیص نیست</string>
+    <string name="proxy_groups_tips">راهنما</string>
+    <string name="proxy_groups_tips_tap">برای جابه‌جایی به یک گره، روی آن ضربه بزنید.</string>
+    <string name="proxy_groups_tips_long_press">برای باز کردن جزئیات یک گره و تست جداگانهٔ آن، آن را لمس طولانی کنید:</string>
+    <string name="proxy_groups_tips_connect">برای تست‌ها باید VPN وصل باشد.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">اشتراک‌ها</string>

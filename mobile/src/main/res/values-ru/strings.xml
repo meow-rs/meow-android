@@ -80,6 +80,10 @@
     <string name="proxy_detail_nat_symmetric">Симметричный (NAT4)</string>
     <string name="proxy_detail_nat_unknown">Неизвестно</string>
     <string name="proxy_detail_nat_source_hidden">UDP-ретрансляция узла не сообщает источник ответов, поэтому тип NAT определить нельзя</string>
+    <string name="proxy_groups_tips">Подсказки</string>
+    <string name="proxy_groups_tips_tap">Нажмите на узел, чтобы переключиться на него.</string>
+    <string name="proxy_groups_tips_long_press">Нажмите и удерживайте узел, чтобы открыть подробности и проверить только его:</string>
+    <string name="proxy_groups_tips_connect">Для тестов нужно подключение VPN.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Подписки</string>

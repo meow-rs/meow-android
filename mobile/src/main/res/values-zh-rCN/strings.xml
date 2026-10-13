@@ -80,6 +80,10 @@
     <string name="proxy_detail_nat_symmetric">对称型（NAT4）</string>
     <string name="proxy_detail_nat_unknown">未知</string>
     <string name="proxy_detail_nat_source_hidden">该节点的 UDP 转发不报告回包来源，无法判断 NAT 类型</string>
+    <string name="proxy_groups_tips">使用提示</string>
+    <string name="proxy_groups_tips_tap">单击节点：切换到该节点。</string>
+    <string name="proxy_groups_tips_long_press">长按节点：打开节点详情，单独测试该节点：</string>
+    <string name="proxy_groups_tips_connect">测试需要先连接 VPN。</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">订阅管理</string>

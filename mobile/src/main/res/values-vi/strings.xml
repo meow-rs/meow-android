@@ -80,6 +80,10 @@
     <string name="proxy_detail_nat_symmetric">Symmetric (NAT4)</string>
     <string name="proxy_detail_nat_unknown">Không rõ</string>
     <string name="proxy_detail_nat_source_hidden">Bộ chuyển tiếp UDP của nút không báo nguồn gói trả lời nên không xác định được loại NAT</string>
+    <string name="proxy_groups_tips">Mẹo sử dụng</string>
+    <string name="proxy_groups_tips_tap">Chạm vào một nút để chuyển sang nút đó.</string>
+    <string name="proxy_groups_tips_long_press">Nhấn giữ một nút để mở chi tiết và kiểm tra riêng nút đó:</string>
+    <string name="proxy_groups_tips_connect">Cần kết nối VPN để chạy kiểm tra.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">Gói đăng ký</string>

@@ -15,17 +15,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -87,6 +91,43 @@ fun ProxyGroupsScreen(
             }
         }
     }
+}
+
+/**
+ * The tab's info button: a long press is not something anyone finds by
+ * looking, so this says what a node row answers to and what its detail page
+ * offers (the page's own row titles, so the two never drift).
+ */
+@Composable
+fun ProxyGroupsTipsDialog(onDismiss: () -> Unit) {
+    val details = listOf(R.string.proxy_detail_type, R.string.proxy_detail_udp) + ProxyProbe.entries.map { it.title }
+    val body = MaterialTheme.typography.bodyMedium
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.proxy_groups_tips)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).testTag("proxy_groups_tips_dialog"),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(stringResource(R.string.proxy_groups_tips_tap), style = body)
+                Spacer(Modifier.size(4.dp))
+                Text(stringResource(R.string.proxy_groups_tips_long_press), style = body)
+                details.forEach { label ->
+                    Text("•  ${stringResource(label)}", style = body, modifier = Modifier.padding(start = 8.dp))
+                }
+                Spacer(Modifier.size(4.dp))
+                Text(
+                    text = stringResource(R.string.proxy_groups_tips_connect),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.meow.mutedText,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) }
+        },
+    )
 }
 
 /** Why there are no groups to show; the VPN switch itself lives on Home. */

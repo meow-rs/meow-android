@@ -92,6 +92,10 @@
     <string name="proxy_detail_nat_symmetric">متماثل (NAT4)</string>
     <string name="proxy_detail_nat_unknown">غير معروف</string>
     <string name="proxy_detail_nat_source_hidden">ترحيل UDP لهذه العقدة لا يُبلغ عن مصدر الردود، لذا يتعذّر تحديد نوع NAT</string>
+    <string name="proxy_groups_tips">تلميحات</string>
+    <string name="proxy_groups_tips_tap">انقر على عقدة للتبديل إليها.</string>
+    <string name="proxy_groups_tips_long_press">اضغط مطولًا على عقدة لفتح تفاصيلها واختبارها بمفردها:</string>
+    <string name="proxy_groups_tips_connect">تتطلب الاختبارات اتصال VPN.</string>
 
     <!-- Subscriptions -->
     <string name="subs_title">الاشتراكات</string>
