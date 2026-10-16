@@ -367,6 +367,43 @@ class MeowApiTest {
     }
 
     // -------------------------------------------------------------------------
+    // Secret
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `every client sends the secret current at the time of the call`() = runTest {
+        var secret: String? = "first"
+        val authed = MeowApi(baseUrl = server.url("/"), secret = { secret })
+        server.enqueue(MockResponse().setResponseCode(204))
+        server.enqueue(MockResponse().setResponseCode(204))
+        enqueue("""{"delay": 142}""")
+
+        authed.closeAllConnections()
+        // An engine restart mints a new one; the next call picks it up.
+        secret = "second"
+        // These two run on clients derived for longer timeouts.
+        authed.updateRuleProvider("ads")
+        authed.testProxyDelay("Tokyo 01")
+
+        assertEquals(
+            listOf("Bearer first", "Bearer second", "Bearer second"),
+            List(3) { server.takeRequest().getHeader("Authorization") },
+        )
+    }
+
+    @Test
+    fun `no secret, or an empty one, sends no Authorization header`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.closeAllConnections()
+        MeowApi(baseUrl = server.url("/"), secret = { "" }).closeAllConnections()
+
+        assertNull(server.takeRequest().getHeader("Authorization"))
+        assertNull(server.takeRequest().getHeader("Authorization"))
+    }
+
+    // -------------------------------------------------------------------------
     // Mutations
     // -------------------------------------------------------------------------
 

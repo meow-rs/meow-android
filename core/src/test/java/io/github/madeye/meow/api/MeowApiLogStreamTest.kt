@@ -69,6 +69,22 @@ class MeowApiLogStreamTest {
     }
 
     @Test
+    fun `logs sends the secret on the websocket handshake`() = runBlocking {
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    webSocket.send("""{"type": "info", "payload": "x", "time": "t"}""")
+                }
+            }),
+        )
+        val authed = MeowApi(baseUrl = server.url("/"), secret = { "s3cret" })
+
+        withTimeout(10_000) { authed.logs().take(1).toList() }
+
+        assertEquals("Bearer s3cret", server.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
     fun `logs reconnects after the socket closes`() = runBlocking {
         repeat(2) { round ->
             server.enqueue(

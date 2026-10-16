@@ -5,6 +5,7 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
+import io.github.madeye.meow.preference.ApiSecretStore
 import io.github.madeye.meow.preference.BuiltinDnsStore
 import io.github.madeye.meow.preference.RouteModeStore
 import kotlinx.coroutines.Dispatchers
@@ -90,9 +91,19 @@ class MeowInstance(val profile: ClashProfile) {
         val routeMode = RouteModeStore.default.load()?.wire.orEmpty()
         // Settings' "Built-in DNS" switch; off follows the profile's `dns:`.
         val builtinDns = BuiltinDnsStore.default.load()
-        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", "", routeMode, builtinDns)
+        // A fresh secret per start, so no other app on the device can use the
+        // API; a profile that sets `secret:` keeps its own instead.
+        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", ApiSecretStore.mint(), routeMode, builtinDns)
         if (result != 0) {
             throw RuntimeException("Failed to start engine: ${MeowCore.nativeGetLastError()}")
+        }
+        // Before the service reports Connected, which is when the UI starts
+        // calling the API. Should the write fail, the VPN still runs; only the
+        // app's own screens are refused (401) until the next start.
+        try {
+            ApiSecretStore.default.save(MeowCore.nativeApiSecret().orEmpty())
+        } catch (e: Exception) {
+            Timber.e(e, "MeowInstance: could not share the API secret")
         }
         Timber.d("MeowInstance: engine started")
     }

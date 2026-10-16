@@ -75,6 +75,8 @@ pub(crate) fn get_runtime() -> &'static tokio::runtime::Runtime {
 
 pub(crate) struct EngineState {
     pub(crate) tunnel: Tunnel,
+    /// The API server's secret (see `engine::api_secret`); empty for none.
+    api_secret: String,
     _handles: Vec<tokio::task::JoinHandle<()>>,
 }
 
@@ -277,9 +279,8 @@ async fn start_engine_async(
     if let Some(addr) = external_controller {
         config.api.external_controller = addr.parse().ok();
     }
-    if let Some(s) = secret {
-        config.api.secret = if s.is_empty() { None } else { Some(s) };
-    }
+    config.api.secret = engine::api_secret(config.api.secret.take(), secret);
+    let api_secret = config.api.secret.clone().unwrap_or_default();
     // The app's route-mode picker outlives a session, so its pick replaces
     // the profile's `mode:`. `raw` is what `GET /configs` echoes back.
     if let Some(mode) = mode {
@@ -388,6 +389,7 @@ async fn start_engine_async(
     ));
     Ok(EngineState {
         tunnel,
+        api_secret,
         _handles: handles,
     })
 }
@@ -633,6 +635,23 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeGetLastErr
     env.new_string(&msg)
         .unwrap_or_else(|_| env.new_string("").unwrap())
         .into_raw()
+}
+
+/// The running engine's API secret, for `MeowInstance` to hand to the UI
+/// process; empty when the engine is stopped or runs without one.
+#[no_mangle]
+pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeApiSecret(
+    env: JNIEnv,
+    _class: JClass,
+) -> jstring {
+    let secret = ENGINE
+        .lock()
+        .as_ref()
+        .map(|s| s.api_secret.clone())
+        .unwrap_or_default();
+    env.new_string(&secret)
+        .map(|s| s.into_raw())
+        .unwrap_or(std::ptr::null_mut())
 }
 
 #[no_mangle]

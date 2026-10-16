@@ -9,6 +9,7 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
+import io.github.madeye.meow.preference.ApiSecretStore
 import java.io.File
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -81,7 +82,7 @@ class ProviderStartupTest {
             withTimeout(10_000) { startup.await() }
             assertTrue("provider download blocked Android's main thread", responsive)
             assertTrue(MeowCore.nativeIsRunning())
-            val api = MeowApi()
+            val api = MeowApi(secret = ApiSecretStore.default::load)
             val result = withTimeout(5_000) {
                 // The native API task binds just after engine publication.
                 var response = runCatching { api.proxies() }

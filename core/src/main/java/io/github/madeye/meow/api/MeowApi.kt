@@ -24,6 +24,7 @@ import okhttp3.Callback
 import okhttp3.Dispatcher
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -39,16 +40,32 @@ import timber.log.Timber
  * The engine runs in-process (in `:vpn`) and binds its listener on
  * `127.0.0.1:9090` — see `MeowInstance.start`. [baseUrl] is a constructor
  * parameter rather than a hardcoded constant purely so tests can point it at a
- * `MockWebServer`, and so the iOS-style hardening (random port + minted secret)
- * stays a one-line change later.
+ * `MockWebServer`.
+ *
+ * Every request, the `/logs` websocket included, carries
+ * `Authorization: Bearer` with the value [secret] returns at that moment
+ * (the app passes `ApiSecretStore.default::load`); none when it returns null
+ * or empty. Asked per request because the engine changes it on every start.
  *
  * Ported from `flutter_module/lib/services/meow_api.dart`.
  */
 class MeowApi(
     private val baseUrl: HttpUrl = DEFAULT_BASE_URL.toHttpUrl(),
-    private val client: OkHttpClient = defaultClient(),
+    baseClient: OkHttpClient = defaultClient(),
     private val json: Json = MeowJson,
+    secret: () -> String? = { null },
 ) {
+    /** [baseClient] plus the secret; every call goes through this one. */
+    private val client: OkHttpClient = baseClient.newBuilder().addInterceptor(BearerAuth(secret)).build()
+
+    private class BearerAuth(private val secret: () -> String?) : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            val token = secret()?.takeIf { it.isNotEmpty() } ?: return chain.proceed(chain.request())
+            val request = chain.request().newBuilder().header("Authorization", "Bearer $token").build()
+            return chain.proceed(request)
+        }
+    }
+
     companion object {
         const val DEFAULT_BASE_URL = "http://127.0.0.1:9090"
 

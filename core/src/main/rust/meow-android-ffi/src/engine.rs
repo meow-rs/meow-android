@@ -121,9 +121,10 @@ pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
             // nativeStartEngine, so the user's value is never used — and
             // mihomo-style shorthand like `external-controller: :9090`
             // fails meow-config's strict address parse since v0.20.
+            // `secret:` stays: it is what an on-device dashboard
+            // authenticates with (see `api_secret`).
             "external-controller",
             "external-controller-tls",
-            "secret",
         ] {
             m.remove(serde_yaml::Value::String(key.to_string()));
         }
@@ -139,6 +140,17 @@ pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
         }
     }
     serde_yaml::to_string(&doc).context("serializing stripped config YAML")
+}
+
+/// The secret the API server runs with: the profile's `secret:` when it sets
+/// one, so an on-device dashboard keeps the credential its user chose, else
+/// `minted`, the random one `MeowInstance` generated for this start. Without
+/// a secret any app on the device could read `/connections` and drive the
+/// engine through 127.0.0.1.
+pub fn api_secret(profile: Option<String>, minted: Option<String>) -> Option<String> {
+    profile
+        .filter(|s| !s.is_empty())
+        .or(minted.filter(|s| !s.is_empty()))
 }
 
 /// Strip `yaml` and hand it to `load`: first with the profile's DNS
@@ -324,6 +336,30 @@ rules:
             assert_eq!(notes(PROFILE, upstreams), Some(true));
             assert_eq!(notes("connection-notes: false\n", upstreams), Some(false));
         }
+    }
+
+    #[test]
+    fn the_profile_secret_survives_the_strip() {
+        let doc: serde_yaml::Value = serde_yaml::from_str(
+            &strip_and_inject(
+                "secret: hunter2\nexternal-controller: :9090\n",
+                DnsUpstreams::Profile,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(doc["secret"].as_str(), Some("hunter2"));
+        assert!(doc.get("external-controller").is_none());
+    }
+
+    #[test]
+    fn the_profile_secret_wins_else_the_minted_one() {
+        let s = |v: &str| Some(v.to_string());
+        assert_eq!(api_secret(s("mine"), s("minted")), s("mine"));
+        assert_eq!(api_secret(None, s("minted")), s("minted"));
+        assert_eq!(api_secret(s(""), s("minted")), s("minted"));
+        assert_eq!(api_secret(None, s("")), None);
+        assert_eq!(api_secret(None, None), None);
     }
 
     #[tokio::test]

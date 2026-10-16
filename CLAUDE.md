@@ -101,8 +101,13 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   Clash-compatible controller (`http://127.0.0.1:9090`, started by `MeowInstance`).
   Proxies/groups, delay probes, rules, rule providers (`updateRuleProvider` gets its
   own 90 s read timeout: the engine answers only after the download), connections,
-  configs, and the `/logs` websocket (500ms→30s reconnect ramp). `baseUrl` is
-  injectable for tests.
+  configs, and the `/logs` websocket (500ms→30s reconnect ramp). Every call,
+  the websocket handshake included, sends `Authorization: Bearer` with the
+  secret read from `preference/ApiSecretStore` at call time: `MeowInstance`
+  mints a fresh one per engine start, the profile's own `secret:` wins (kept by
+  `strip_and_inject` for on-device dashboards), and `:vpn` writes the one the
+  engine runs with (`nativeApiSecret`) before the service reports Connected.
+  `baseUrl` and `secret` are injectable for tests.
 - **MeowApiModels.kt**: `/proxies` is a heterogeneous map discriminated by a field
   *value*, so it is parsed by hand; `ProxyHistory.time` accepts both the Go string
   and Rust `SystemTime` encodings.

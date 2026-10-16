@@ -12,6 +12,7 @@ import io.github.madeye.meow.bg.MeowInstance
 import io.github.madeye.meow.net.ExitIpLookup
 import io.github.madeye.meow.net.IpGeoLookup
 import io.github.madeye.meow.net.ProxyProber
+import io.github.madeye.meow.preference.ApiSecretStore
 import io.github.madeye.meow.preference.BuiltinDnsPreference
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
@@ -63,7 +64,7 @@ object AppGraph {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    val api: MeowApi by lazy { MeowApi() }
+    val api: MeowApi by lazy { MeowApi(secret = ApiSecretStore.default::load) }
     val vpn: VpnStateRepository by lazy { VpnStateRepository() }
     val speedSamples: SpeedSampleStore by lazy { SpeedSampleStore(vpn, scope) }
 

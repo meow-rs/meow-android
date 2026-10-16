@@ -46,7 +46,10 @@ Network
   in-process and upstream lookups bypass the tunnel via protected sockets
 - **Socket Protection**: Per-socket `VpnService.protect(fd)` via JNI callback
 - **REST API**: Embedded external controller (`127.0.0.1:9090`) drives the
-  live connections, logs, rules, DNS cache, and traffic views
+  live connections, logs, rules, DNS cache, and traffic views. It requires a
+  secret, random per VPN start unless the profile sets `secret:`, so other
+  apps on the device cannot read it; set `secret:` to use an on-device
+  dashboard
 - **Compose UI**: Shadowrocket-style tab view, styled to match the iOS app
   - Home: VPN toggle, connection status, route mode (Rule / Global / Direct,
     remembered across reconnects) and the live Rules view; the top-right
