@@ -654,12 +654,30 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeApiSecret(
         .unwrap_or(std::ptr::null_mut())
 }
 
+/// What Settings shows as the engine version; `build.rs` reads the release
+/// from Cargo.lock.
+const ENGINE_VERSION: &str = concat!("meow-rs v", env!("MEOW_RS_VERSION"));
+
 #[no_mangle]
 pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeVersion(
     env: JNIEnv,
     _class: JClass,
 ) -> jstring {
-    env.new_string("meow-rs v0.22.0")
+    env.new_string(ENGINE_VERSION)
         .unwrap_or_else(|_| env.new_string("").unwrap())
         .into_raw()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ENGINE_VERSION;
+
+    #[test]
+    fn the_engine_version_is_the_pinned_release() {
+        let tag = ENGINE_VERSION.strip_prefix("meow-rs ").unwrap();
+        assert!(
+            include_str!("../Cargo.toml").contains(&format!("tag = \"{tag}\"")),
+            "{ENGINE_VERSION} is not the tag Cargo.toml pins",
+        );
+    }
 }
