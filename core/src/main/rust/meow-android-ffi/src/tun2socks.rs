@@ -10,6 +10,7 @@
 
 use crate::engine;
 use crate::logging;
+use crate::owner;
 use futures::{SinkExt, StreamExt};
 use meow_common::{ConnType, Metadata, Network, ProxyConn};
 use meow_dns::DnsServer;
@@ -424,7 +425,7 @@ async fn dispatch_tcp(stream: lwip::TcpStream, src_addr: SocketAddr, dst_addr: S
 
     tracing::debug!("tun2socks: dispatch {} -> {}", src_addr, dst_addr);
 
-    let metadata = Metadata {
+    let mut metadata = Metadata {
         network: Network::Tcp,
         conn_type: ConnType::Inner,
         src_ip: Some(src_addr.ip()),
@@ -433,11 +434,27 @@ async fn dispatch_tcp(stream: lwip::TcpStream, src_addr: SocketAddr, dst_addr: S
         dst_port: dst_addr.port(),
         ..Default::default()
     };
+    apply_owner(
+        &mut metadata,
+        owner::lookup(owner::IPPROTO_TCP, src_addr, dst_addr).await,
+    );
 
     let proxy_conn: Box<dyn ProxyConn> = Box::new(NetstackConn(stream));
     let inner = tunnel.inner().clone();
     meow_tunnel::tcp::handle_tcp(&inner, proxy_conn, metadata).await;
     tracing::debug!("tun2socks: flow done {} -> {}", src_addr, dst_addr);
+}
+
+/// Tag a flow with the app that opened it (see [`owner`]): the uid feeds
+/// UID rules, the package name PROCESS-NAME rules and the connections list.
+fn apply_owner(metadata: &mut Metadata, owner: Option<owner::Owner>) {
+    let Some(owner) = owner else {
+        return;
+    };
+    metadata.uid = Some(owner.uid);
+    if let Some(package) = owner.package {
+        metadata.process = (&*package).into();
+    }
 }
 
 struct NetstackConn(lwip::TcpStream);
@@ -516,6 +533,15 @@ async fn dispatch_udp(
         return;
     };
     let key = (src, SocketAddr::new(resolved_ip, metadata.dst_port));
+
+    // Rules run once per flow, on the packet that opens its session; the
+    // packets after it skip the owner lookup's binder round trip.
+    if !inner.nat_table.contains_key(&key) {
+        apply_owner(
+            &mut metadata,
+            owner::lookup(owner::IPPROTO_UDP, src, dst).await,
+        );
+    }
 
     meow_tunnel::udp::handle_udp(inner, &payload, src, metadata).await;
 
@@ -1008,5 +1034,38 @@ mod tests {
             started.elapsed()
         );
         assert!(!TUN2SOCKS_ACTIVE.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn owner_tags_uid_and_package() {
+        let mut metadata = Metadata::default();
+        apply_owner(
+            &mut metadata,
+            Some(owner::Owner {
+                uid: 10_123,
+                package: Some("com.example.app".into()),
+            }),
+        );
+        assert_eq!(metadata.uid, Some(10_123));
+        assert_eq!(metadata.process, "com.example.app");
+    }
+
+    #[test]
+    fn owner_without_package_tags_only_uid() {
+        let mut metadata = Metadata::default();
+        apply_owner(
+            &mut metadata,
+            Some(owner::Owner {
+                uid: 1051,
+                package: None,
+            }),
+        );
+        assert_eq!(metadata.uid, Some(1051));
+        assert!(metadata.process.is_empty());
+
+        let mut untouched = Metadata::default();
+        apply_owner(&mut untouched, None);
+        assert_eq!(untouched.uid, None);
+        assert!(untouched.process.is_empty());
     }
 }

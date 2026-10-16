@@ -3,6 +3,7 @@ package io.github.madeye.meow.bg
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -17,6 +18,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import timber.log.Timber
 import java.io.File
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import android.net.VpnService as BaseVpnService
 
 class VpnService : BaseVpnService(), BaseService.Interface {
@@ -26,6 +29,9 @@ class VpnService : BaseVpnService(), BaseService.Interface {
         private const val PRIVATE_VLAN4_ROUTER = "172.19.0.2"
         private const val PRIVATE_VLAN6_CLIENT = "fdfe:dcba:9876::1"
         private const val PRIVATE_VLAN6_ROUTER = "fdfe:dcba:9876::2"
+
+        /** `android.os.Process.INVALID_UID`, a constant that only exists from API 29. */
+        private const val INVALID_UID = -1
 
         /**
          * Starts the VPN. The caller must already hold VPN consent
@@ -102,6 +108,45 @@ class VpnService : BaseVpnService(), BaseService.Interface {
     }
 
     override val isVpnService get() = true
+
+    private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
+
+    /**
+     * The uid of the app that owns one tunnelled flow, or
+     * [INVALID_UID] when the system cannot tell (Android 9 and older
+     * have no such query). Called over JNI from the FFI's owner.rs, on a
+     * worker thread, for each new TCP connection and UDP session;
+     * [localAddr] / [remoteAddr] are the app socket's raw IPv4 or IPv6
+     * address bytes.
+     */
+    fun connectionOwnerUid(
+        protocol: Int,
+        localAddr: ByteArray,
+        localPort: Int,
+        remoteAddr: ByteArray,
+        remotePort: Int,
+    ): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return INVALID_UID
+        return try {
+            connectivity.getConnectionOwnerUid(
+                protocol,
+                InetSocketAddress(InetAddress.getByAddress(localAddr), localPort),
+                InetSocketAddress(InetAddress.getByAddress(remoteAddr), remotePort),
+            )
+        } catch (_: Exception) {
+            // Must not reach the native caller: SecurityException once this
+            // service is no longer the active VPN, IllegalArgumentException for
+            // a protocol the platform rejects.
+            INVALID_UID
+        }
+    }
+
+    /**
+     * The first package installed under [uid], or null for uids no package
+     * owns (root, system daemons). Called over JNI from the FFI's owner.rs,
+     * which caches the answer per uid.
+     */
+    fun packageForUid(uid: Int): String? = packageManager.getPackagesForUid(uid)?.firstOrNull()
 
     private fun startVpn() {
         val builder = Builder()

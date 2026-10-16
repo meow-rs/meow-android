@@ -243,8 +243,14 @@ data class ConnectionMeta(
     val sniffHost: String = "",
     /** normal | mapping | fake-ip */
     val dnsMode: String = "",
-    val processName: String = "",
-    val uid: Int = 0,
+    /**
+     * Package name of the app that opened the connection. The VPN service
+     * asks Android for each flow's owner; empty below Android 10, for flows
+     * no app owns, or when the system could not tell in time.
+     */
+    val process: String = "",
+    /** Linux uid of that app; null when unknown. */
+    val uid: Int? = null,
 )
 
 @Serializable

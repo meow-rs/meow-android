@@ -552,6 +552,25 @@ class MeowApiTest {
         assertEquals(3L, snapshot.uploadTotal)
     }
 
+    @Test
+    fun `connections read the owning app and leave an unknown one empty`() = runTest {
+        enqueue(
+            """{"downloadTotal": 0, "uploadTotal": 0, "connections": [
+                {"id": "a", "metadata": {"host": "example.com", "process": "com.example.app",
+                 "processPath": "", "uid": 10123}},
+                {"id": "b", "metadata": {"host": "example.org", "process": "",
+                 "processPath": "", "uid": null}}
+            ]}""",
+        )
+
+        val (owned, unknown) = api.connections().connections
+
+        assertEquals("com.example.app", owned.metadata.process)
+        assertEquals(10123, owned.metadata.uid)
+        assertEquals("", unknown.metadata.process)
+        assertNull(unknown.metadata.uid)
+    }
+
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------

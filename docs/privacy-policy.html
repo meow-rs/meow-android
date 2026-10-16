@@ -24,7 +24,7 @@
 <body>
 
 <h1>Meow - Privacy Policy</h1>
-<p class="updated">Last updated: October 11, 2026</p>
+<p class="updated">Last updated: October 16, 2026</p>
 
 <h2>Overview</h2>
 <p>Meow ("the App", Android package <code>io.github.madeye.meow</code>) is an open-source VPN client provided by Max Lv. We respect your privacy and are committed to protecting it. This policy explains what data the App handles and how.</p>
@@ -39,8 +39,8 @@
 <h2>Local Data, Retention and Deletion</h2>
 <ul>
     <li>Subscription URLs, proxy credentials, configuration profiles, downloaded provider/rule data, and settings are stored in the App's private storage.</li>
-    <li>The installed-app list is read on-device to let you select which apps use the VPN. Selected package names are stored locally, not uploaded as an app inventory.</li>
-    <li>Traffic statistics, active/recent connection details (which may include destination addresses and hostnames), DNS lookup results, and engine diagnostic logs are displayed locally. The recent-connections list and displayed log buffer are bounded and held in memory; they are not a developer-hosted browsing history.</li>
+    <li>The installed-app list is read on-device to let you select which apps use the VPN. Selected package names are stored locally, not uploaded as an app inventory. On Android 10 and later the App also asks Android which installed app opened each connection it carries, to show it with that connection; this stays on the device.</li>
+    <li>Traffic statistics, active/recent connection details (which may include destination addresses, hostnames and the app that opened the connection), DNS lookup results, and engine diagnostic logs are displayed locally. The recent-connections list and displayed log buffer are bounded and held in memory; they are not a developer-hosted browsing history.</li>
     <li>Android backup is enabled. Depending on your device and system backup settings, Android may back up or transfer eligible app data. Manage these copies through your system backup settings.</li>
 </ul>
 <p>You can delete profiles in the App, clear recent connections, or clear app storage in Android settings. Clearing app storage or uninstalling removes the local app data, but does not delete exported files, system backups, or information already received by an external service. Files or QR codes you explicitly export/share are passed to the destination you choose.</p>

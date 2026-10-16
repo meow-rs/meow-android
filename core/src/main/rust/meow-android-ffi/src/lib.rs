@@ -17,6 +17,7 @@ mod diagnostics;
 mod engine;
 mod ip_info;
 mod logging;
+mod owner;
 mod probe;
 mod protect;
 mod tun2socks;
@@ -494,6 +495,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
     probe::cancel_all();
     tun2socks::stop();
     protect::clear();
+    owner::clear();
     *DNS_RESOLVER.write() = None;
     let mut engine = ENGINE.lock();
     if let Some(state) = engine.take() {
@@ -508,7 +510,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
 
 #[no_mangle]
 pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartTun2Socks(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     vpn_service: JObject,
     fd: jint,
@@ -528,6 +530,8 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartTun2S
     // meow-rs opens (proxy adapters + the DNS resolver's default
     // SocketFactory) will fire VpnService.protect() before connect/bind.
     protect::install(&env, &vpn_service);
+    // Lets tun2socks tag each connection with the app that opened it.
+    owner::install(&mut env, &vpn_service);
 
     match tun2socks::start(fd, dns_port as u16) {
         Ok(()) => {
