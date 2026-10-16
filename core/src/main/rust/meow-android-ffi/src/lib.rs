@@ -196,6 +196,7 @@ fn start_engine(
     external_controller: Option<String>,
     secret: Option<String>,
     mode: Option<TunnelMode>,
+    dns: engine::DnsUpstreams,
 ) -> i32 {
     logging::bridge_log("start_engine: acquiring ENGINE lock");
     let mut engine = ENGINE.lock();
@@ -205,7 +206,7 @@ fn start_engine(
     }
 
     let rt = get_runtime();
-    match rt.block_on(async { start_engine_async(external_controller, secret, mode).await }) {
+    match rt.block_on(async { start_engine_async(external_controller, secret, mode, dns).await }) {
         Ok(state) => {
             logging::bridge_log("start_engine: engine started successfully");
             *engine = Some(state);
@@ -223,6 +224,7 @@ async fn start_engine_async(
     external_controller: Option<String>,
     secret: Option<String>,
     mode: Option<TunnelMode>,
+    dns: engine::DnsUpstreams,
 ) -> Result<EngineState, anyhow::Error> {
     install_tracing_subscriber();
 
@@ -250,13 +252,15 @@ async fn start_engine_async(
     // `core/build.gradle.kts` (downloadGeoxAssets) for the bundling path.
 
     // Load via engine::load_stripped_config: strips listener/sniffer blocks
-    // and pins the profile's DNS to in-process fake-IP. Falls back to the
-    // minimal config (also passed through strip_and_inject) when no home
-    // dir is set or the file is unreadable.
+    // and pins the profile's DNS to in-process fake-IP, on the upstreams
+    // `dns` picks. Falls back to the minimal config (also passed through
+    // strip_and_inject) when no home dir is set or the file is unreadable.
     let mut config = match config_path.as_deref() {
         Some(path) if std::path::Path::new(path).exists() => {
-            logging::bridge_log(&format!("start_engine_async: loading config from {}", path));
-            engine::load_stripped_config(path).await?
+            logging::bridge_log(&format!(
+                "start_engine_async: loading config from {path}, DNS upstreams: {dns:?}"
+            ));
+            engine::load_stripped_config(path, dns).await?
         }
         _ => {
             logging::bridge_log("start_engine_async: using minimal config");
@@ -456,6 +460,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartEngin
     addr: JString,
     secret: JString,
     mode: JString,
+    builtin_dns: jboolean,
 ) -> jint {
     let addr_str: String = env.get_string(&addr).map(|s| s.into()).unwrap_or_default();
     let secret_str: String = env
@@ -463,10 +468,17 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartEngin
         .map(|s| s.into())
         .unwrap_or_default();
     let mode_str: String = env.get_string(&mode).map(|s| s.into()).unwrap_or_default();
+    // Settings' "Built-in DNS" switch: ignore the profile's upstreams.
+    let dns = if builtin_dns == JNI_FALSE {
+        engine::DnsUpstreams::Profile
+    } else {
+        engine::DnsUpstreams::Builtin
+    };
     start_engine(
         Some(addr_str),
         Some(secret_str),
         parse_mode_override(&mode_str),
+        dns,
     )
 }
 

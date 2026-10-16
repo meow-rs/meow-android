@@ -12,6 +12,7 @@ import io.github.madeye.meow.bg.MeowInstance
 import io.github.madeye.meow.net.ExitIpLookup
 import io.github.madeye.meow.net.IpGeoLookup
 import io.github.madeye.meow.net.ProxyProber
+import io.github.madeye.meow.preference.BuiltinDnsPreference
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
 import io.github.madeye.meow.preference.ThemeModePreference
@@ -83,6 +84,7 @@ object AppGraph {
 
     /** Settings flips it; Home's exit-IP card follows. */
     val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
+    val builtinDns: BuiltinDnsPreference by lazy { BuiltinDnsPreference(scope) }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
     val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
 
@@ -149,6 +151,7 @@ object AppGraph {
                 SettingsViewModel::class.java -> SettingsViewModel(
                     appVersions,
                     showExitIp,
+                    builtinDns,
                     themeMode,
                     // Null in the Play build, which may only update through
                     // Play. Built here, not in a lazy property: that delegate

@@ -8,8 +8,11 @@ object MeowCore {
 
     external fun nativeInit()
     external fun nativeSetHomeDir(dir: String)
-    /** [mode] overrides the config's `mode:` (`rule`/`global`/`direct`); empty keeps it. */
-    external fun nativeStartEngine(addr: String, secret: String, mode: String): Int
+    /**
+     * [mode] overrides the config's `mode:` (`rule`/`global`/`direct`); empty keeps it.
+     * [builtinDns] drops the profile's DNS upstreams for the built-in pool.
+     */
+    external fun nativeStartEngine(addr: String, secret: String, mode: String, builtinDns: Boolean): Int
     external fun nativeStopEngine()
     external fun nativeStartTun2Socks(vpnService: Any, fd: Int, dnsPort: Int): Int
     external fun nativeIsRunning(): Boolean

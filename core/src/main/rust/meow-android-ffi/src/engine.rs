@@ -39,9 +39,11 @@ const BUILTIN_NAMESERVERS: &[&str] = &["tcp://119.29.29.29", "tcp://223.5.5.5"];
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DnsUpstreams {
     /// The profile's own `dns:` settings; the built-in pool fills in a
-    /// missing `nameserver` / `default-nameserver`.
+    /// missing `nameserver` / `default-nameserver`. The default.
     Profile,
-    /// The built-in pool only; the profile's `dns:` block is dropped.
+    /// The built-in pool only; the profile's `dns:` block is dropped. Chosen
+    /// by Settings' "Built-in DNS" switch, for a profile whose upstreams load
+    /// but do not answer on the current network.
     Builtin,
 }
 
@@ -166,17 +168,18 @@ impl Drop for TempFileGuard {
     }
 }
 
-/// Read `config_path`, strip it (see [`load_with_dns_fallback`]), and hand
-/// a sibling `config.yaml.android-stripped.yaml` to `load_config`. The
-/// sibling placement is deliberate: `load_config` uses `path.parent()` as
-/// the rule-/proxy-provider `cache_dir`, so colocating with the original
-/// keeps rule-provider cache files in the home dir. Using
-/// `load_config_from_str` would silently disable that caching.
-pub async fn load_stripped_config(config_path: &str) -> Result<Config> {
+/// Read `config_path`, strip it for `upstreams` (with the profile's, see
+/// [`load_with_dns_fallback`]), and hand a sibling
+/// `config.yaml.android-stripped.yaml` to `load_config`. The sibling
+/// placement is deliberate: `load_config` uses `path.parent()` as the
+/// rule-/proxy-provider `cache_dir`, so colocating with the original keeps
+/// rule-provider cache files in the home dir. Using `load_config_from_str`
+/// would silently disable that caching.
+pub async fn load_stripped_config(config_path: &str, upstreams: DnsUpstreams) -> Result<Config> {
     let original = std::fs::read_to_string(config_path)
         .with_context(|| format!("reading config from {config_path}"))?;
     let stripped_path = sibling_stripped_path(config_path);
-    load_with_dns_fallback(&original, |stripped| {
+    let load = |stripped: String| {
         let stripped_path = stripped_path.clone();
         async move {
             std::fs::write(&stripped_path, stripped).with_context(|| {
@@ -185,8 +188,11 @@ pub async fn load_stripped_config(config_path: &str) -> Result<Config> {
             let _guard = TempFileGuard(stripped_path.clone());
             load_config(stripped_path.to_str().expect("utf-8 path")).await
         }
-    })
-    .await
+    };
+    match upstreams {
+        DnsUpstreams::Profile => load_with_dns_fallback(&original, load).await,
+        DnsUpstreams::Builtin => load(strip_and_inject(&original, upstreams)?).await,
+    }
 }
 
 fn sibling_stripped_path(config_path: &str) -> PathBuf {

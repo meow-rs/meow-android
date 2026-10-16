@@ -63,6 +63,7 @@ fun SettingsScreen(
     contentPadding: PaddingValues,
     onPerAppProxy: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
+    onBuiltinDnsChange: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onCheckForUpdates: () -> Unit,
     onPrivacyPolicy: () -> Unit,
@@ -130,10 +131,15 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.perapp_desc),
             )
             HorizontalDivider(color = MaterialTheme.meow.border)
-            InfoRow(
+            // Off runs on the profile's `dns:` nameservers; on is the way out
+            // when those load but do not answer on this network.
+            SwitchRow(
                 icon = Icons.Filled.Dns,
-                title = stringResource(R.string.settings_dns_server),
-                value = stringResource(R.string.settings_dns_builtin),
+                title = stringResource(R.string.settings_builtin_dns),
+                subtitle = stringResource(R.string.settings_builtin_dns_desc),
+                checked = state.builtinDns,
+                onCheckedChange = onBuiltinDnsChange,
+                modifier = Modifier.testTag("settings_builtin_dns"),
             )
             HorizontalDivider(color = MaterialTheme.meow.border)
             // The subtitle names the services: every check sends them the

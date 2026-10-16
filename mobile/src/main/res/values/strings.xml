@@ -200,8 +200,8 @@
     <string name="settings_engine">Engine</string>
     <string name="settings_engine_offline">Connect the VPN to use this</string>
     <string name="settings_network">Network</string>
-    <string name="settings_dns_server">DNS Server</string>
-    <string name="settings_dns_builtin">Plain TCP via tunnel</string>
+    <string name="settings_builtin_dns">Built-in DNS</string>
+    <string name="settings_builtin_dns_desc">Ignore the profile\'s nameservers and use 119.29.29.29 and 223.5.5.5 over TCP; restart VPN to apply</string>
     <string name="settings_show_exit_ip">Show exit IP</string>
     <string name="settings_show_exit_ip_desc">Looks up your public IP on Home via ip.sb, ipwho.is or ipinfo.io</string>
     <string name="settings_privacy_policy">Privacy Policy</string>

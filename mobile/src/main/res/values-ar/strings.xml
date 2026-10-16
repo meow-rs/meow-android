@@ -217,8 +217,8 @@
     <string name="settings_engine">النواة</string>
     <string name="settings_engine_offline">اتصل بشبكة VPN لاستخدام هذه الميزة</string>
     <string name="settings_network">الشبكة</string>
-    <string name="settings_dns_server">خادم DNS</string>
-    <string name="settings_dns_builtin">عبر النفق (TCP عادي)</string>
+    <string name="settings_builtin_dns">DNS المدمج</string>
+    <string name="settings_builtin_dns_desc">تجاهل خوادم DNS في ملف التعريف واستخدام 119.29.29.29 و223.5.5.5 عبر TCP؛ أعِد اتصال VPN للتطبيق</string>
     <string name="settings_show_exit_ip">عرض عنوان IP الخارجي</string>
     <string name="settings_show_exit_ip_desc">يستعلم عن عنوان IP العام لديك عبر ip.sb أو ipwho.is أو ipinfo.io ويعرضه في «الرئيسية»</string>
     <string name="settings_privacy_policy">سياسة الخصوصية</string>

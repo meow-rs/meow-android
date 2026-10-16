@@ -3,6 +3,7 @@ package io.github.madeye.meow.ui.screens.settings
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.madeye.meow.preference.BuiltinDnsPreference
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.ThemeMode
 import io.github.madeye.meow.preference.ThemeModePreference
@@ -26,6 +27,8 @@ data class SettingsUiState(
     val appVersion: String = "",
     val engineVersion: String = "",
     val showExitIp: Boolean = false,
+    /** Settings' "Built-in DNS" switch; applies from the next connect. */
+    val builtinDns: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** An update check is waiting on GitHub. */
     val checkingForUpdate: Boolean = false,
@@ -45,6 +48,7 @@ sealed interface SettingsEvent {
 class SettingsViewModel(
     private val versions: AppVersions,
     private val exitIp: ExitIpPreference,
+    private val builtinDns: BuiltinDnsPreference,
     private val theme: ThemeModePreference,
     /**
      * The newest GitHub release. Null in the Play build, which may only
@@ -61,17 +65,23 @@ class SettingsViewModel(
     private val _events = MutableSharedFlow<SettingsEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
 
+    /** The two switches, as (show exit IP, built-in DNS). */
+    private val switches = combine(exitIp.enabled, builtinDns.enabled) { showExitIp, builtin ->
+        (showExitIp == true) to (builtin == true)
+    }
+
     val uiState: StateFlow<SettingsUiState> = combine(
         versionPair,
-        exitIp.enabled,
+        switches,
         checking,
         update,
         theme.mode,
-    ) { (app, engine), showExitIp, isChecking, newer, mode ->
+    ) { (app, engine), (showExitIp, builtin), isChecking, newer, mode ->
         SettingsUiState(
             appVersion = app,
             engineVersion = engine,
-            showExitIp = showExitIp == true,
+            showExitIp = showExitIp,
+            builtinDns = builtin,
             themeMode = mode,
             checkingForUpdate = isChecking,
             update = newer,
@@ -83,6 +93,8 @@ class SettingsViewModel(
     }
 
     fun onShowExitIpChange(show: Boolean) = exitIp.set(show)
+
+    fun onBuiltinDnsChange(enabled: Boolean) = builtinDns.set(enabled)
 
     fun onThemeModeChange(mode: ThemeMode) = theme.set(mode)
 

@@ -5,6 +5,7 @@ import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
+import io.github.madeye.meow.preference.BuiltinDnsStore
 import io.github.madeye.meow.preference.RouteModeStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -87,7 +88,9 @@ class MeowInstance(val profile: ClashProfile) {
         // The Home route-mode pick overrides the profile's `mode:`; empty
         // means the user never picked one.
         val routeMode = RouteModeStore.default.load()?.wire.orEmpty()
-        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", "", routeMode)
+        // Settings' "Built-in DNS" switch; off follows the profile's `dns:`.
+        val builtinDns = BuiltinDnsStore.default.load()
+        val result = MeowCore.nativeStartEngine("127.0.0.1:9090", "", routeMode, builtinDns)
         if (result != 0) {
             throw RuntimeException("Failed to start engine: ${MeowCore.nativeGetLastError()}")
         }
