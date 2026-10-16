@@ -228,15 +228,13 @@
 
     <!-- Connections -->
     <string name="connections_title">Соединения</string>
-    <string name="connections_tab_active">Активные</string>
-    <string name="connections_tab_recent">Недавние</string>
-    <string name="connections_empty">Нет активных соединений</string>
-    <string name="connections_recent_empty">Нет недавних запросов</string>
+    <string name="connections_empty">Нет соединений</string>
     <string name="connections_close_all">Закрыть все</string>
     <string name="connections_close_all_confirm">Закрыть все активные соединения?</string>
-    <string name="connections_recent_clear">Очистить</string>
-    <string name="connections_recent_clear_confirm">Очистить недавние запросы?</string>
+    <string name="connections_recent_clear">Очистить закрытые</string>
+    <string name="connections_recent_clear_confirm">Очистить закрытые соединения?</string>
     <string name="connections_last_seen">Последняя активность: %1$s</string>
+    <string name="connections_closed_at">Закрыто %1$s</string>
     <string name="connections_filter">Фильтр по хосту или IP…</string>
     <string name="connection_detail_title">Соединение</string>
     <string name="connection_detail_host">Хост</string>
@@ -252,7 +250,14 @@
     <string name="connection_detail_rule_global">Глобальный режим</string>
     <string name="connection_detail_rule_direct">Прямой режим</string>
     <string name="connection_detail_network">Сеть</string>
-    <string name="connection_detail_destination_ip">IP назначения</string>
+    <string name="connection_detail_local_ip">Локальный IP</string>
+    <string name="connection_detail_remote_ip">Удалённый IP</string>
+    <string name="connection_detail_remote_ip_dns_cache">Из кэша DNS</string>
+    <string name="connection_detail_remote_ip_by_proxy">Разрешается прокси-сервером</string>
+    <string name="connection_detail_remote_region">Регион удалённого IP</string>
+    <string name="connection_detail_remote_asn">ASN удалённого IP</string>
+    <string name="connection_detail_remote_org">Организация удалённого IP</string>
+    <string name="connection_detail_region_private">Частная сеть</string>
     <string name="connection_detail_sniff_host">Определённый хост</string>
     <string name="connection_detail_dns_mode">Режим DNS</string>
     <string name="connection_detail_close">Закрыть соединение</string>

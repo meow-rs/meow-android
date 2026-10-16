@@ -8,7 +8,9 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.navigation.toRoute
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
+import io.github.madeye.meow.bg.MeowInstance
 import io.github.madeye.meow.net.ExitIpLookup
+import io.github.madeye.meow.net.IpGeoLookup
 import io.github.madeye.meow.net.ProxyProber
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.RouteModeStore
@@ -78,6 +80,7 @@ object AppGraph {
     /** Settings flips it; Home's exit-IP card follows. */
     val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
+    val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
 
     /** A proxy detail page's tests, run in `:vpn` over the activity's binding. */
     val proxyProber: ProxyProber by lazy { ProxyProber(vpn) }
@@ -170,6 +173,9 @@ object AppGraph {
                     polling = connectionsPolling(api, recentConnections),
                     rules = api::rules,
                     closeConnection = api::closeConnection,
+                    proxies = api::proxies,
+                    dnsCache = { host -> api.dnsResults(search = host) },
+                    ipGeo = ipGeoLookup::lookup,
                 )
                 DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
                 LogsViewModel::class.java -> LogsViewModel(api)

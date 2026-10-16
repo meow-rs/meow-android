@@ -15,6 +15,7 @@
 
 mod diagnostics;
 mod engine;
+mod ip_info;
 mod logging;
 mod probe;
 mod protect;

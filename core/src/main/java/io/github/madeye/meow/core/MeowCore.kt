@@ -29,4 +29,12 @@ object MeowCore {
      */
     external fun nativeProbeProxy(id: Long, proxy: String, kind: String, arg: String): String?
     external fun nativeCancelProxyProbe(id: Long)
+
+    /**
+     * Where [ip] is registered, from the GeoX databases in [dir] (the engine
+     * home): `{"country": "CN", "asn": 136958, "org": "…"}`, leaving out what
+     * they do not know. Offline; needs no running engine. Null only when the
+     * JVM could not take the answer.
+     */
+    external fun nativeLookupIp(dir: String, ip: String): String?
 }

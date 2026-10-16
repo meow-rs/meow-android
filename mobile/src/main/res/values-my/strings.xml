@@ -221,15 +221,13 @@
 
     <!-- Connections -->
     <string name="connections_title">ချိတ်ဆက်မှုများ</string>
-    <string name="connections_tab_active">လက်ရှိ</string>
-    <string name="connections_tab_recent">မကြာသေးမီ</string>
-    <string name="connections_empty">လက်ရှိ ချိတ်ဆက်မှု မရှိပါ</string>
-    <string name="connections_recent_empty">မကြာသေးမီ တောင်းဆိုမှု မရှိပါ</string>
+    <string name="connections_empty">ချိတ်ဆက်မှု မရှိပါ</string>
     <string name="connections_close_all">အားလုံး ပိတ်ရန်</string>
     <string name="connections_close_all_confirm">လက်ရှိ ချိတ်ဆက်မှုအားလုံးကို ပိတ်မလား။</string>
-    <string name="connections_recent_clear">ရှင်းရန်</string>
-    <string name="connections_recent_clear_confirm">မကြာသေးမီ တောင်းဆိုမှုများကို ရှင်းမလား။</string>
+    <string name="connections_recent_clear">ပိတ်ပြီးသည်များကို ရှင်းရန်</string>
+    <string name="connections_recent_clear_confirm">ပိတ်ပြီးသော ချိတ်ဆက်မှုများကို ရှင်းမလား။</string>
     <string name="connections_last_seen">နောက်ဆုံး တွေ့ချိန်: %1$s</string>
+    <string name="connections_closed_at">ပိတ်ပြီး %1$s</string>
     <string name="connections_filter">Host သို့မဟုတ် IP ဖြင့် စစ်ထုတ်ရန်…</string>
     <string name="connection_detail_title">ချိတ်ဆက်မှု</string>
     <string name="connection_detail_host">Host</string>
@@ -245,7 +243,14 @@
     <string name="connection_detail_rule_global">Global မုဒ်</string>
     <string name="connection_detail_rule_direct">တိုက်ရိုက် မုဒ်</string>
     <string name="connection_detail_network">ကွန်ရက်</string>
-    <string name="connection_detail_destination_ip">ဦးတည်ရာ IP</string>
+    <string name="connection_detail_local_ip">စက်တွင်း IP</string>
+    <string name="connection_detail_remote_ip">အဝေးမှ IP</string>
+    <string name="connection_detail_remote_ip_dns_cache">DNS cache မှ</string>
+    <string name="connection_detail_remote_ip_by_proxy">Proxy ဆာဗာက ဖြေရှင်းသည်</string>
+    <string name="connection_detail_remote_region">အဝေးမှ IP ဒေသ</string>
+    <string name="connection_detail_remote_asn">အဝေးမှ IP ASN</string>
+    <string name="connection_detail_remote_org">အဝေးမှ IP အဖွဲ့အစည်း</string>
+    <string name="connection_detail_region_private">သီးသန့် ကွန်ရက်</string>
     <string name="connection_detail_sniff_host">ရှာဖွေတွေ့ရှိသော host</string>
     <string name="connection_detail_dns_mode">DNS မုဒ်</string>
     <string name="connection_detail_close">ချိတ်ဆက်မှု ပိတ်ရန်</string>

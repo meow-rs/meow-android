@@ -220,15 +220,13 @@
 
     <!-- Connections -->
     <string name="connections_title">Bağlantılar</string>
-    <string name="connections_tab_active">Etkin</string>
-    <string name="connections_tab_recent">Son istekler</string>
-    <string name="connections_empty">Etkin bağlantı yok</string>
-    <string name="connections_recent_empty">Son istek yok</string>
+    <string name="connections_empty">Bağlantı yok</string>
     <string name="connections_close_all">Tümünü kapat</string>
     <string name="connections_close_all_confirm">Tüm etkin bağlantılar kapatılsın mı?</string>
-    <string name="connections_recent_clear">Temizle</string>
-    <string name="connections_recent_clear_confirm">Son istekler temizlensin mi?</string>
+    <string name="connections_recent_clear">Kapananları temizle</string>
+    <string name="connections_recent_clear_confirm">Kapanan bağlantılar temizlensin mi?</string>
     <string name="connections_last_seen">Son görülme: %1$s</string>
+    <string name="connections_closed_at">%1$s kapandı</string>
     <string name="connections_filter">Alan adı veya IP adresine göre filtrele…</string>
     <string name="connection_detail_title">Bağlantı</string>
     <string name="connection_detail_host">Ana makine</string>
@@ -244,7 +242,14 @@
     <string name="connection_detail_rule_global">Global mod</string>
     <string name="connection_detail_rule_direct">Doğrudan mod</string>
     <string name="connection_detail_network">Ağ</string>
-    <string name="connection_detail_destination_ip">Hedef IP</string>
+    <string name="connection_detail_local_ip">Yerel IP</string>
+    <string name="connection_detail_remote_ip">Uzak IP</string>
+    <string name="connection_detail_remote_ip_dns_cache">DNS önbelleğinden</string>
+    <string name="connection_detail_remote_ip_by_proxy">Proxy sunucusu tarafından çözümlenir</string>
+    <string name="connection_detail_remote_region">Uzak IP bölgesi</string>
+    <string name="connection_detail_remote_asn">Uzak IP ASN</string>
+    <string name="connection_detail_remote_org">Uzak IP kuruluşu</string>
+    <string name="connection_detail_region_private">Özel ağ</string>
     <string name="connection_detail_sniff_host">Algılanan ana makine</string>
     <string name="connection_detail_dns_mode">DNS modu</string>
     <string name="connection_detail_close">Bağlantıyı kapat</string>

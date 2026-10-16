@@ -41,6 +41,14 @@ class FormattersTest {
     }
 
     @Test
+    fun `clockTime shows only the local time of day`() {
+        val instant = 1_792_116_781_000L // 2026-10-16T02:13:01Z
+        assertEquals("02:13:01", Formatters.clockTime(instant, ZoneOffset.UTC))
+        assertEquals("10:13:01", Formatters.clockTime(instant, ZoneId.of("Asia/Shanghai")))
+        assertEquals("", Formatters.clockTime(0, ZoneOffset.UTC))
+    }
+
+    @Test
     fun `bitRate steps by thousands like link speeds`() {
         assertEquals("850 bps", Formatters.bitRate(850.0))
         assertEquals("940 Kbps", Formatters.bitRate(940_000.0))

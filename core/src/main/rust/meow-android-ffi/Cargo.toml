@@ -64,6 +64,10 @@ httparse = "1"
 tokio-util = "0.7"
 rand = "0.9"
 
+# Connection detail IP section (src/ip_info.rs): country / ASN lookups in
+# the bundled GeoX databases. Same version and features as the engine's.
+maxminddb = { version = "0.27", features = ["mmap"] }
+
 # Low-level
 libc = "0.2"
 anyhow = "1"

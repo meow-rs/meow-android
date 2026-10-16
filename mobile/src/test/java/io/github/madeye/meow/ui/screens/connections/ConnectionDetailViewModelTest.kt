@@ -3,8 +3,13 @@ package io.github.madeye.meow.ui.screens.connections
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.api.Connection
 import io.github.madeye.meow.api.ConnectionMeta
+import io.github.madeye.meow.api.DnsResult
 import io.github.madeye.meow.api.MeowApiException
+import io.github.madeye.meow.api.ProxiesResult
+import io.github.madeye.meow.api.Proxy
+import io.github.madeye.meow.api.ProxyGroup
 import io.github.madeye.meow.api.Rule
+import io.github.madeye.meow.net.IpGeo
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -37,6 +42,7 @@ class ConnectionDetailViewModelTest {
     private var rules: suspend () -> List<Rule> = { RULES }
     private val closed = CopyOnWriteArrayList<String>()
     private val polled = AtomicInteger()
+    private val geoLookups = CopyOnWriteArrayList<String>()
     private val viewModels = mutableListOf<ConnectionDetailViewModel>()
 
     @Before
@@ -61,13 +67,19 @@ class ConnectionDetailViewModelTest {
             rules()
         },
         closeConnection = { closed += it },
+        proxies = { PROXIES },
+        dnsCache = { host -> listOf(DnsResult(name = host, ips = listOf("9.9.9.9"))) },
+        ipGeo = { ip ->
+            geoLookups += ip
+            IpGeo(country = "CN", asn = 136958, org = "China Unicom Guangdong IP network")
+        },
     ).also { viewModels += it }
 
     private suspend fun ConnectionDetailViewModel.await(until: (ConnectionDetailUiState) -> Boolean) =
         withTimeout(5_000) { uiState.first(until) }
 
     @Test
-    fun `shows the open connection, then its Recent row once it closes`() = runBlocking {
+    fun `shows the open connection, then its closed row once it closes`() = runBlocking {
         store.onSnapshot(listOf(conn("a", upload = 10), conn("b")))
         val vm = viewModel("a")
 
@@ -164,12 +176,90 @@ class ConnectionDetailViewModelTest {
         assertEquals(listOf("a"), closed.toList())
     }
 
+    @Test
+    fun `the remote ip arrives with where it is registered`() = runBlocking {
+        store.onSnapshot(listOf(conn("a", destinationIp = "157.148.41.176")))
+        val state = viewModel("a").await { (it.remote as? RemoteIp.Known)?.geo != null }
+
+        assertEquals(
+            RemoteIp.Known(
+                ip = "157.148.41.176",
+                geo = IpGeo(country = "CN", asn = 136958, org = "China Unicom Guangdong IP network"),
+            ),
+            state.remote,
+        )
+        assertEquals(listOf("157.148.41.176"), geoLookups.toList())
+    }
+
+    @Test
+    fun `an address the proxy server resolves is not looked up`() = runBlocking {
+        store.onSnapshot(listOf(conn("a", chains = listOf("Proxy"))))
+        val state = viewModel("a").await { it.remote != null }
+
+        assertEquals(RemoteIp.ResolvedByProxy, state.remote)
+        assertTrue(geoLookups.isEmpty())
+    }
+
+    @Test
+    fun `the engine's destination ip wins over any lookup`() = runBlocking {
+        val remote = remoteIpOf(
+            conn("a", chains = listOf("Proxy"), destinationIp = "1.2.3.4"),
+            proxies = { error("not consulted") },
+            dnsCache = { error("not consulted") },
+        )
+        assertEquals(RemoteIp.Known("1.2.3.4"), remote)
+    }
+
+    @Test
+    fun `a host dialed DIRECT through a group takes its address from the DNS cache`() = runBlocking {
+        val cache = listOf(
+            // The engine's search matches substrings too.
+            DnsResult(name = "cdn.a.example", ips = listOf("1.1.1.1")),
+            DnsResult(name = "A.example.", ips = listOf("9.9.9.9", "9.9.9.8")),
+        )
+        val remote = remoteIpOf(conn("a", chains = listOf("Domestic")), { PROXIES }, { cache })
+        assertEquals(RemoteIp.Known("9.9.9.9", fromDnsCache = true), remote)
+
+        // Expired from the cache: nothing to show.
+        assertNull(remoteIpOf(conn("a", chains = listOf("DIRECT")), { PROXIES }, { emptyList() }))
+    }
+
+    @Test
+    fun `nothing to say for a rejected flow, a bare ip flow or a stopped engine`() = runBlocking {
+        val cache: suspend (String) -> List<DnsResult> = { error("not consulted") }
+        assertNull(remoteIpOf(conn("a", chains = listOf("REJECT")), { PROXIES }, cache))
+        assertNull(remoteIpOf(conn("a", chains = listOf("Unknown")), { PROXIES }, cache))
+        assertNull(remoteIpOf(conn("a").copy(metadata = ConnectionMeta()), { PROXIES }, cache))
+        assertNull(
+            remoteIpOf(
+                conn("a"),
+                { throw MeowApiException.Unreachable(IOException("VPN stopped")) },
+                cache,
+            ),
+        )
+    }
+
+    @Test
+    fun `a policy is followed through its groups' picks to a leaf`() {
+        assertEquals("Trojan", PROXIES.leafType("Proxy"))
+        assertEquals("Direct", PROXIES.leafType("Domestic"))
+        assertEquals("Direct", PROXIES.leafType("DIRECT"))
+        assertEquals("LoadBalance", PROXIES.leafType("Balanced"))
+        assertNull(PROXIES.leafType("Unknown"))
+        val loop = ProxiesResult(
+            groups = mapOf("A" to group("A", now = "B"), "B" to group("B", now = "A")),
+            proxies = emptyMap(),
+        )
+        assertNull(loop.leafType("A"))
+    }
+
     private fun conn(
         id: String,
         upload: Long = 0,
         rule: String = "DOMAIN-SUFFIX",
         payload: String = "example.com",
         chains: List<String> = listOf("Proxy"),
+        destinationIp: String = "",
     ) = Connection(
         id = id,
         upload = upload,
@@ -177,7 +267,7 @@ class ConnectionDetailViewModelTest {
         chains = chains,
         rule = rule,
         rulePayload = payload,
-        metadata = ConnectionMeta(host = "$id.example"),
+        metadata = ConnectionMeta(host = "$id.example", destinationIP = destinationIp, sourceIP = "172.19.0.1"),
     )
 
     private companion object {
@@ -186,6 +276,20 @@ class ConnectionDetailViewModelTest {
             Rule(type = "RULE-SET", payload = "direct", proxy = "Proxy"),
             Rule(type = "RULE-SET", payload = "direct", proxy = "DIRECT"),
             Rule(type = "MATCH", payload = "", proxy = "Proxy"),
+        )
+
+        fun group(name: String, now: String, type: String = "Selector") =
+            ProxyGroup(name = name, type = type, now = now, all = listOf(now), history = emptyList())
+
+        val PROXIES = ProxiesResult(
+            groups = mapOf(
+                "Proxy" to group("Proxy", now = "Auto"),
+                "Auto" to group("Auto", now = "HK", type = "URLTest"),
+                "Domestic" to group("Domestic", now = "DIRECT"),
+                "Balanced" to group("Balanced", now = "", type = "LoadBalance"),
+            ),
+            proxies = listOf("HK" to "Trojan", "DIRECT" to "Direct", "REJECT" to "Reject")
+                .associate { (name, type) -> name to Proxy(name = name, type = type, history = emptyList()) },
         )
     }
 }

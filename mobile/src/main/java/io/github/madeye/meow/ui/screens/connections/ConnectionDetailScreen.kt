@@ -27,6 +27,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +38,8 @@ import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
+import io.github.madeye.meow.ui.util.regionFlag
+import io.github.madeye.meow.ui.util.regionName
 import java.time.Instant
 import kotlinx.coroutines.delay
 
@@ -110,13 +113,9 @@ fun ConnectionDetailScreen(
             ),
             ruleLine(connection, state.ruleIndex, onOpenRule),
         )
+        IpSection(localIp = meta.sourceIP, remote = state.remote)
         Section(
             Line(R.string.connection_detail_network, meta.network.uppercase().ifEmpty { PLACEHOLDER }),
-            if (meta.host.isNotEmpty() && meta.destinationIP.isNotEmpty()) {
-                Line(R.string.connection_detail_destination_ip, "${meta.destinationIP}:${meta.destinationPort}")
-            } else {
-                null
-            },
             if (meta.sniffHost.isNotEmpty() && meta.sniffHost != meta.host) {
                 Line(R.string.connection_detail_sniff_host, meta.sniffHost)
             } else {
@@ -148,11 +147,56 @@ private data class Line(
     val testTag: String? = null,
 )
 
-/** A card of [lines], dividers between them; null lines are left out. */
+/**
+ * Both ends' addresses, and who holds the far one: its country and network,
+ * from the GeoX databases on the device.
+ */
+@Composable
+private fun IpSection(localIp: String, remote: RemoteIp?) {
+    val geo = (remote as? RemoteIp.Known)?.geo
+    Section(
+        if (localIp.isNotEmpty()) Line(R.string.connection_detail_local_ip, localIp) else null,
+        when (remote) {
+            is RemoteIp.Known -> Line(
+                label = R.string.connection_detail_remote_ip,
+                value = remote.ip,
+                detail = if (remote.fromDnsCache) stringResource(R.string.connection_detail_remote_ip_dns_cache) else null,
+                testTag = "connection_detail_remote_ip",
+            )
+            RemoteIp.ResolvedByProxy -> Line(
+                label = R.string.connection_detail_remote_ip,
+                value = stringResource(R.string.connection_detail_remote_ip_by_proxy),
+                testTag = "connection_detail_remote_ip",
+            )
+            null -> null
+        },
+        geo?.country?.let { Line(R.string.connection_detail_remote_region, regionLabel(it)) },
+        geo?.asn?.let { Line(R.string.connection_detail_remote_asn, "AS$it") },
+        geo?.org?.let { Line(R.string.connection_detail_remote_org, it) },
+    )
+}
+
+/**
+ * A country as its flag and name in the UI language. The database's own codes
+ * for ranges filed by owner (`GOOGLE`, `CLOUDFLARE`…) are what GEOIP rules
+ * match on, so they stay as they are.
+ */
+@Composable
+private fun regionLabel(code: String): String {
+    if (code == PRIVATE_REGION) return stringResource(R.string.connection_detail_region_private)
+    val name = regionName(code, LocalConfiguration.current.locales[0]) ?: return code
+    return listOfNotNull(regionFlag(code), name).joinToString(" ")
+}
+
+private const val PRIVATE_REGION = "PRIVATE"
+
+/** A card of [lines], dividers between them; null lines are left out, and a card with none. */
 @Composable
 private fun Section(vararg lines: Line?) {
+    val shown = lines.filterNotNull()
+    if (shown.isEmpty()) return
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
-        lines.filterNotNull().forEachIndexed { index, line ->
+        shown.forEachIndexed { index, line ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.meow.border)
             LineRow(line)
         }

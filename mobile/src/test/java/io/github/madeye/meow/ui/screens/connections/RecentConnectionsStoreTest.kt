@@ -3,6 +3,7 @@ package io.github.madeye.meow.ui.screens.connections
 import io.github.madeye.meow.api.Connection
 import io.github.madeye.meow.api.ConnectionMeta
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -186,25 +187,50 @@ class ConnectionsUiStateTest {
     @Test
     fun `query matches host or destination ip case insensitively`() {
         val state = ConnectionsUiState(
-            connections = listOf(
-                connection("a", host = "One.Example"),
-                connection("b", host = "", destinationIp = "8.8.8.8"),
-                connection("c", host = "other.test"),
-            ),
-            recent = listOf(
-                RecentConnection(connection("d", host = "one.example"), lastSeenAtMillis = 1),
+            rows = listOf(
+                ConnectionRow(connection("a", host = "One.Example")),
+                ConnectionRow(connection("b", host = "", destinationIp = "8.8.8.8")),
+                ConnectionRow(connection("c", host = "other.test")),
+                ConnectionRow(connection("d", host = "one.example"), lastSeenAtMillis = 1),
             ),
             query = "example",
         )
 
-        assertEquals(listOf("a"), state.visibleConnections.map { it.id })
-        assertEquals(listOf("d"), state.visibleRecent.map { it.connection.id })
-        assertEquals(listOf("b"), state.copy(query = "8.8").visibleConnections.map { it.id })
-        assertEquals(3, state.copy(query = "  ").visibleConnections.size)
+        assertEquals(listOf("a", "d"), state.visibleRows.map { it.connection.id })
+        assertEquals(listOf("b"), state.copy(query = "8.8").visibleRows.map { it.connection.id })
+        assertEquals(4, state.copy(query = "  ").visibleRows.size)
     }
 
-    private fun connection(id: String, host: String, destinationIp: String = "") = Connection(
+    @Test
+    fun `open and closed connections share one list, newest start first`() {
+        val lists = ConnectionLists(
+            active = listOf(
+                connection("open-old", start = "2026-10-16T02:00:00Z"),
+                connection("open-new", start = "2026-10-16T02:05:00.5Z"),
+            ),
+            recent = listOf(
+                RecentConnection(connection("closed-mid", start = "2026-10-16T02:03:00Z"), lastSeenAtMillis = 7),
+                RecentConnection(connection("closed-newest", start = "2026-10-16T02:05:01Z"), lastSeenAtMillis = 9),
+                RecentConnection(connection("closed-unparseable", start = ""), lastSeenAtMillis = 3),
+            ),
+        )
+
+        val rows = lists.rows()
+
+        assertEquals(
+            listOf("closed-newest", "open-new", "closed-mid", "open-old", "closed-unparseable"),
+            rows.map { it.connection.id },
+        )
+        assertEquals(listOf(9L, null, 7L, null, 3L), rows.map { it.lastSeenAtMillis })
+        val state = ConnectionsUiState(rows = rows)
+        assertTrue(state.hasActive && state.hasClosed)
+        assertFalse(ConnectionsUiState(rows = rows.filter { it.lastSeenAtMillis != null }).hasActive)
+        assertFalse(ConnectionsUiState(rows = rows.filter { it.lastSeenAtMillis == null }).hasClosed)
+    }
+
+    private fun connection(id: String, host: String = "", destinationIp: String = "", start: String = "") = Connection(
         id = id,
+        start = start,
         metadata = ConnectionMeta(host = host, destinationIP = destinationIp),
     )
 }

@@ -216,15 +216,13 @@
 
     <!-- Connections -->
     <string name="connections_title">Kết nối</string>
-    <string name="connections_tab_active">Đang mở</string>
-    <string name="connections_tab_recent">Gần đây</string>
-    <string name="connections_empty">Không có kết nối nào đang mở</string>
-    <string name="connections_recent_empty">Không có yêu cầu gần đây</string>
+    <string name="connections_empty">Không có kết nối nào</string>
     <string name="connections_close_all">Đóng tất cả</string>
     <string name="connections_close_all_confirm">Đóng tất cả kết nối đang mở?</string>
-    <string name="connections_recent_clear">Xóa</string>
-    <string name="connections_recent_clear_confirm">Xóa các yêu cầu gần đây?</string>
+    <string name="connections_recent_clear">Xóa kết nối đã đóng</string>
+    <string name="connections_recent_clear_confirm">Xóa các kết nối đã đóng?</string>
     <string name="connections_last_seen">Hoạt động lần cuối: %1$s</string>
+    <string name="connections_closed_at">Đã đóng %1$s</string>
     <string name="connections_filter">Lọc theo máy chủ hoặc IP…</string>
     <string name="connection_detail_title">Kết nối</string>
     <string name="connection_detail_host">Máy chủ</string>
@@ -240,7 +238,14 @@
     <string name="connection_detail_rule_global">Chế độ toàn cục</string>
     <string name="connection_detail_rule_direct">Chế độ trực tiếp</string>
     <string name="connection_detail_network">Mạng</string>
-    <string name="connection_detail_destination_ip">IP đích</string>
+    <string name="connection_detail_local_ip">IP cục bộ</string>
+    <string name="connection_detail_remote_ip">IP từ xa</string>
+    <string name="connection_detail_remote_ip_dns_cache">Từ bộ nhớ đệm DNS</string>
+    <string name="connection_detail_remote_ip_by_proxy">Do máy chủ proxy phân giải</string>
+    <string name="connection_detail_remote_region">Khu vực IP từ xa</string>
+    <string name="connection_detail_remote_asn">ASN của IP từ xa</string>
+    <string name="connection_detail_remote_org">Tổ chức của IP từ xa</string>
+    <string name="connection_detail_region_private">Mạng riêng</string>
     <string name="connection_detail_sniff_host">Tên miền dò được</string>
     <string name="connection_detail_dns_mode">Chế độ DNS</string>
     <string name="connection_detail_close">Đóng kết nối</string>

@@ -231,15 +231,13 @@
 
     <!-- Connections -->
     <string name="connections_title">Connections</string>
-    <string name="connections_tab_active">Active</string>
-    <string name="connections_tab_recent">Recent</string>
-    <string name="connections_empty">No active connections</string>
-    <string name="connections_recent_empty">No recent requests</string>
+    <string name="connections_empty">No connections</string>
     <string name="connections_close_all">Close All</string>
     <string name="connections_close_all_confirm">Close all active connections?</string>
-    <string name="connections_recent_clear">Clear</string>
-    <string name="connections_recent_clear_confirm">Clear recent requests?</string>
+    <string name="connections_recent_clear">Clear Closed</string>
+    <string name="connections_recent_clear_confirm">Clear closed connections?</string>
     <string name="connections_last_seen">Last seen %1$s</string>
+    <string name="connections_closed_at">Closed %1$s</string>
     <string name="connections_filter">Filter by host or IP…</string>
     <string name="connection_detail_title">Connection</string>
     <string name="connection_detail_host">Host</string>
@@ -255,7 +253,14 @@
     <string name="connection_detail_rule_global">Global mode</string>
     <string name="connection_detail_rule_direct">Direct mode</string>
     <string name="connection_detail_network">Network</string>
-    <string name="connection_detail_destination_ip">Destination IP</string>
+    <string name="connection_detail_local_ip">Local IP</string>
+    <string name="connection_detail_remote_ip">Remote IP</string>
+    <string name="connection_detail_remote_ip_dns_cache">From the DNS cache</string>
+    <string name="connection_detail_remote_ip_by_proxy">Resolved by the proxy server</string>
+    <string name="connection_detail_remote_region">Remote IP Region</string>
+    <string name="connection_detail_remote_asn">Remote IP ASN</string>
+    <string name="connection_detail_remote_org">Remote IP Organization</string>
+    <string name="connection_detail_region_private">Private network</string>
     <string name="connection_detail_sniff_host">Sniffed Host</string>
     <string name="connection_detail_dns_mode">DNS Mode</string>
     <string name="connection_detail_close">Close Connection</string>

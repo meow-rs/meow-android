@@ -29,7 +29,8 @@ import io.github.madeye.meow.net.ExitIp
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
-import java.util.IllformedLocaleException
+import io.github.madeye.meow.ui.util.regionFlag
+import io.github.madeye.meow.ui.util.regionName
 import java.util.Locale
 
 /** The public address traffic leaves from, with its country and network. Tap to re-check. */
@@ -127,9 +128,7 @@ private fun FoundLines(state: ExitIpUiState.Found) {
 }
 
 /** The two regional-indicator symbols that render as the country's flag. */
-internal fun ExitIp.flagEmoji(): String? = countryCode?.let { code ->
-    buildString { code.forEach { appendCodePoint(0x1F1E6 + (it - 'A')) } }
-}
+internal fun ExitIp.flagEmoji(): String? = countryCode?.let(::regionFlag)
 
 /**
  * The country in the UI language. The services answer in English (ipinfo.io
@@ -138,13 +137,7 @@ internal fun ExitIp.flagEmoji(): String? = countryCode?.let { code ->
  */
 internal fun ExitIp.countryName(locale: Locale): String? {
     val code = countryCode ?: return country
-    val name = try {
-        Locale.Builder().setRegion(code).build().getDisplayCountry(locale)
-    } catch (e: IllformedLocaleException) {
-        ""
-    }
-    // An unknown region comes back as the code itself.
-    return name.takeIf { it.isNotEmpty() && it != code } ?: country ?: code
+    return regionName(code, locale) ?: country ?: code
 }
 
 /** `AS24940 Hetzner Online GmbH`, or whichever half is known. */

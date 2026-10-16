@@ -228,15 +228,13 @@
 
     <!-- Connections -->
     <string name="connections_title">اتصال‌ها</string>
-    <string name="connections_tab_active">فعال</string>
-    <string name="connections_tab_recent">اخیر</string>
-    <string name="connections_empty">اتصال فعالی وجود ندارد</string>
-    <string name="connections_recent_empty">درخواست اخیری وجود ندارد</string>
+    <string name="connections_empty">اتصالی وجود ندارد</string>
     <string name="connections_close_all">بستن همه</string>
     <string name="connections_close_all_confirm">همهٔ اتصال‌های فعال بسته شوند؟</string>
-    <string name="connections_recent_clear">پاک کردن</string>
-    <string name="connections_recent_clear_confirm">درخواست‌های اخیر پاک شوند؟</string>
+    <string name="connections_recent_clear">پاک کردن بسته‌شده‌ها</string>
+    <string name="connections_recent_clear_confirm">اتصال‌های بسته‌شده پاک شوند؟</string>
     <string name="connections_last_seen">آخرین فعالیت: \u2068%1$s\u2069</string>
+    <string name="connections_closed_at">بسته‌شده \u2068%1$s\u2069</string>
     <string name="connections_filter">فیلتر بر اساس میزبان یا آی‌پی…</string>
     <string name="connection_detail_title">اتصال</string>
     <string name="connection_detail_host">میزبان</string>
@@ -252,7 +250,14 @@
     <string name="connection_detail_rule_global">حالت سراسری</string>
     <string name="connection_detail_rule_direct">حالت مستقیم</string>
     <string name="connection_detail_network">شبکه</string>
-    <string name="connection_detail_destination_ip">\u200FIP مقصد</string>
+    <string name="connection_detail_local_ip">\u200FIP محلی</string>
+    <string name="connection_detail_remote_ip">\u200FIP راه دور</string>
+    <string name="connection_detail_remote_ip_dns_cache">از حافظهٔ نهان DNS</string>
+    <string name="connection_detail_remote_ip_by_proxy">توسط سرور پروکسی تفکیک می‌شود</string>
+    <string name="connection_detail_remote_region">منطقهٔ IP راه دور</string>
+    <string name="connection_detail_remote_asn">\u200FASN مربوط به IP راه دور</string>
+    <string name="connection_detail_remote_org">سازمان IP راه دور</string>
+    <string name="connection_detail_region_private">شبکهٔ خصوصی</string>
     <string name="connection_detail_sniff_host">میزبان شناسایی‌شده</string>
     <string name="connection_detail_dns_mode">حالت DNS</string>
     <string name="connection_detail_close">بستن اتصال</string>

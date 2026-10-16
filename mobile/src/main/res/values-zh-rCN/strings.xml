@@ -216,15 +216,13 @@
 
     <!-- Connections -->
     <string name="connections_title">连接</string>
-    <string name="connections_tab_active">活跃</string>
-    <string name="connections_tab_recent">最近</string>
-    <string name="connections_empty">无活跃连接</string>
-    <string name="connections_recent_empty">无最近请求</string>
+    <string name="connections_empty">暂无连接</string>
     <string name="connections_close_all">关闭全部</string>
     <string name="connections_close_all_confirm">关闭所有活跃连接？</string>
-    <string name="connections_recent_clear">清除</string>
-    <string name="connections_recent_clear_confirm">清除最近请求？</string>
+    <string name="connections_recent_clear">清除已关闭</string>
+    <string name="connections_recent_clear_confirm">清除已关闭的连接？</string>
     <string name="connections_last_seen">最后活跃 %1$s</string>
+    <string name="connections_closed_at">已关闭 %1$s</string>
     <string name="connections_filter">按主机或 IP 过滤…</string>
     <string name="connection_detail_title">连接详情</string>
     <string name="connection_detail_host">主机</string>
@@ -240,7 +238,14 @@
     <string name="connection_detail_rule_global">全局模式</string>
     <string name="connection_detail_rule_direct">直连模式</string>
     <string name="connection_detail_network">网络</string>
-    <string name="connection_detail_destination_ip">目标 IP</string>
+    <string name="connection_detail_local_ip">本地 IP</string>
+    <string name="connection_detail_remote_ip">远程 IP</string>
+    <string name="connection_detail_remote_ip_dns_cache">来自 DNS 缓存</string>
+    <string name="connection_detail_remote_ip_by_proxy">由代理服务器解析</string>
+    <string name="connection_detail_remote_region">远程 IP 地区</string>
+    <string name="connection_detail_remote_asn">远程 IP ASN</string>
+    <string name="connection_detail_remote_org">远程 IP 组织</string>
+    <string name="connection_detail_region_private">私有网络</string>
     <string name="connection_detail_sniff_host">嗅探域名</string>
     <string name="connection_detail_dns_mode">DNS 模式</string>
     <string name="connection_detail_close">断开连接</string>

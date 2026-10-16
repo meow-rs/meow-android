@@ -75,6 +75,12 @@ object Formatters {
     fun dayLabel(isoDate: String): String =
         runCatching { LocalDate.parse(isoDate).format(DAY_LABEL) }.getOrDefault(isoDate)
 
+    private val CLOCK_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+
+    /** Local time of day, e.g. `10:13:01`, for rows that only need that much; empty for 0. */
+    fun clockTime(epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
+        if (epochMillis <= 0) "" else CLOCK_TIME.format(Instant.ofEpochMilli(epochMillis).atZone(zone))
+
     /** Absolute local timestamp for "Updated …" rows. */
     fun timestamp(epochMillis: Long): String =
         if (epochMillis <= 0) "" else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))

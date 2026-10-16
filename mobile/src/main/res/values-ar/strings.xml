@@ -248,15 +248,13 @@
 
     <!-- Connections -->
     <string name="connections_title">الاتصالات</string>
-    <string name="connections_tab_active">النشطة</string>
-    <string name="connections_tab_recent">الحديثة</string>
-    <string name="connections_empty">لا توجد اتصالات نشطة</string>
-    <string name="connections_recent_empty">لا توجد طلبات حديثة</string>
+    <string name="connections_empty">لا توجد اتصالات</string>
     <string name="connections_close_all">إغلاق الكل</string>
     <string name="connections_close_all_confirm">هل تريد إغلاق كل الاتصالات النشطة؟</string>
-    <string name="connections_recent_clear">مسح</string>
-    <string name="connections_recent_clear_confirm">هل تريد مسح الطلبات الحديثة؟</string>
+    <string name="connections_recent_clear">مسح المغلقة</string>
+    <string name="connections_recent_clear_confirm">هل تريد مسح الاتصالات المغلقة؟</string>
     <string name="connections_last_seen">آخر نشاط: \u2068%1$s\u2069</string>
+    <string name="connections_closed_at">أُغلق \u2068%1$s\u2069</string>
     <string name="connections_filter">تصفية حسب المضيف أو عنوان IP…</string>
     <string name="connection_detail_title">الاتصال</string>
     <string name="connection_detail_host">المضيف</string>
@@ -272,7 +270,14 @@
     <string name="connection_detail_rule_global">الوضع الشامل</string>
     <string name="connection_detail_rule_direct">الوضع المباشر</string>
     <string name="connection_detail_network">الشبكة</string>
-    <string name="connection_detail_destination_ip">عنوان IP الوجهة</string>
+    <string name="connection_detail_local_ip">عنوان IP المحلي</string>
+    <string name="connection_detail_remote_ip">عنوان IP البعيد</string>
+    <string name="connection_detail_remote_ip_dns_cache">من ذاكرة DNS المؤقتة</string>
+    <string name="connection_detail_remote_ip_by_proxy">يُحَلّ بواسطة الخادم الوكيل</string>
+    <string name="connection_detail_remote_region">منطقة عنوان IP البعيد</string>
+    <string name="connection_detail_remote_asn">رقم ASN لعنوان IP البعيد</string>
+    <string name="connection_detail_remote_org">مؤسسة عنوان IP البعيد</string>
+    <string name="connection_detail_region_private">شبكة خاصة</string>
     <string name="connection_detail_sniff_host">المضيف المُكتشَف</string>
     <string name="connection_detail_dns_mode">وضع DNS</string>
     <string name="connection_detail_close">إغلاق الاتصال</string>
