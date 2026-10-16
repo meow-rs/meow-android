@@ -608,8 +608,9 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeValidateCo
     // raw YAML rejects configs that would run fine — e.g. mihomo's
     // `external-controller: :9090` shorthand, stripped at start but fatal
     // to a raw parse.
-    let load = crate::engine::load_with_dns_fallback(&yaml_str, |stripped| async move {
-        meow_config::load_config_from_str(&stripped).await
+    // Boxed for the same reason as in `engine::load_stripped_config`.
+    let load = crate::engine::load_with_dns_fallback(&yaml_str, |stripped| {
+        Box::pin(async move { meow_config::load_config_from_str(&stripped).await })
     });
     match get_runtime().block_on(load) {
         Ok(_) => 0,

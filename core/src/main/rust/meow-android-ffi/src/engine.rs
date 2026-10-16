@@ -179,15 +179,18 @@ pub async fn load_stripped_config(config_path: &str, upstreams: DnsUpstreams) ->
     let original = std::fs::read_to_string(config_path)
         .with_context(|| format!("reading config from {config_path}"))?;
     let stripped_path = sibling_stripped_path(config_path);
+    // Boxed so the loader's large future lives on the heap: unoptimised
+    // builds copy a future through the stack at every async layer above it,
+    // and the engine starts on a Java thread with a 1 MB stack.
     let load = |stripped: String| {
         let stripped_path = stripped_path.clone();
-        async move {
+        Box::pin(async move {
             std::fs::write(&stripped_path, stripped).with_context(|| {
                 format!("writing stripped config to {}", stripped_path.display())
             })?;
             let _guard = TempFileGuard(stripped_path.clone());
             load_config(stripped_path.to_str().expect("utf-8 path")).await
-        }
+        })
     };
     match upstreams {
         DnsUpstreams::Profile => load_with_dns_fallback(&original, load).await,
