@@ -297,6 +297,25 @@ class MeowApi(
         }
     }
 
+    /**
+     * How the engine handled one connection, step by step. Null when the
+     * engine no longer knows it (closed without notes, or closed long enough
+     * ago to have left its history) or predates the endpoint.
+     */
+    suspend fun connectionNotes(id: String): ConnectionNotes? {
+        val request = Request.Builder()
+            .url(baseUrl.newBuilder().addPathSegment("connections").addPathSegment(id).build())
+            .build()
+        val body = try {
+            execute(request, "connectionNotes")
+        } catch (e: MeowApiException.Http) {
+            // 405: an engine with only DELETE on the route.
+            if (e.code == 404 || e.code == 405) return null
+            throw e
+        }
+        return decode("connectionNotes") { json.decodeFromString(ConnectionNotes.serializer(), body) }
+    }
+
     suspend fun closeConnection(id: String) {
         val request = Request.Builder()
             .url(baseUrl.newBuilder().addPathSegment("connections").addPathSegment(id).build())

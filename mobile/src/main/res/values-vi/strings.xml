@@ -249,6 +249,7 @@
     <string name="connection_detail_region_private">Mạng riêng</string>
     <string name="connection_detail_sniff_host">Tên miền dò được</string>
     <string name="connection_detail_dns_mode">Chế độ DNS</string>
+    <string name="connection_detail_notes">Ghi chú</string>
     <string name="connection_detail_close">Đóng kết nối</string>
     <string name="connection_detail_gone">Kết nối này không còn trong danh sách.</string>
 

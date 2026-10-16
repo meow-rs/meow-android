@@ -3,6 +3,8 @@ package io.github.madeye.meow.ui.screens.connections
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.api.Connection
 import io.github.madeye.meow.api.ConnectionMeta
+import io.github.madeye.meow.api.ConnectionNote
+import io.github.madeye.meow.api.ConnectionNotes
 import io.github.madeye.meow.api.DnsResult
 import io.github.madeye.meow.api.MeowApiException
 import io.github.madeye.meow.api.ProxiesResult
@@ -44,6 +46,10 @@ class ConnectionDetailViewModelTest {
     private val polled = AtomicInteger()
     private val geoLookups = CopyOnWriteArrayList<String>()
     private val labelLookups = CopyOnWriteArrayList<String>()
+    private val noteReads = AtomicInteger()
+
+    /** What successive notes reads return; the last one repeats. */
+    private var noteAnswers: List<ConnectionNotes?> = listOf(null)
     private val viewModels = mutableListOf<ConnectionDetailViewModel>()
 
     @Before
@@ -78,6 +84,11 @@ class ConnectionDetailViewModelTest {
             labelLookups += pkg
             "Label of $pkg"
         },
+        connectionNotes = {
+            val read = noteReads.getAndIncrement()
+            noteAnswers[read.coerceAtMost(noteAnswers.lastIndex)]
+        },
+        notesPollIntervalMillis = 1,
     ).also { viewModels += it }
 
     private suspend fun ConnectionDetailViewModel.await(until: (ConnectionDetailUiState) -> Boolean) =
@@ -203,6 +214,45 @@ class ConnectionDetailViewModelTest {
 
         assertEquals("Label of com.example.app", state.appLabel)
         assertEquals(listOf("com.example.app"), labelLookups.toList())
+    }
+
+    @Test
+    fun `notes are re-read while the connection is open and kept once it closes`() = runBlocking {
+        val dial = ConnectionNote(time = "2026-10-16T02:13:01.5Z", kind = "dial", text = "Dialing a.example:443 via Proxy")
+        val closed = ConnectionNote(time = "2026-10-16T02:13:02Z", kind = "relay", text = "Closed: 4 B up, 4 B down")
+        noteAnswers = listOf(
+            ConnectionNotes(closed = false, notes = listOf(dial)),
+            ConnectionNotes(closed = true, notes = listOf(dial, closed)),
+        )
+        store.onSnapshot(listOf(conn("a")))
+        val state = viewModel("a").await { it.notes.size == 2 }
+
+        assertEquals(listOf(dial, closed), state.notes)
+        delay(50)
+        assertEquals("no reads after the engine reported it closed", 2, noteReads.get())
+    }
+
+    @Test
+    fun `notes are not asked for again when the engine has none to give`() = runBlocking {
+        store.onSnapshot(listOf(conn("a")))
+        val vm = viewModel("a")
+        vm.await { it.connection != null }
+        delay(50)
+
+        assertTrue(vm.uiState.value.notes.isEmpty())
+        assertEquals(1, noteReads.get())
+    }
+
+    @Test
+    fun `notes are not polled for a live connection the engine is not recording`() = runBlocking {
+        noteAnswers = listOf(ConnectionNotes(closed = false, notes = emptyList()))
+        store.onSnapshot(listOf(conn("a")))
+        val vm = viewModel("a")
+        vm.await { it.connection != null }
+        delay(50)
+
+        assertTrue(vm.uiState.value.notes.isEmpty())
+        assertEquals(1, noteReads.get())
     }
 
     @Test

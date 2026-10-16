@@ -181,6 +181,7 @@ object AppGraph {
                     dnsCache = { host -> api.dnsResults(search = host) },
                     ipGeo = ipGeoLookup::lookup,
                     appLabel = appLabels::labelOf,
+                    connectionNotes = api::connectionNotes,
                 )
                 DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
                 LogsViewModel::class.java -> LogsViewModel(api)

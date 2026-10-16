@@ -264,6 +264,7 @@
     <string name="connection_detail_region_private">Private network</string>
     <string name="connection_detail_sniff_host">Sniffed Host</string>
     <string name="connection_detail_dns_mode">DNS Mode</string>
+    <string name="connection_detail_notes">Notes</string>
     <string name="connection_detail_close">Close Connection</string>
     <string name="connection_detail_gone">This connection is no longer listed.</string>
 

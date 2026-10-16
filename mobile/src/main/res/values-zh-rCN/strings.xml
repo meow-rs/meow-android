@@ -249,6 +249,7 @@
     <string name="connection_detail_region_private">私有网络</string>
     <string name="connection_detail_sniff_host">嗅探域名</string>
     <string name="connection_detail_dns_mode">DNS 模式</string>
+    <string name="connection_detail_notes">处理过程</string>
     <string name="connection_detail_close">断开连接</string>
     <string name="connection_detail_gone">该连接已不在列表中。</string>
 

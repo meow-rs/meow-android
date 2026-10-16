@@ -272,6 +272,32 @@ data class Connection(
     val rulePayload: String = "",
 )
 
+/**
+ * One step of how the engine handled a connection: the fake-IP it reversed,
+ * a DNS lookup a rule needed, the rule that matched, the dial, the close.
+ */
+@Serializable
+data class ConnectionNote(
+    /** RFC 3339 UTC with microseconds. */
+    val time: String = "",
+    /** connection | dns | rule | dial | relay */
+    val kind: String = "",
+    val text: String = "",
+)
+
+/**
+ * The notes part of `GET /connections/{id}`, which also answers for recently
+ * closed connections that recorded notes. The rest of the body is the
+ * `/connections` entry, which the list already has.
+ */
+@Serializable
+data class ConnectionNotes(
+    /** True once the engine has closed the connection; its notes are final then. */
+    val closed: Boolean = false,
+    /** Empty when the engine records no notes (`connection-notes: false`). */
+    val notes: List<ConnectionNote> = emptyList(),
+)
+
 @Serializable
 data class ConnectionsSnapshot(
     val downloadTotal: Long = 0,

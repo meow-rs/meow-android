@@ -281,6 +281,7 @@
     <string name="connection_detail_region_private">شبكة خاصة</string>
     <string name="connection_detail_sniff_host">المضيف المُكتشَف</string>
     <string name="connection_detail_dns_mode">وضع DNS</string>
+    <string name="connection_detail_notes">ملاحظات</string>
     <string name="connection_detail_close">إغلاق الاتصال</string>
     <string name="connection_detail_gone">لم يعد هذا الاتصال مدرجًا.</string>
 

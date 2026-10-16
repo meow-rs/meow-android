@@ -81,6 +81,12 @@ object Formatters {
     fun clockTime(epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
         if (epochMillis <= 0) "" else CLOCK_TIME.format(Instant.ofEpochMilli(epochMillis).atZone(zone))
 
+    private val CLOCK_TIME_MILLIS: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+
+    /** Local time of day of an ISO-8601 instant to the millisecond, e.g. `10:13:01.042`; empty if unparseable. */
+    fun clockTimeMillis(iso: String, zone: ZoneId = ZoneId.systemDefault()): String =
+        runCatching { CLOCK_TIME_MILLIS.format(Instant.parse(iso).atZone(zone)) }.getOrDefault("")
+
     /** Absolute local timestamp for "Updated …" rows. */
     fun timestamp(epochMillis: Long): String =
         if (epochMillis <= 0) "" else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))

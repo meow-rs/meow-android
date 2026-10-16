@@ -426,6 +426,33 @@ class MeowApiTest {
     }
 
     @Test
+    fun `connectionNotes reads the notes of one connection`() = runTest {
+        enqueue(
+            """{"id": "abc-123", "metadata": {"host": "example.com"}, "upload": 4, "download": 4,
+                "closed": true, "end": "2026-10-16T08:00:01.5Z", "notes": [
+                {"time": "2026-10-16T08:00:00.123456Z", "kind": "dns",
+                 "text": "No address for example.com after 5003 ms; IP rules cannot match"},
+                {"time": "2026-10-16T08:00:00.2Z", "kind": "rule", "text": "Matched rule #9 MATCH → Proxy"}
+            ]}""",
+        )
+
+        val notes = api.connectionNotes("abc-123")!!
+
+        assertEquals("/connections/abc-123", server.takeRequest().requestUrl!!.encodedPath)
+        assertTrue(notes.closed)
+        assertEquals(listOf("dns", "rule"), notes.notes.map { it.kind })
+        assertEquals("Matched rule #9 MATCH → Proxy", notes.notes[1].text)
+    }
+
+    @Test
+    fun `connectionNotes is null for a connection the engine forgot or an engine without notes`() = runTest {
+        enqueue("""{"message": "Resource not found"}""", code = 404)
+        assertNull(api.connectionNotes("gone"))
+        enqueue("", code = 405)
+        assertNull(api.connectionNotes("old-engine"))
+    }
+
+    @Test
     fun `updateRuleProvider PUTs the name as one encoded segment`() = runTest {
         server.enqueue(MockResponse().setResponseCode(204))
 

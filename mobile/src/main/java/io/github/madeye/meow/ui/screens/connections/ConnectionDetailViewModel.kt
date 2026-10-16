@@ -4,18 +4,24 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.api.Connection
+import io.github.madeye.meow.api.ConnectionNote
+import io.github.madeye.meow.api.ConnectionNotes
 import io.github.madeye.meow.api.DnsResult
 import io.github.madeye.meow.api.MeowApiException
 import io.github.madeye.meow.api.ProxiesResult
 import io.github.madeye.meow.api.Rule
 import io.github.madeye.meow.net.IpGeo
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -61,6 +67,8 @@ data class ConnectionDetailUiState(
     val remote: RemoteIp? = null,
     /** The display name of the app that opened it, once resolved; null when the engine did not say. */
     val appLabel: String? = null,
+    /** How the engine handled it, oldest first; empty until read, and when the engine kept none. */
+    val notes: List<ConnectionNote> = emptyList(),
 ) {
     val active: Boolean get() = connection != null && lastSeenAtMillis == null
 }
@@ -69,7 +77,9 @@ data class ConnectionDetailUiState(
  * One connection's detail page: where it went, and which rule sent it there.
  *
  * Reads the same process-scoped [store] as the list, polling it while shown,
- * so a connection that closes under the page turns into its closed row.
+ * so a connection that closes under the page turns into its closed row. Its
+ * notes are re-read while shown too, until the engine reports it closed or
+ * turns out not to record it.
  */
 class ConnectionDetailViewModel(
     private val id: String,
@@ -83,16 +93,45 @@ class ConnectionDetailViewModel(
     private val ipGeo: suspend (ip: String) -> IpGeo,
     /** An installed app's display name by package name. */
     private val appLabel: suspend (packageName: String) -> String,
+    /** The engine's notes on a connection; null when it has none to give. */
+    private val connectionNotes: suspend (id: String) -> ConnectionNotes?,
+    private val notesPollIntervalMillis: Long = NOTES_POLL_INTERVAL_MS,
 ) : ViewModel() {
 
     private val ruleIndex = MutableStateFlow<Int?>(null)
     private val remote = MutableStateFlow<RemoteIp?>(null)
     private val app = MutableStateFlow<String?>(null)
+    private val notes = MutableStateFlow<List<ConnectionNote>>(emptyList())
+
+    /** Re-reads the notes while collected, until they can no longer change. */
+    private val notesPolling: Flow<Unit> = flow<Unit> {
+        while (refreshNotes()) delay(notesPollIntervalMillis)
+    }.onStart { emit(Unit) }
 
     val uiState: StateFlow<ConnectionDetailUiState> =
-        combine(store.lists, ruleIndex, remote, app, polling) { lists, index, remoteIp, label, _ ->
-            lists.detail(index).copy(remote = remoteIp, appLabel = label)
+        combine(
+            store.lists,
+            ruleIndex,
+            remote,
+            combine(app, notes, ::Pair),
+            merge(polling, notesPolling),
+        ) { lists, index, remoteIp, (label, steps), _ ->
+            lists.detail(index).copy(remote = remoteIp, appLabel = label, notes = steps)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), store.lists.value.detail(null))
+
+    /** Reads the notes once; false when there is no point asking again. */
+    private suspend fun refreshNotes(): Boolean {
+        val read = try {
+            connectionNotes(id)
+        } catch (e: MeowApiException) {
+            // Unreachable while the VPN restarts; ask again on the next round.
+            return true
+        } ?: return false
+        notes.value = read.notes
+        // A recording engine notes the flow before listing it, so a live
+        // connection without notes will never get any.
+        return !read.closed && read.notes.isNotEmpty()
+    }
 
     init {
         // Both once: the rule and the address were fixed when the flow
@@ -188,6 +227,8 @@ internal fun ProxiesResult.leafType(name: String): String? {
 }
 
 private const val MAX_GROUP_DEPTH = 16
+
+private const val NOTES_POLL_INTERVAL_MS = 1_000L
 
 /** The first address the cache holds for exactly [host]; the search also matches substrings. */
 internal fun List<DnsResult>.ipOf(host: String): String? =

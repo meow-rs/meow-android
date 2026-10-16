@@ -261,6 +261,7 @@
     <string name="connection_detail_region_private">Частная сеть</string>
     <string name="connection_detail_sniff_host">Определённый хост</string>
     <string name="connection_detail_dns_mode">Режим DNS</string>
+    <string name="connection_detail_notes">Заметки</string>
     <string name="connection_detail_close">Закрыть соединение</string>
     <string name="connection_detail_gone">Этого соединения больше нет в списке.</string>
 

@@ -254,6 +254,7 @@
     <string name="connection_detail_region_private">သီးသန့် ကွန်ရက်</string>
     <string name="connection_detail_sniff_host">ရှာဖွေတွေ့ရှိသော host</string>
     <string name="connection_detail_dns_mode">DNS မုဒ်</string>
+    <string name="connection_detail_notes">မှတ်စုများ</string>
     <string name="connection_detail_close">ချိတ်ဆက်မှု ပိတ်ရန်</string>
     <string name="connection_detail_gone">ဤချိတ်ဆက်မှုသည် စာရင်းတွင် မရှိတော့ပါ။</string>
 

@@ -41,6 +41,15 @@ class FormattersTest {
     }
 
     @Test
+    fun `clockTimeMillis shows an engine note time to the millisecond`() {
+        val time = "2026-10-16T02:13:01.042917Z"
+        assertEquals("02:13:01.042", Formatters.clockTimeMillis(time, ZoneOffset.UTC))
+        assertEquals("10:13:01.042", Formatters.clockTimeMillis(time, ZoneId.of("Asia/Shanghai")))
+        assertEquals("02:13:01.000", Formatters.clockTimeMillis("2026-10-16T02:13:01Z", ZoneOffset.UTC))
+        assertEquals("", Formatters.clockTimeMillis("", ZoneOffset.UTC))
+    }
+
+    @Test
     fun `clockTime shows only the local time of day`() {
         val instant = 1_792_116_781_000L // 2026-10-16T02:13:01Z
         assertEquals("02:13:01", Formatters.clockTime(instant, ZoneOffset.UTC))
