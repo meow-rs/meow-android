@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
@@ -971,7 +970,6 @@ private fun ConnectionsRoute(onOpen: (id: String) -> Unit, onBack: () -> Unit) {
             contentPadding = padding,
             onQueryChange = viewModel::onQueryChange,
             onTabChange = viewModel::onTabChange,
-            onClose = viewModel::close,
             onOpen = onOpen,
         )
     }
@@ -986,9 +984,28 @@ private fun ConnectionDetailRoute(onOpenRule: (index: Int) -> Unit, onBack: () -
         title = stringResource(R.string.connection_detail_title),
         navigationIcon = { BackButton(onBack) },
         actions = {
+            // Closing a connection lives here, not on its row in the list.
             if (state.active) {
-                IconButton(onClick = viewModel::close, modifier = Modifier.testTag("connection_detail_close")) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.connection_detail_close))
+                var menuOpen by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.testTag("connection_detail_menu")) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.common_more_options))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.connection_detail_close),
+                                    color = MaterialTheme.meow.danger,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                viewModel.close()
+                            },
+                            modifier = Modifier.testTag("connection_detail_close"),
+                        )
+                    }
                 }
             }
         },

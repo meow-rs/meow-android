@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material3.AlertDialog
@@ -111,13 +109,6 @@ class ConnectionsViewModel(
 
     fun onTabChange(value: ConnectionsTab) { tab.value = value }
 
-    fun close(id: String) {
-        viewModelScope.launch {
-            recentConnections.closeLocal(id)
-            runCatching { api.closeConnection(id) }
-        }
-    }
-
     fun closeAll() {
         viewModelScope.launch {
             recentConnections.closeAllLocal()
@@ -164,7 +155,6 @@ fun ConnectionsScreen(
     contentPadding: PaddingValues,
     onQueryChange: (String) -> Unit,
     onTabChange: (ConnectionsTab) -> Unit,
-    onClose: (String) -> Unit,
     onOpen: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -255,7 +245,6 @@ fun ConnectionsScreen(
                         connection = connection,
                         elapsed = Formatters.elapsedSince(connection.start),
                         onOpen = { onOpen(connection.id) },
-                        onClose = { onClose(connection.id) },
                     )
                 }
             }
@@ -280,52 +269,46 @@ private fun ConnectionCard(
     elapsed: String,
     onOpen: () -> Unit,
     footer: String? = null,
-    onClose: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.meow
 
-    GlassCard(onClick = onOpen, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = connection.address,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (connection.chains.isNotEmpty()) {
-                    Text(
-                        text = connection.chains.reversed().joinToString(" → "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.mutedText,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Text(
-                    text = buildString {
-                        append("↑ ${Formatters.bytes(connection.upload)}")
-                        append("  ↓ ${Formatters.bytes(connection.download)}")
-                        if (elapsed.isNotEmpty()) append("  $elapsed")
-                    },
-                    style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                    color = colors.mutedText,
-                )
-                if (!footer.isNullOrEmpty()) {
-                    Text(
-                        text = footer,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.mutedText,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            if (onClose != null) {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Filled.Close, contentDescription = null, tint = colors.danger)
-                }
-            }
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onOpen,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = connection.address,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (connection.chains.isNotEmpty()) {
+            Text(
+                text = connection.chains.reversed().joinToString(" → "),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.mutedText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(
+            text = buildString {
+                append("↑ ${Formatters.bytes(connection.upload)}")
+                append("  ↓ ${Formatters.bytes(connection.download)}")
+                if (elapsed.isNotEmpty()) append("  $elapsed")
+            },
+            style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
+            color = colors.mutedText,
+        )
+        if (!footer.isNullOrEmpty()) {
+            Text(
+                text = footer,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.mutedText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
