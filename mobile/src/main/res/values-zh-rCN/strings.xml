@@ -226,6 +226,7 @@
     <string name="connections_filter">按主机或 IP 过滤…</string>
     <string name="connection_detail_title">连接详情</string>
     <string name="connection_detail_host">主机</string>
+    <string name="connection_detail_app">应用</string>
     <string name="connection_detail_date">时间</string>
     <string name="connection_detail_status">状态</string>
     <string name="connection_detail_active">活跃</string>

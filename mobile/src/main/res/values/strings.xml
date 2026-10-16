@@ -241,6 +241,7 @@
     <string name="connections_filter">Filter by host or IP…</string>
     <string name="connection_detail_title">Connection</string>
     <string name="connection_detail_host">Host</string>
+    <string name="connection_detail_app">App</string>
     <string name="connection_detail_date">Date</string>
     <string name="connection_detail_status">Status</string>
     <string name="connection_detail_active">Active</string>

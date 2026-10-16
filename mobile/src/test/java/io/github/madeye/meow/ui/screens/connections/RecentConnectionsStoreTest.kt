@@ -4,6 +4,7 @@ import io.github.madeye.meow.api.Connection
 import io.github.madeye.meow.api.ConnectionMeta
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -202,6 +203,26 @@ class ConnectionsUiStateTest {
     }
 
     @Test
+    fun `query matches the app by name or package once its name is known`() {
+        val state = ConnectionsUiState(
+            rows = listOf(
+                ConnectionRow(connection("chrome", host = "a.test", process = "com.android.chrome")),
+                ConnectionRow(connection("mail", host = "b.test", process = "com.example.mail")),
+                ConnectionRow(connection("none", host = "c.test")),
+            ),
+            query = "chrome",
+            appLabels = mapOf("com.android.chrome" to "Chrome", "com.example.mail" to "Inbox"),
+        )
+
+        assertEquals(listOf("chrome"), state.visibleRows.map { it.connection.id })
+        assertEquals(listOf("mail"), state.copy(query = "inbox").visibleRows.map { it.connection.id })
+        assertEquals(listOf("mail"), state.copy(query = "example.mail").visibleRows.map { it.connection.id })
+        assertEquals("Chrome", state.appLabelOf(state.rows[0].connection))
+        assertNull(state.appLabelOf(state.rows[2].connection))
+        assertNull("not resolved yet", state.copy(appLabels = emptyMap()).appLabelOf(state.rows[0].connection))
+    }
+
+    @Test
     fun `open and closed connections share one list, newest start first`() {
         val lists = ConnectionLists(
             active = listOf(
@@ -228,9 +249,15 @@ class ConnectionsUiStateTest {
         assertFalse(ConnectionsUiState(rows = rows.filter { it.lastSeenAtMillis == null }).hasClosed)
     }
 
-    private fun connection(id: String, host: String = "", destinationIp: String = "", start: String = "") = Connection(
+    private fun connection(
+        id: String,
+        host: String = "",
+        destinationIp: String = "",
+        start: String = "",
+        process: String = "",
+    ) = Connection(
         id = id,
         start = start,
-        metadata = ConnectionMeta(host = host, destinationIP = destinationIp),
+        metadata = ConnectionMeta(host = host, destinationIP = destinationIp, process = process),
     )
 }

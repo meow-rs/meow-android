@@ -43,6 +43,7 @@ class ConnectionDetailViewModelTest {
     private val closed = CopyOnWriteArrayList<String>()
     private val polled = AtomicInteger()
     private val geoLookups = CopyOnWriteArrayList<String>()
+    private val labelLookups = CopyOnWriteArrayList<String>()
     private val viewModels = mutableListOf<ConnectionDetailViewModel>()
 
     @Before
@@ -72,6 +73,10 @@ class ConnectionDetailViewModelTest {
         ipGeo = { ip ->
             geoLookups += ip
             IpGeo(country = "CN", asn = 136958, org = "China Unicom Guangdong IP network")
+        },
+        appLabel = { pkg ->
+            labelLookups += pkg
+            "Label of $pkg"
         },
     ).also { viewModels += it }
 
@@ -192,6 +197,24 @@ class ConnectionDetailViewModelTest {
     }
 
     @Test
+    fun `the app that opened the connection arrives with its name`() = runBlocking {
+        store.onSnapshot(listOf(conn("a", process = "com.example.app")))
+        val state = viewModel("a").await { it.appLabel != null }
+
+        assertEquals("Label of com.example.app", state.appLabel)
+        assertEquals(listOf("com.example.app"), labelLookups.toList())
+    }
+
+    @Test
+    fun `no app name is looked up when the engine did not say`() = runBlocking {
+        store.onSnapshot(listOf(conn("a")))
+        val state = viewModel("a").await { it.remote != null }
+
+        assertNull(state.appLabel)
+        assertTrue(labelLookups.isEmpty())
+    }
+
+    @Test
     fun `an address the proxy server resolves is not looked up`() = runBlocking {
         store.onSnapshot(listOf(conn("a", chains = listOf("Proxy"))))
         val state = viewModel("a").await { it.remote != null }
@@ -260,6 +283,7 @@ class ConnectionDetailViewModelTest {
         payload: String = "example.com",
         chains: List<String> = listOf("Proxy"),
         destinationIp: String = "",
+        process: String = "",
     ) = Connection(
         id = id,
         upload = upload,
@@ -267,7 +291,12 @@ class ConnectionDetailViewModelTest {
         chains = chains,
         rule = rule,
         rulePayload = payload,
-        metadata = ConnectionMeta(host = "$id.example", destinationIP = destinationIp, sourceIP = "172.19.0.1"),
+        metadata = ConnectionMeta(
+            host = "$id.example",
+            destinationIP = destinationIp,
+            sourceIP = "172.19.0.1",
+            process = process,
+        ),
     )
 
     private companion object {

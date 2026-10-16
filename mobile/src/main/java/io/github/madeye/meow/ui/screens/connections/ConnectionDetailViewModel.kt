@@ -59,6 +59,8 @@ data class ConnectionDetailUiState(
     val ruleIndex: Int? = null,
     /** Null until worked out, and when there is nothing to say (no host, rejected…). */
     val remote: RemoteIp? = null,
+    /** The display name of the app that opened it, once resolved; null when the engine did not say. */
+    val appLabel: String? = null,
 ) {
     val active: Boolean get() = connection != null && lastSeenAtMillis == null
 }
@@ -79,14 +81,17 @@ class ConnectionDetailViewModel(
     /** The engine's DNS cache entries matching a host name. */
     private val dnsCache: suspend (host: String) -> List<DnsResult>,
     private val ipGeo: suspend (ip: String) -> IpGeo,
+    /** An installed app's display name by package name. */
+    private val appLabel: suspend (packageName: String) -> String,
 ) : ViewModel() {
 
     private val ruleIndex = MutableStateFlow<Int?>(null)
     private val remote = MutableStateFlow<RemoteIp?>(null)
+    private val app = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<ConnectionDetailUiState> =
-        combine(store.lists, ruleIndex, remote, polling) { lists, index, remoteIp, _ ->
-            lists.detail(index).copy(remote = remoteIp)
+        combine(store.lists, ruleIndex, remote, app, polling) { lists, index, remoteIp, label, _ ->
+            lists.detail(index).copy(remote = remoteIp, appLabel = label)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), store.lists.value.detail(null))
 
     init {
@@ -105,6 +110,9 @@ class ConnectionDetailViewModel(
             val known = remoteIpOf(firstSeen(), proxies, dnsCache)
             remote.value = known
             if (known is RemoteIp.Known) remote.value = known.copy(geo = ipGeo(known.ip))
+        }
+        viewModelScope.launch {
+            firstSeen().appPackage?.let { app.value = appLabel(it) }
         }
     }
 

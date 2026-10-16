@@ -230,6 +230,7 @@
     <string name="connections_filter">Alan adı veya IP adresine göre filtrele…</string>
     <string name="connection_detail_title">Bağlantı</string>
     <string name="connection_detail_host">Ana makine</string>
+    <string name="connection_detail_app">Uygulama</string>
     <string name="connection_detail_date">Tarih</string>
     <string name="connection_detail_status">Durum</string>
     <string name="connection_detail_active">Etkin</string>

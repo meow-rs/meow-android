@@ -258,6 +258,7 @@
     <string name="connections_filter">تصفية حسب المضيف أو عنوان IP…</string>
     <string name="connection_detail_title">الاتصال</string>
     <string name="connection_detail_host">المضيف</string>
+    <string name="connection_detail_app">التطبيق</string>
     <string name="connection_detail_date">الوقت</string>
     <string name="connection_detail_status">الحالة</string>
     <string name="connection_detail_active">نشط</string>

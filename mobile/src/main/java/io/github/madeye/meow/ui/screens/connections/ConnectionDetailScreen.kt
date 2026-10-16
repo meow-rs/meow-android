@@ -91,6 +91,7 @@ fun ConnectionDetailScreen(
     ) {
         Section(
             Line(R.string.connection_detail_host, connection.address),
+            appLine(connection, state.appLabel),
             Line(R.string.connection_detail_date, Formatters.dateTime(connection.start)),
             if (lastSeen == null) {
                 Line(R.string.connection_detail_status, stringResource(R.string.connection_detail_active), colors.connected)
@@ -200,6 +201,26 @@ private fun Section(vararg lines: Line?) {
             if (index > 0) HorizontalDivider(color = MaterialTheme.meow.border)
             LineRow(line)
         }
+    }
+}
+
+/**
+ * The app that opened the connection: its name over its package, or just the
+ * uid for a system process no package owns. Null when the engine did not say
+ * (Android 9 and older, or the system could not tell in time).
+ */
+private fun appLine(connection: Connection, label: String?): Line? {
+    val meta = connection.metadata
+    val pkg = connection.appPackage
+    return when {
+        pkg != null -> Line(
+            label = R.string.connection_detail_app,
+            value = label ?: pkg,
+            detail = pkg.takeIf { label != null && label != pkg },
+            testTag = "connection_detail_app",
+        )
+        meta.uid != null -> Line(R.string.connection_detail_app, "UID ${meta.uid}", testTag = "connection_detail_app")
+        else -> null
     }
 }
 

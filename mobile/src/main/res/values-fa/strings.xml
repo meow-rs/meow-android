@@ -238,6 +238,7 @@
     <string name="connections_filter">فیلتر بر اساس میزبان یا آی‌پی…</string>
     <string name="connection_detail_title">اتصال</string>
     <string name="connection_detail_host">میزبان</string>
+    <string name="connection_detail_app">برنامه</string>
     <string name="connection_detail_date">زمان</string>
     <string name="connection_detail_status">وضعیت</string>
     <string name="connection_detail_active">فعال</string>

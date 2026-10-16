@@ -95,6 +95,21 @@ class InstalledAppsRepository(private val context: Context) {
         }
     }
 
+    /** The display name of one package; null when it is not installed (anymore). */
+    suspend fun label(packageName: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val info = if (Build.VERSION.SDK_INT >= 33) {
+                packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getApplicationInfo(packageName, 0)
+            }
+            packageManager.getApplicationLabel(info).toString()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** Null when the package vanished between listing and drawing. */
     suspend fun icon(packageName: String): Drawable? = withContext(Dispatchers.IO) {
         try {

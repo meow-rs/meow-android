@@ -20,6 +20,7 @@ import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppRepository
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
+import io.github.madeye.meow.ui.screens.connections.AppLabels
 import io.github.madeye.meow.ui.screens.connections.ConnectionDetailViewModel
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
 import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
@@ -71,6 +72,9 @@ object AppGraph {
     val trafficHistory: TrafficHistoryRepository by lazy { TrafficHistoryRepository() }
     val perApp: PerAppRepository by lazy { PerAppRepository() }
     val installedApps: InstalledAppsRepository by lazy { InstalledAppsRepository(appContext) }
+
+    /** Names of the apps behind connections, shared by the list and the detail page. */
+    val appLabels: AppLabels by lazy { AppLabels(scope, installedApps::label) }
     val configValidator: ConfigValidator by lazy { ConfigValidator() }
     val analytics: Analytics by lazy { Analytics(appContext) }
     val appVersions: AppVersions by lazy { AppVersions(appContext) }
@@ -163,7 +167,7 @@ object AppGraph {
                 YamlEditorViewModel::class.java ->
                     YamlEditorViewModel(extras.createSavedStateHandle(), profiles, configValidator, analytics)
 
-                ConnectionsViewModel::class.java -> ConnectionsViewModel(api, recentConnections)
+                ConnectionsViewModel::class.java -> ConnectionsViewModel(api, recentConnections, appLabels)
                 RulesViewModel::class.java ->
                     RulesViewModel(api, focus = extras.createSavedStateHandle().toRoute<Dest.Rules>().focus)
 
@@ -176,6 +180,7 @@ object AppGraph {
                     proxies = api::proxies,
                     dnsCache = { host -> api.dnsResults(search = host) },
                     ipGeo = ipGeoLookup::lookup,
+                    appLabel = appLabels::labelOf,
                 )
                 DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
                 LogsViewModel::class.java -> LogsViewModel(api)

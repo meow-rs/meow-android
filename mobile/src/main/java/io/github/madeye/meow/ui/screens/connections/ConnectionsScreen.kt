@@ -67,19 +67,26 @@ data class ConnectionRow(
 data class ConnectionsUiState(
     val rows: List<ConnectionRow> = emptyList(),
     val query: String = "",
+    /** Display names of the apps behind [rows], by package, as they resolve. */
+    val appLabels: Map<String, String> = emptyMap(),
 ) {
     val visibleRows: List<ConnectionRow>
-        get() = rows.filter { it.connection.matches(query) }
+        get() = rows.filter { it.connection.matches(query, appLabelOf(it.connection)) }
+
+    /** The name of the app that opened [connection], once known. */
+    fun appLabelOf(connection: Connection): String? = connection.appPackage?.let(appLabels::get)
 
     val hasActive: Boolean get() = rows.any { it.lastSeenAtMillis == null }
 
     val hasClosed: Boolean get() = rows.any { it.lastSeenAtMillis != null }
 }
 
-private fun Connection.matches(query: String): Boolean {
+private fun Connection.matches(query: String, appLabel: String?): Boolean {
     if (query.isBlank()) return true
     return metadata.host.contains(query, ignoreCase = true) ||
-        metadata.destinationIP.contains(query, ignoreCase = true)
+        metadata.destinationIP.contains(query, ignoreCase = true) ||
+        metadata.process.contains(query, ignoreCase = true) ||
+        appLabel?.contains(query, ignoreCase = true) == true
 }
 
 /**
@@ -93,6 +100,7 @@ internal fun ConnectionLists.rows(): List<ConnectionRow> =
 class ConnectionsViewModel(
     private val api: MeowApi,
     private val recentConnections: RecentConnectionsStore,
+    private val appLabels: AppLabels,
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
@@ -101,15 +109,18 @@ class ConnectionsViewModel(
     private val polling = connectionsPolling(api, recentConnections)
 
     val uiState: StateFlow<ConnectionsUiState> =
-        combine(recentConnections.lists, query, polling) { lists, search, _ ->
-            ConnectionsUiState(rows = lists.rows(), query = search)
+        combine(recentConnections.lists, query, polling, appLabels.labels) { lists, search, _, labels ->
+            val rows = lists.rows()
+            // Only packages not seen before start a lookup; their labels come back through `labels`.
+            appLabels.request(rows.mapNotNull { it.connection.appPackage })
+            ConnectionsUiState(rows = rows, query = search, appLabels = labels)
         }.stateIn(
             viewModelScope,
             // Polling stops when the screen leaves the composition, rather
             // than running forever as the Flutter version's timer did.
             SharingStarted.WhileSubscribed(5_000),
             // So the first frame already shows history kept by the process-scoped store.
-            ConnectionsUiState(rows = recentConnections.lists.value.rows()),
+            ConnectionsUiState(rows = recentConnections.lists.value.rows(), appLabels = appLabels.labels.value),
         )
 
     fun onQueryChange(value: String) { query.value = value }
@@ -191,7 +202,11 @@ fun ConnectionsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(rows, key = { it.connection.id }) { row ->
-                    ConnectionCard(row = row, onOpen = { onOpen(row.connection.id) })
+                    ConnectionCard(
+                        row = row,
+                        appLabel = state.appLabelOf(row.connection),
+                        onOpen = { onOpen(row.connection.id) },
+                    )
                 }
             }
         }
@@ -199,7 +214,7 @@ fun ConnectionsScreen(
 }
 
 @Composable
-private fun ConnectionCard(row: ConnectionRow, onOpen: () -> Unit) {
+private fun ConnectionCard(row: ConnectionRow, appLabel: String?, onOpen: () -> Unit) {
     val colors = MaterialTheme.meow
     val connection = row.connection
     val lastSeen = row.lastSeenAtMillis
@@ -239,9 +254,14 @@ private fun ConnectionCard(row: ConnectionRow, onOpen: () -> Unit) {
                 )
             }
         }
-        if (connection.chains.isNotEmpty()) {
+        // Which app, then where the policy sent it: "Chrome · Proxy → HK-01".
+        val route = listOfNotNull(
+            appLabel,
+            connection.chains.reversed().joinToString(" → ").ifEmpty { null },
+        ).joinToString(" · ")
+        if (route.isNotEmpty()) {
             Text(
-                text = connection.chains.reversed().joinToString(" → "),
+                text = route,
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.mutedText,
                 maxLines = 1,

@@ -238,6 +238,7 @@
     <string name="connections_filter">Фильтр по хосту или IP…</string>
     <string name="connection_detail_title">Соединение</string>
     <string name="connection_detail_host">Хост</string>
+    <string name="connection_detail_app">Приложение</string>
     <string name="connection_detail_date">Время</string>
     <string name="connection_detail_status">Состояние</string>
     <string name="connection_detail_active">Активно</string>

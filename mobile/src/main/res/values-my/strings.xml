@@ -231,6 +231,7 @@
     <string name="connections_filter">Host သို့မဟုတ် IP ဖြင့် စစ်ထုတ်ရန်…</string>
     <string name="connection_detail_title">ချိတ်ဆက်မှု</string>
     <string name="connection_detail_host">Host</string>
+    <string name="connection_detail_app">အက်ပ်</string>
     <string name="connection_detail_date">အချိန်</string>
     <string name="connection_detail_status">အခြေအနေ</string>
     <string name="connection_detail_active">လက်ရှိ</string>

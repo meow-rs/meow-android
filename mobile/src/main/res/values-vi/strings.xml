@@ -226,6 +226,7 @@
     <string name="connections_filter">Lọc theo máy chủ hoặc IP…</string>
     <string name="connection_detail_title">Kết nối</string>
     <string name="connection_detail_host">Máy chủ</string>
+    <string name="connection_detail_app">Ứng dụng</string>
     <string name="connection_detail_date">Thời gian</string>
     <string name="connection_detail_status">Trạng thái</string>
     <string name="connection_detail_active">Đang mở</string>
