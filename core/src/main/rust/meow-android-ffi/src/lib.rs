@@ -6,12 +6,12 @@
 //! through upstream's `meow_common::SocketProtector` hook — see
 //! `protect.rs` — so no proxy-side patches are needed. Every netstack TCP flow is dispatched
 //! in-process via `meow_tunnel::tcp::handle_tcp` — no SOCKS5 loopback
-//! hop. DNS is delegated to meow's resolver running in fake-IP mode
-//! (28.0.0.0/8) with a pinned CN-side upstream pool injected by
-//! `engine::strip_and_inject`; the tun2socks UDP/53 intercept hands every
-//! in-TUN DNS datagram straight to `meow_dns::DnsServer::handle_query`
-//! (A/AAAA) or forwards verbatim to the pinned upstreams (anything else).
-//! Mirrors meow-ios.
+//! hop. DNS is delegated to meow's resolver, pinned to fake-IP mode
+//! (28.0.0.0/8) by `engine::strip_and_inject` but on the profile's own
+//! upstreams (the built-in CN-side pool when it names none); the tun2socks
+//! UDP/53 intercept hands every in-TUN DNS datagram straight to
+//! `meow_dns::DnsServer::handle_query` (A/AAAA) or forwards verbatim to the
+//! built-in upstreams (anything else).
 
 mod diagnostics;
 mod engine;
@@ -249,10 +249,10 @@ async fn start_engine_async(
     // load_config, so no pre-VPN network fetch is needed here. See
     // `core/build.gradle.kts` (downloadGeoxAssets) for the bundling path.
 
-    // Load via engine::load_stripped_config (mirrors meow-ios): strips
-    // listener/sniffer/dns blocks and injects the pinned fake-IP DNS block.
-    // Falls back to the minimal config (also passed through strip_and_inject)
-    // when no home dir is set or the file is unreadable.
+    // Load via engine::load_stripped_config: strips listener/sniffer blocks
+    // and pins the profile's DNS to in-process fake-IP. Falls back to the
+    // minimal config (also passed through strip_and_inject) when no home
+    // dir is set or the file is unreadable.
     let mut config = match config_path.as_deref() {
         Some(path) if std::path::Path::new(path).exists() => {
             logging::bridge_log(&format!("start_engine_async: loading config from {}", path));
@@ -260,7 +260,7 @@ async fn start_engine_async(
         }
         _ => {
             logging::bridge_log("start_engine_async: using minimal config");
-            let stripped = engine::strip_and_inject(MINIMAL_CONFIG)?;
+            let stripped = engine::strip_and_inject(MINIMAL_CONFIG, engine::DnsUpstreams::Builtin)?;
             meow_config::load_config_from_str(&stripped).await?
         }
     };
@@ -591,17 +591,15 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeValidateCo
     let yaml_str: String = env.get_string(&yaml).map(|s| s.into()).unwrap_or_default();
     // Validate what the engine will actually load: the started engine runs
     // the config through strip_and_inject (drops listener ports, sniffer,
-    // user dns, external-controller, …), so validating the raw YAML rejects
-    // configs that would run fine — e.g. mihomo's `external-controller:
-    // :9090` shorthand, stripped at start but fatal to a raw parse.
-    let stripped = match crate::engine::strip_and_inject(&yaml_str) {
-        Ok(s) => s,
-        Err(e) => {
-            set_error(format!("validate config: {}", e));
-            return -1;
-        }
-    };
-    match get_runtime().block_on(meow_config::load_config_from_str(&stripped)) {
+    // external-controller, pins DNS to fake-IP, …) and falls back to the
+    // built-in DNS when the profile's cannot be set up, so validating the
+    // raw YAML rejects configs that would run fine — e.g. mihomo's
+    // `external-controller: :9090` shorthand, stripped at start but fatal
+    // to a raw parse.
+    let load = crate::engine::load_with_dns_fallback(&yaml_str, |stripped| async move {
+        meow_config::load_config_from_str(&stripped).await
+    });
+    match get_runtime().block_on(load) {
         Ok(_) => 0,
         Err(e) => {
             set_error(format!("validate config: {}", e));

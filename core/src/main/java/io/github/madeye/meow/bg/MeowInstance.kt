@@ -77,10 +77,9 @@ class MeowInstance(val profile: ClashProfile) {
         // this start() path share copyGeoxAssets via the companion object.
 
         val configFile = File(configDir, "config.yaml")
-        // Only strip the app-managed `subscriptions:` block. Listener ports,
-        // `sniffer:`, and the user `dns:` block are stripped (and the pinned
-        // fake-IP DNS block injected) on the Rust side by
-        // `engine::strip_and_inject` — see meow-ios for the same pattern.
+        // Only strip the app-managed `subscriptions:` block. Listener ports
+        // and `sniffer:` are stripped, and `dns:` pinned to in-process
+        // fake-IP, on the Rust side by `engine::strip_and_inject`.
         val yaml = profile.yamlContent
             .replace(Regex("(?m)^subscriptions:.*?(?=^[a-z]|\\Z)", RegexOption.DOT_MATCHES_ALL), "")
         configFile.writeText(yaml)
