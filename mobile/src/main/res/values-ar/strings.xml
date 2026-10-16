@@ -258,6 +258,25 @@
     <string name="connections_recent_clear_confirm">هل تريد مسح الطلبات الحديثة؟</string>
     <string name="connections_last_seen">آخر نشاط: \u2068%1$s\u2069</string>
     <string name="connections_filter">تصفية حسب المضيف أو عنوان IP…</string>
+    <string name="connection_detail_title">الاتصال</string>
+    <string name="connection_detail_host">المضيف</string>
+    <string name="connection_detail_date">الوقت</string>
+    <string name="connection_detail_status">الحالة</string>
+    <string name="connection_detail_active">نشط</string>
+    <string name="connection_detail_closed">مغلق</string>
+    <string name="connection_detail_duration">المدة</string>
+    <string name="connection_detail_policy">السياسة</string>
+    <string name="connection_detail_rule">القاعدة</string>
+    <string name="connection_detail_rule_number">القاعدة رقم %1$d</string>
+    <string name="connection_detail_rule_final">لم تطابق أي قاعدة (DIRECT)</string>
+    <string name="connection_detail_rule_global">الوضع الشامل</string>
+    <string name="connection_detail_rule_direct">الوضع المباشر</string>
+    <string name="connection_detail_network">الشبكة</string>
+    <string name="connection_detail_destination_ip">عنوان IP الوجهة</string>
+    <string name="connection_detail_sniff_host">المضيف المُكتشَف</string>
+    <string name="connection_detail_dns_mode">وضع DNS</string>
+    <string name="connection_detail_close">إغلاق الاتصال</string>
+    <string name="connection_detail_gone">لم يعد هذا الاتصال مدرجًا.</string>
 
     <!-- Rules -->
     <string name="rules_title">القواعد</string>

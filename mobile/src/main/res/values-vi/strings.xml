@@ -226,6 +226,25 @@
     <string name="connections_recent_clear_confirm">Xóa các yêu cầu gần đây?</string>
     <string name="connections_last_seen">Hoạt động lần cuối: %1$s</string>
     <string name="connections_filter">Lọc theo máy chủ hoặc IP…</string>
+    <string name="connection_detail_title">Kết nối</string>
+    <string name="connection_detail_host">Máy chủ</string>
+    <string name="connection_detail_date">Thời gian</string>
+    <string name="connection_detail_status">Trạng thái</string>
+    <string name="connection_detail_active">Đang mở</string>
+    <string name="connection_detail_closed">Đã đóng</string>
+    <string name="connection_detail_duration">Thời lượng</string>
+    <string name="connection_detail_policy">Chính sách</string>
+    <string name="connection_detail_rule">Quy tắc</string>
+    <string name="connection_detail_rule_number">Quy tắc #%1$d</string>
+    <string name="connection_detail_rule_final">Không khớp quy tắc nào (DIRECT)</string>
+    <string name="connection_detail_rule_global">Chế độ toàn cục</string>
+    <string name="connection_detail_rule_direct">Chế độ trực tiếp</string>
+    <string name="connection_detail_network">Mạng</string>
+    <string name="connection_detail_destination_ip">IP đích</string>
+    <string name="connection_detail_sniff_host">Tên miền dò được</string>
+    <string name="connection_detail_dns_mode">Chế độ DNS</string>
+    <string name="connection_detail_close">Đóng kết nối</string>
+    <string name="connection_detail_gone">Kết nối này không còn trong danh sách.</string>
 
     <!-- Rules -->
     <string name="rules_title">Quy tắc</string>

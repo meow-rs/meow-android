@@ -230,6 +230,25 @@
     <string name="connections_recent_clear_confirm">Son istekler temizlensin mi?</string>
     <string name="connections_last_seen">Son görülme: %1$s</string>
     <string name="connections_filter">Alan adı veya IP adresine göre filtrele…</string>
+    <string name="connection_detail_title">Bağlantı</string>
+    <string name="connection_detail_host">Ana makine</string>
+    <string name="connection_detail_date">Tarih</string>
+    <string name="connection_detail_status">Durum</string>
+    <string name="connection_detail_active">Etkin</string>
+    <string name="connection_detail_closed">Kapalı</string>
+    <string name="connection_detail_duration">Süre</string>
+    <string name="connection_detail_policy">Politika</string>
+    <string name="connection_detail_rule">Kural</string>
+    <string name="connection_detail_rule_number">Kural #%1$d</string>
+    <string name="connection_detail_rule_final">Hiçbir kural eşleşmedi (DIRECT)</string>
+    <string name="connection_detail_rule_global">Global mod</string>
+    <string name="connection_detail_rule_direct">Doğrudan mod</string>
+    <string name="connection_detail_network">Ağ</string>
+    <string name="connection_detail_destination_ip">Hedef IP</string>
+    <string name="connection_detail_sniff_host">Algılanan ana makine</string>
+    <string name="connection_detail_dns_mode">DNS modu</string>
+    <string name="connection_detail_close">Bağlantıyı kapat</string>
+    <string name="connection_detail_gone">Bu bağlantı artık listede değil.</string>
 
     <!-- Rules -->
     <string name="rules_title">Kurallar</string>

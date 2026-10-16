@@ -16,7 +16,8 @@ import kotlinx.serialization.Serializable
  * Four tabs, laid out as on meow-ios: Home (the VPN switch), which pushes
  * Subscriptions — and from there the YAML editor — and Rules; Proxy Groups,
  * which pushes a node's detail page; Utility, which pushes the monitoring screens (Connections / DNS / Traffic /
- * Logs); and Settings, which pushes Per-App Proxy.
+ * Logs), where a connection pushes its detail page, which pushes Rules at
+ * the rule it matched; and Settings, which pushes Per-App Proxy.
  */
 sealed interface Dest {
     @Serializable data object Home : Dest
@@ -37,7 +38,11 @@ sealed interface Dest {
 
     @Serializable data object Connections : Dest
 
-    @Serializable data object Rules : Dest
+    /** [id]: the engine's connection id. */
+    @Serializable data class ConnectionDetail(val id: String) : Dest
+
+    /** [focus]: a rule to scroll to and mark, by its place in the engine's list; -1 for none. */
+    @Serializable data class Rules(val focus: Int = -1) : Dest
 
     @Serializable data object Logs : Dest
 

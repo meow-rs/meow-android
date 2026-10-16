@@ -238,6 +238,25 @@
     <string name="connections_recent_clear_confirm">Очистить недавние запросы?</string>
     <string name="connections_last_seen">Последняя активность: %1$s</string>
     <string name="connections_filter">Фильтр по хосту или IP…</string>
+    <string name="connection_detail_title">Соединение</string>
+    <string name="connection_detail_host">Хост</string>
+    <string name="connection_detail_date">Время</string>
+    <string name="connection_detail_status">Состояние</string>
+    <string name="connection_detail_active">Активно</string>
+    <string name="connection_detail_closed">Закрыто</string>
+    <string name="connection_detail_duration">Длительность</string>
+    <string name="connection_detail_policy">Политика</string>
+    <string name="connection_detail_rule">Правило</string>
+    <string name="connection_detail_rule_number">Правило №%1$d</string>
+    <string name="connection_detail_rule_final">Ни одно правило не подошло (DIRECT)</string>
+    <string name="connection_detail_rule_global">Глобальный режим</string>
+    <string name="connection_detail_rule_direct">Прямой режим</string>
+    <string name="connection_detail_network">Сеть</string>
+    <string name="connection_detail_destination_ip">IP назначения</string>
+    <string name="connection_detail_sniff_host">Определённый хост</string>
+    <string name="connection_detail_dns_mode">Режим DNS</string>
+    <string name="connection_detail_close">Закрыть соединение</string>
+    <string name="connection_detail_gone">Этого соединения больше нет в списке.</string>
 
     <!-- Rules -->
     <string name="rules_title">Правила</string>

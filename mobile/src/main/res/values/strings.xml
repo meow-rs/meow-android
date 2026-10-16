@@ -241,6 +241,25 @@
     <string name="connections_recent_clear_confirm">Clear recent requests?</string>
     <string name="connections_last_seen">Last seen %1$s</string>
     <string name="connections_filter">Filter by host or IP…</string>
+    <string name="connection_detail_title">Connection</string>
+    <string name="connection_detail_host">Host</string>
+    <string name="connection_detail_date">Date</string>
+    <string name="connection_detail_status">Status</string>
+    <string name="connection_detail_active">Active</string>
+    <string name="connection_detail_closed">Closed</string>
+    <string name="connection_detail_duration">Duration</string>
+    <string name="connection_detail_policy">Policy</string>
+    <string name="connection_detail_rule">Rule</string>
+    <string name="connection_detail_rule_number">Rule #%1$d</string>
+    <string name="connection_detail_rule_final">No rule matched (DIRECT)</string>
+    <string name="connection_detail_rule_global">Global mode</string>
+    <string name="connection_detail_rule_direct">Direct mode</string>
+    <string name="connection_detail_network">Network</string>
+    <string name="connection_detail_destination_ip">Destination IP</string>
+    <string name="connection_detail_sniff_host">Sniffed Host</string>
+    <string name="connection_detail_dns_mode">DNS Mode</string>
+    <string name="connection_detail_close">Close Connection</string>
+    <string name="connection_detail_gone">This connection is no longer listed.</string>
 
     <!-- Rules -->
     <string name="rules_title">Rules</string>

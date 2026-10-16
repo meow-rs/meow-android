@@ -18,8 +18,10 @@ import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppRepository
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
+import io.github.madeye.meow.ui.screens.connections.ConnectionDetailViewModel
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
 import io.github.madeye.meow.ui.screens.connections.RecentConnectionsStore
+import io.github.madeye.meow.ui.screens.connections.connectionsPolling
 import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
@@ -159,7 +161,16 @@ object AppGraph {
                     YamlEditorViewModel(extras.createSavedStateHandle(), profiles, configValidator, analytics)
 
                 ConnectionsViewModel::class.java -> ConnectionsViewModel(api, recentConnections)
-                RulesViewModel::class.java -> RulesViewModel(api)
+                RulesViewModel::class.java ->
+                    RulesViewModel(api, focus = extras.createSavedStateHandle().toRoute<Dest.Rules>().focus)
+
+                ConnectionDetailViewModel::class.java -> ConnectionDetailViewModel(
+                    id = extras.createSavedStateHandle().toRoute<Dest.ConnectionDetail>().id,
+                    store = recentConnections,
+                    polling = connectionsPolling(api, recentConnections),
+                    rules = api::rules,
+                    closeConnection = api::closeConnection,
+                )
                 DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
                 LogsViewModel::class.java -> LogsViewModel(api)
 

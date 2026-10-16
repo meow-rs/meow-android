@@ -238,6 +238,25 @@
     <string name="connections_recent_clear_confirm">درخواست‌های اخیر پاک شوند؟</string>
     <string name="connections_last_seen">آخرین فعالیت: \u2068%1$s\u2069</string>
     <string name="connections_filter">فیلتر بر اساس میزبان یا آی‌پی…</string>
+    <string name="connection_detail_title">اتصال</string>
+    <string name="connection_detail_host">میزبان</string>
+    <string name="connection_detail_date">زمان</string>
+    <string name="connection_detail_status">وضعیت</string>
+    <string name="connection_detail_active">فعال</string>
+    <string name="connection_detail_closed">بسته‌شده</string>
+    <string name="connection_detail_duration">مدت</string>
+    <string name="connection_detail_policy">سیاست</string>
+    <string name="connection_detail_rule">قانون</string>
+    <string name="connection_detail_rule_number">قانون شمارهٔ %1$d</string>
+    <string name="connection_detail_rule_final">هیچ قانونی مطابقت نداشت (DIRECT)</string>
+    <string name="connection_detail_rule_global">حالت سراسری</string>
+    <string name="connection_detail_rule_direct">حالت مستقیم</string>
+    <string name="connection_detail_network">شبکه</string>
+    <string name="connection_detail_destination_ip">\u200FIP مقصد</string>
+    <string name="connection_detail_sniff_host">میزبان شناسایی‌شده</string>
+    <string name="connection_detail_dns_mode">حالت DNS</string>
+    <string name="connection_detail_close">بستن اتصال</string>
+    <string name="connection_detail_gone">این اتصال دیگر در فهرست نیست.</string>
 
     <!-- Rules -->
     <string name="rules_title">قوانین</string>

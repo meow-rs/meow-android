@@ -1,6 +1,7 @@
 package io.github.madeye.meow.ui.screens.rules
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,14 +15,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,12 +55,15 @@ data class RulesUiState(
     val query: String = "",
     val loading: Boolean = true,
     val failed: Boolean = false,
+    /** The rule a connection's detail page opened the list on; -1 for none. */
+    val focus: Int = -1,
 ) {
-    val visible: List<Rule>
+    /** Each with its place in [rules], which is the engine's matching order. */
+    val visible: List<IndexedValue<Rule>>
         get() = if (query.isBlank()) {
-            rules
+            rules.withIndex().toList()
         } else {
-            rules.filter {
+            rules.withIndex().filter { (_, it) ->
                 it.type.contains(query, true) ||
                     it.payload.contains(query, true) ||
                     it.proxy.contains(query, true)
@@ -60,7 +71,7 @@ data class RulesUiState(
         }
 }
 
-class RulesViewModel(private val api: MeowApi) : ViewModel() {
+class RulesViewModel(private val api: MeowApi, private val focus: Int = -1) : ViewModel() {
 
     private val rules = MutableStateFlow<List<Rule>>(emptyList())
     private val query = MutableStateFlow("")
@@ -69,8 +80,8 @@ class RulesViewModel(private val api: MeowApi) : ViewModel() {
 
     val uiState: StateFlow<RulesUiState> =
         combine(rules, query, loading, failed) { list, search, isLoading, didFail ->
-            RulesUiState(list, search, isLoading, didFail)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RulesUiState())
+            RulesUiState(list, search, isLoading, didFail, focus)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RulesUiState(focus = focus))
 
     init {
         load()
@@ -115,6 +126,17 @@ fun RulesScreen(
         )
         Spacer(Modifier.height(8.dp))
 
+        val listState = rememberLazyListState()
+        // Once, when the rules arrive: bring the focused rule into view, with
+        // the two before it, since what precedes a rule decides what reaches it.
+        var focusShown by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(state.rules.isEmpty()) {
+            if (focusShown || state.focus < 0 || state.rules.isEmpty()) return@LaunchedEffect
+            focusShown = true
+            val position = state.visible.indexOfFirst { it.index == state.focus }
+            if (position >= 0) listState.scrollToItem((position - 2).coerceAtLeast(0))
+        }
+
         when {
             state.failed -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -137,6 +159,7 @@ fun RulesScreen(
             }
 
             else -> LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
@@ -144,21 +167,30 @@ fun RulesScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.visible) { rule -> RuleRow(rule) }
+                items(state.visible, key = { it.index }) { (index, rule) ->
+                    RuleRow(rule, focused = index == state.focus)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RuleRow(rule: Rule) {
+private fun RuleRow(rule: Rule, focused: Boolean) {
     val colors = MaterialTheme.meow
     val tint = when (rule.proxy.uppercase()) {
         "DIRECT" -> colors.connected
         "REJECT" -> colors.danger
         else -> colors.accent
     }
-    GlassCard(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+    GlassCard(
+        modifier = if (focused) {
+            Modifier.border(2.dp, colors.accent, MaterialTheme.shapes.large).testTag("rules_focused")
+        } else {
+            Modifier
+        },
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = rule.type,

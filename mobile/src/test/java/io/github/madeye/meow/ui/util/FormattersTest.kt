@@ -33,6 +33,14 @@ class FormattersTest {
     }
 
     @Test
+    fun `dateTime shows an instant in the local zone, to the second`() {
+        assertEquals("2026-10-16 02:13:01", Formatters.dateTime("2026-10-16T02:13:01Z", ZoneOffset.UTC))
+        assertEquals("2026-10-16 10:13:01", Formatters.dateTime("2026-10-16T02:13:01Z", ZoneId.of("Asia/Shanghai")))
+        assertEquals("", Formatters.dateTime("", ZoneOffset.UTC))
+        assertEquals("", Formatters.dateTime("yesterday", ZoneOffset.UTC))
+    }
+
+    @Test
     fun `bitRate steps by thousands like link speeds`() {
         assertEquals("850 bps", Formatters.bitRate(850.0))
         assertEquals("940 Kbps", Formatters.bitRate(940_000.0))

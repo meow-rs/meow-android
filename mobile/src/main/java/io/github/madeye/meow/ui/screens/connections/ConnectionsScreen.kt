@@ -49,6 +49,7 @@ import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 import java.time.Instant
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -87,27 +88,8 @@ class ConnectionsViewModel(
     private val query = MutableStateFlow("")
     private val tab = MutableStateFlow(ConnectionsTab.Active)
 
-    /**
-     * Polls the engine only while collected, so it starts and stops with
-     * [uiState]'s subscription instead of running for the ViewModel's lifetime.
-     * Diffing lives in [recentConnections], which outlives this ViewModel.
-     */
-    private val polling = flow<Unit> {
-        while (true) {
-            val ticket = recentConnections.snapshotTicket()
-            try {
-                recentConnections.onSnapshot(api.connections().connections, ticket)
-            } catch (e: MeowApiException) {
-                if (e is MeowApiException.Unreachable) {
-                    // The controller is gone (VPN stopped). The flows from the
-                    // last snapshot are done; file them under Recent. A later
-                    // successful poll puts back anything still open.
-                    recentConnections.onSnapshot(emptyList(), ticket)
-                }
-            }
-            delay(POLL_INTERVAL_MS)
-        }
-    }.onStart { emit(Unit) }
+    /** Runs only while [uiState] is collected, not for the ViewModel's lifetime. */
+    private val polling = connectionsPolling(api, recentConnections)
 
     val uiState: StateFlow<ConnectionsUiState> =
         combine(recentConnections.lists, query, tab, polling) { lists, search, selected, _ ->
@@ -150,11 +132,31 @@ class ConnectionsViewModel(
         val lists = recentConnections.lists.value
         return ConnectionsUiState(connections = lists.active, recent = lists.recent)
     }
-
-    private companion object {
-        const val POLL_INTERVAL_MS = 1_000L
-    }
 }
+
+private const val POLL_INTERVAL_MS = 1_000L
+
+/**
+ * Feeds [store] a `/connections` snapshot every second, only while collected,
+ * so polling starts and stops with the screen collecting it: the list, or one
+ * connection's detail page. Diffing lives in [store], which outlives both.
+ */
+internal fun connectionsPolling(api: MeowApi, store: RecentConnectionsStore): Flow<Unit> = flow<Unit> {
+    while (true) {
+        val ticket = store.snapshotTicket()
+        try {
+            store.onSnapshot(api.connections().connections, ticket)
+        } catch (e: MeowApiException) {
+            if (e is MeowApiException.Unreachable) {
+                // The controller is gone (VPN stopped). The flows from the
+                // last snapshot are done; file them under Recent. A later
+                // successful poll puts back anything still open.
+                store.onSnapshot(emptyList(), ticket)
+            }
+        }
+        delay(POLL_INTERVAL_MS)
+    }
+}.onStart { emit(Unit) }
 
 @Composable
 fun ConnectionsScreen(
@@ -163,6 +165,7 @@ fun ConnectionsScreen(
     onQueryChange: (String) -> Unit,
     onTabChange: (ConnectionsTab) -> Unit,
     onClose: (String) -> Unit,
+    onOpen: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -238,6 +241,7 @@ fun ConnectionsScreen(
                             R.string.connections_last_seen,
                             Formatters.timestamp(recent.lastSeenAtMillis),
                         ),
+                        onOpen = { onOpen(recent.connection.id) },
                     )
                 }
             }
@@ -250,6 +254,7 @@ fun ConnectionsScreen(
                     ConnectionCard(
                         connection = connection,
                         elapsed = Formatters.elapsedSince(connection.start),
+                        onOpen = { onOpen(connection.id) },
                         onClose = { onClose(connection.id) },
                     )
                 }
@@ -273,17 +278,17 @@ private fun tabLabel(tab: ConnectionsTab, count: Int): String {
 private fun ConnectionCard(
     connection: Connection,
     elapsed: String,
+    onOpen: () -> Unit,
     footer: String? = null,
     onClose: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.meow
-    val host = connection.metadata.host.ifEmpty { connection.metadata.destinationIP }
 
-    GlassCard(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+    GlassCard(onClick = onOpen, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "$host:${connection.metadata.destinationPort}",
+                    text = connection.address,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -324,6 +329,10 @@ private fun ConnectionCard(
         }
     }
 }
+
+/** `host:port`, or the destination IP's when the flow has no host name. */
+internal val Connection.address: String
+    get() = "${metadata.host.ifEmpty { metadata.destinationIP }}:${metadata.destinationPort}"
 
 @Composable
 fun ConnectionsActions(

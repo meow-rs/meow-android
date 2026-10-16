@@ -239,6 +239,9 @@ data class ConnectionMeta(
     val sourcePort: String = "",
     val destinationPort: String = "",
     val host: String = "",
+    /** The name sniffed from the flow's first bytes (TLS SNI, HTTP Host); empty when none. */
+    val sniffHost: String = "",
+    /** normal | mapping | fake-ip */
     val dnsMode: String = "",
     val processName: String = "",
     val uid: Int = 0,
@@ -252,7 +255,13 @@ data class Connection(
     val download: Long = 0,
     /** ISO-8601 timestamp; the UI derives elapsed time from it. */
     val start: String = "",
+    /** Outermost last: the last name is the policy the rule chose. */
     val chains: List<String> = emptyList(),
+    /**
+     * The matched rule's type (`DOMAIN-SUFFIX`, `RULE-SET`, `MATCH`…), or the
+     * engine's name for a route no rule chose: `Final` (no rule matched, so
+     * DIRECT), `Global` or `Direct` (the route mode).
+     */
     val rule: String = "",
     val rulePayload: String = "",
 )

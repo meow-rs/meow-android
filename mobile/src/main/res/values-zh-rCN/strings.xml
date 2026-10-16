@@ -226,6 +226,25 @@
     <string name="connections_recent_clear_confirm">清除最近请求？</string>
     <string name="connections_last_seen">最后活跃 %1$s</string>
     <string name="connections_filter">按主机或 IP 过滤…</string>
+    <string name="connection_detail_title">连接详情</string>
+    <string name="connection_detail_host">主机</string>
+    <string name="connection_detail_date">时间</string>
+    <string name="connection_detail_status">状态</string>
+    <string name="connection_detail_active">活跃</string>
+    <string name="connection_detail_closed">已关闭</string>
+    <string name="connection_detail_duration">时长</string>
+    <string name="connection_detail_policy">策略</string>
+    <string name="connection_detail_rule">规则</string>
+    <string name="connection_detail_rule_number">第 %1$d 条规则</string>
+    <string name="connection_detail_rule_final">未匹配任何规则（直连）</string>
+    <string name="connection_detail_rule_global">全局模式</string>
+    <string name="connection_detail_rule_direct">直连模式</string>
+    <string name="connection_detail_network">网络</string>
+    <string name="connection_detail_destination_ip">目标 IP</string>
+    <string name="connection_detail_sniff_host">嗅探域名</string>
+    <string name="connection_detail_dns_mode">DNS 模式</string>
+    <string name="connection_detail_close">断开连接</string>
+    <string name="connection_detail_gone">该连接已不在列表中。</string>
 
     <!-- Rules -->
     <string name="rules_title">规则</string>

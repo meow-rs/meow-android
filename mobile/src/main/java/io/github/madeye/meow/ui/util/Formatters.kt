@@ -80,6 +80,11 @@ object Formatters {
         if (epochMillis <= 0) "" else TIMESTAMP.format(Instant.ofEpochMilli(epochMillis))
 
     private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val DATE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+    /** Local date and time of an ISO-8601 instant, e.g. `2026-10-16 10:13:01`; empty if unparseable. */
+    fun dateTime(iso: String, zone: ZoneId = ZoneId.systemDefault()): String =
+        runCatching { DATE_TIME.format(Instant.parse(iso).atZone(zone)) }.getOrDefault("")
 
     /**
      * Local calendar date of a Unix time in **seconds** (the unit subscription

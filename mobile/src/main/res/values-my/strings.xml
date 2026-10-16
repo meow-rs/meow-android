@@ -231,6 +231,25 @@
     <string name="connections_recent_clear_confirm">မကြာသေးမီ တောင်းဆိုမှုများကို ရှင်းမလား။</string>
     <string name="connections_last_seen">နောက်ဆုံး တွေ့ချိန်: %1$s</string>
     <string name="connections_filter">Host သို့မဟုတ် IP ဖြင့် စစ်ထုတ်ရန်…</string>
+    <string name="connection_detail_title">ချိတ်ဆက်မှု</string>
+    <string name="connection_detail_host">Host</string>
+    <string name="connection_detail_date">အချိန်</string>
+    <string name="connection_detail_status">အခြေအနေ</string>
+    <string name="connection_detail_active">လက်ရှိ</string>
+    <string name="connection_detail_closed">ပိတ်ပြီး</string>
+    <string name="connection_detail_duration">ကြာချိန်</string>
+    <string name="connection_detail_policy">မူဝါဒ</string>
+    <string name="connection_detail_rule">စည်းမျဉ်း</string>
+    <string name="connection_detail_rule_number">စည်းမျဉ်း #%1$d</string>
+    <string name="connection_detail_rule_final">ကိုက်ညီသော စည်းမျဉ်း မရှိပါ (DIRECT)</string>
+    <string name="connection_detail_rule_global">Global မုဒ်</string>
+    <string name="connection_detail_rule_direct">တိုက်ရိုက် မုဒ်</string>
+    <string name="connection_detail_network">ကွန်ရက်</string>
+    <string name="connection_detail_destination_ip">ဦးတည်ရာ IP</string>
+    <string name="connection_detail_sniff_host">ရှာဖွေတွေ့ရှိသော host</string>
+    <string name="connection_detail_dns_mode">DNS မုဒ်</string>
+    <string name="connection_detail_close">ချိတ်ဆက်မှု ပိတ်ရန်</string>
+    <string name="connection_detail_gone">ဤချိတ်ဆက်မှုသည် စာရင်းတွင် မရှိတော့ပါ။</string>
 
     <!-- Rules -->
     <string name="rules_title">စည်းမျဉ်းများ</string>
