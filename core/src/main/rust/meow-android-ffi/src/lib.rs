@@ -315,6 +315,7 @@ async fn start_engine_async(
     let tunnel = Tunnel::new_with_slot(Arc::clone(&config.dns.resolver_slot));
     tunnel.set_dialer_registry(config.provider_dialer_registry.clone());
     tunnel.set_mode(config.general.mode);
+    tunnel.set_connection_notes(config.general.connection_notes);
     tunnel.update_routing(config.proxies, config.rules, config.dialer_registry);
     // The UDP NAT sweeper: evicts sessions idle in both directions (the
     // tun2socks reply readers touch the same clock on every reply).
@@ -339,21 +340,10 @@ async fn start_engine_async(
         Arc::new(meow_config::proxy_provider_refresh::ProxyProviderRefreshSupervisor::default());
     proxy_provider_refresh.reconcile(&proxy_providers, config.raw.proxy_providers.as_ref());
 
-    // Providers whose `proxy:` could not resolve during the initial fetch
-    // (the dialer registry was not published yet) retry once now.
-    for entry in proxy_providers.iter() {
-        if entry.take_deferred_initial() {
-            let provider = Arc::clone(entry.value());
-            tokio::spawn(async move {
-                if let Err(e) = provider.acquire_initial().await {
-                    tracing::warn!(
-                        "proxy-provider '{}': deferred initial fetch failed: {e}",
-                        provider.name
-                    );
-                }
-            });
-        }
-    }
+    // Providers the load left owing a remote fetch (served from their cache,
+    // cut off by the deadline, failed, or with a `proxy:` that could not
+    // resolve before `update_routing`) fetch now, retrying with backoff.
+    meow_config::proxy_provider::spawn_deferred_initial_fetches(&proxy_providers);
 
     let listeners_for_api = config.listeners.named.clone();
     let log_tx = log_broadcast_tx().clone();
@@ -413,7 +403,20 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeInit(
 ) {
     logging::init_android_logger();
     logging::bridge_log("nativeInit: android logger initialized");
+    // Process-wide engine policy, set before any config load (engine start
+    // in `:vpn`, validation in the UI process):
+    //  * tun2socks names each flow's owner (owner.rs), so PROCESS-NAME / UID
+    //    rules stay live; their liveness is fixed when rules are built.
+    //  * A provider feed must not hold the VPN start: the tunnel only comes
+    //    up once the config has loaded (and with "Block connections without
+    //    VPN" no fetch can succeed before then). Uncached providers get this
+    //    long; stragglers land in the background, failures retry there.
+    meow_common::process_lookup::enable_inbound_process_info();
+    meow_config::set_provider_fetch_deadline(Some(PROVIDER_FETCH_DEADLINE));
 }
+
+/// How long a config load waits for provider downloads with no cache.
+const PROVIDER_FETCH_DEADLINE: std::time::Duration = std::time::Duration::from_secs(3);
 
 #[no_mangle]
 pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeSetHomeDir(

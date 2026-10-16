@@ -14,6 +14,10 @@
 //!     `fallback`, `nameserver-policy`, `fake-ip-filter`, …); a profile
 //!     without them, or whose upstreams cannot be set up, runs on the
 //!     built-in CN-side pool.
+//!   * Connection notes on unless the profile says otherwise: the
+//!     connection detail page reads each flow's notes (the DNS lookups a
+//!     rule needed, the rule that matched, the dial) from
+//!     `GET /connections/{id}`.
 
 use anyhow::{Context, Result};
 use meow_config::{load_config, Config};
@@ -98,10 +102,10 @@ fn lists_anything(value: Option<&serde_yaml::Value>) -> bool {
 }
 
 /// Strip the shorthand listener ports + explicit `listeners:` array +
-/// `sniffer:` block from a raw config YAML and replace its `dns:` block with
-/// [`engine_dns_block`]. Operates on a generic `serde_yaml::Value` so
-/// unmodelled top-level keys (`tun:`, `experimental:`, `profile:`, etc.)
-/// round-trip unchanged.
+/// `sniffer:` block from a raw config YAML, replace its `dns:` block with
+/// [`engine_dns_block`] and default `connection-notes` to on. Operates on a
+/// generic `serde_yaml::Value` so unmodelled top-level keys (`tun:`,
+/// `experimental:`, `profile:`, etc.) round-trip unchanged.
 pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
     let mut doc: serde_yaml::Value = serde_yaml::from_str(yaml).context("parsing config YAML")?;
     if let serde_yaml::Value::Mapping(m) = &mut doc {
@@ -127,6 +131,12 @@ pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
             serde_yaml::Value::String("dns".into()),
             serde_yaml::Value::Mapping(engine_dns_block(profile_dns, upstreams)),
         );
+        // In the YAML rather than only on the tunnel: the API's config
+        // rebuilds re-read the flag from the raw config they apply.
+        let notes = serde_yaml::Value::String("connection-notes".into());
+        if !m.contains_key(&notes) {
+            m.insert(notes, serde_yaml::Value::Bool(true));
+        }
     }
     serde_yaml::to_string(&doc).context("serializing stripped config YAML")
 }
@@ -300,6 +310,27 @@ rules:
         );
         assert_eq!(dns["nameserver"], list(BUILTIN_NAMESERVERS));
         assert_eq!(dns["default-nameserver"], list(BUILTIN_NAMESERVERS));
+    }
+
+    #[test]
+    fn connection_notes_default_on_but_the_profile_wins() {
+        let notes = |yaml: &str, upstreams| {
+            let doc: serde_yaml::Value =
+                serde_yaml::from_str(&strip_and_inject(yaml, upstreams).unwrap()).unwrap();
+            doc.get("connection-notes")
+                .and_then(serde_yaml::Value::as_bool)
+        };
+        for upstreams in [DnsUpstreams::Profile, DnsUpstreams::Builtin] {
+            assert_eq!(notes(PROFILE, upstreams), Some(true));
+            assert_eq!(notes("connection-notes: false\n", upstreams), Some(false));
+        }
+    }
+
+    #[tokio::test]
+    async fn the_engine_records_notes_for_a_stripped_profile() {
+        let stripped = strip_and_inject("rules: [MATCH,DIRECT]\n", DnsUpstreams::Builtin).unwrap();
+        let config = meow_config::load_config_from_str(&stripped).await.unwrap();
+        assert!(config.general.connection_notes);
     }
 
     #[tokio::test]
