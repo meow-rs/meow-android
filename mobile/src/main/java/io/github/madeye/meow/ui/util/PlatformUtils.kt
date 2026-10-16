@@ -1,15 +1,19 @@
 package io.github.madeye.meow.ui.util
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
+import io.github.madeye.meow.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,6 +31,14 @@ fun rememberClipboardText(): () -> String? {
                 ?.toString()
                 ?.takeIf { it.isNotBlank() }
         }
+    }
+}
+
+/** Puts [text] on the clipboard; below Android 13, which confirms copies itself, says so in a toast. */
+fun Context.copyToClipboard(label: String, text: String) {
+    getSystemService<ClipboardManager>()?.setPrimaryClip(ClipData.newPlainText(label, text)) ?: return
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(this, R.string.common_copied, Toast.LENGTH_SHORT).show()
     }
 }
 

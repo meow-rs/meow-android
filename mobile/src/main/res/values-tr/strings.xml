@@ -20,6 +20,7 @@
     <string name="common_back">Geri</string>
     <string name="common_more_options">Diğer seçenekler</string>
     <string name="common_close">Kapat</string>
+    <string name="common_copied">Kopyalandı</string>
 
     <!-- Home -->
     <string name="home_not_connected">Bağlı değil</string>
@@ -254,6 +255,7 @@
     <string name="connection_detail_sniff_host">Algılanan ana makine</string>
     <string name="connection_detail_dns_mode">DNS modu</string>
     <string name="connection_detail_notes">Notlar</string>
+    <string name="connection_detail_notes_copy">Notları kopyala</string>
     <string name="connection_detail_close">Bağlantıyı kapat</string>
     <string name="connection_detail_gone">Bu bağlantı artık listede değil.</string>
 

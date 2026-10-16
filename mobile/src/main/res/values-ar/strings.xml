@@ -32,6 +32,7 @@
     <string name="common_back">رجوع</string>
     <string name="common_more_options">خيارات إضافية</string>
     <string name="common_close">إغلاق</string>
+    <string name="common_copied">تم النسخ</string>
 
     <!-- Home -->
     <string name="home_not_connected">غير متصل</string>
@@ -282,6 +283,7 @@
     <string name="connection_detail_sniff_host">المضيف المُكتشَف</string>
     <string name="connection_detail_dns_mode">وضع DNS</string>
     <string name="connection_detail_notes">ملاحظات</string>
+    <string name="connection_detail_notes_copy">نسخ الملاحظات</string>
     <string name="connection_detail_close">إغلاق الاتصال</string>
     <string name="connection_detail_gone">لم يعد هذا الاتصال مدرجًا.</string>
 

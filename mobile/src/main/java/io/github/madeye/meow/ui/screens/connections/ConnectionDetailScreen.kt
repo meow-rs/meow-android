@@ -18,8 +18,10 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -41,9 +44,11 @@ import io.github.madeye.meow.ui.components.SectionHeader
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
+import io.github.madeye.meow.ui.util.copyToClipboard
 import io.github.madeye.meow.ui.util.regionFlag
 import io.github.madeye.meow.ui.util.regionName
 import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.delay
 
 /**
@@ -145,14 +150,30 @@ fun ConnectionDetailScreen(
  * The engine's account of the connection, one timed step per row: the
  * fake-IP it reversed, the DNS lookups a rule needed and what they returned,
  * the rule that matched, the dial and the close. Selectable, so a step can
- * be copied into a bug report.
+ * be copied into a bug report, and the header copies them all.
  */
 @Composable
 private fun NotesSection(notes: List<ConnectionNote>) {
     if (notes.isEmpty()) return
     val muted = MaterialTheme.meow.mutedText
+    val context = LocalContext.current
+    val title = stringResource(R.string.connection_detail_notes)
     Column(Modifier.testTag("connection_detail_notes")) {
-        SectionHeader(stringResource(R.string.connection_detail_notes))
+        // Bottom-aligned, the icon centres on the header text above its padding.
+        Row(verticalAlignment = Alignment.Bottom) {
+            SectionHeader(title, Modifier.weight(1f))
+            IconButton(
+                onClick = { context.copyToClipboard(title, notes.asPlainText()) },
+                modifier = Modifier.size(32.dp).testTag("connection_detail_notes_copy"),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ContentCopy,
+                    contentDescription = stringResource(R.string.connection_detail_notes_copy),
+                    tint = muted,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
         GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
             SelectionContainer {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -176,6 +197,13 @@ private fun NotesSection(notes: List<ConnectionNote>) {
         }
     }
 }
+
+/** The notes as the page shows them, one "time  text" line each. */
+internal fun List<ConnectionNote>.asPlainText(zone: ZoneId = ZoneId.systemDefault()): String =
+    joinToString("\n") { note ->
+        val time = Formatters.clockTimeMillis(note.time, zone)
+        if (time.isEmpty()) note.text else "$time  ${note.text}"
+    }
 
 private const val PLACEHOLDER = "—"
 

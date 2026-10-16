@@ -20,6 +20,7 @@
     <string name="common_back">Quay lại</string>
     <string name="common_more_options">Tùy chọn khác</string>
     <string name="common_close">Đóng</string>
+    <string name="common_copied">Đã sao chép</string>
 
     <!-- Home -->
     <string name="home_not_connected">Chưa kết nối</string>
@@ -250,6 +251,7 @@
     <string name="connection_detail_sniff_host">Tên miền dò được</string>
     <string name="connection_detail_dns_mode">Chế độ DNS</string>
     <string name="connection_detail_notes">Ghi chú</string>
+    <string name="connection_detail_notes_copy">Sao chép ghi chú</string>
     <string name="connection_detail_close">Đóng kết nối</string>
     <string name="connection_detail_gone">Kết nối này không còn trong danh sách.</string>
 

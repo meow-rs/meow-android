@@ -20,6 +20,7 @@
     <string name="common_back">Назад</string>
     <string name="common_more_options">Дополнительные действия</string>
     <string name="common_close">Закрыть</string>
+    <string name="common_copied">Скопировано</string>
 
     <!-- Home -->
     <string name="home_not_connected">Не подключено</string>
@@ -262,6 +263,7 @@
     <string name="connection_detail_sniff_host">Определённый хост</string>
     <string name="connection_detail_dns_mode">Режим DNS</string>
     <string name="connection_detail_notes">Заметки</string>
+    <string name="connection_detail_notes_copy">Копировать заметки</string>
     <string name="connection_detail_close">Закрыть соединение</string>
     <string name="connection_detail_gone">Этого соединения больше нет в списке.</string>
 
