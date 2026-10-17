@@ -192,7 +192,8 @@
     <string name="settings_engine_offline">အသုံးပြုရန် VPN ချိတ်ဆက်ပါ</string>
     <string name="settings_network">ကွန်ရက်</string>
     <string name="settings_builtin_dns">ပါဝင်ပြီးသား DNS</string>
-    <string name="settings_builtin_dns_desc">ပရိုဖိုင်၏ DNS ဆာဗာများအစား TCP ဖြင့် 119.29.29.29 နှင့် 223.5.5.5 ကို သုံးသည်။ VPN ပြန်ချိတ်ဆက်ပါ</string>
+    <string name="settings_builtin_dns_desc">ပရိုဖိုင်၏ DNS ဆာဗာများအစား TCP ဖြင့် 119.29.29.29 နှင့် 223.5.5.5 ကို သုံးသည်</string>
+    <string name="settings_builtin_dns_failed">DNS ပြောင်း၍ မရပါ: %1$s</string>
     <string name="settings_show_exit_ip">ထွက်ပေါက် IP ပြရန်</string>
     <string name="settings_show_exit_ip_desc">သင့် Public IP ကို ip.sb၊ ipwho.is သို့မဟုတ် ipinfo.io မှတစ်ဆင့် ရှာဖွေပြီး ပင်မတွင် ပြသည်</string>
     <string name="settings_privacy_policy">ကိုယ်ရေးအချက်အလက် မူဝါဒ</string>

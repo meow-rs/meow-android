@@ -43,10 +43,11 @@ Network
 - **Rule Engine**: Domain, IP, port, geo-based routing, rule-providers, proxy groups
 - **tun2socks**: Userspace lwIP netstack (patched `lwip` crate)
 - **DNS**: Engine-owned fake-IP resolver; every in-TUN DNS query is answered
-  in-process and upstream lookups bypass the tunnel via protected sockets
+  in-process and upstream lookups bypass the tunnel via protected sockets.
   Built-in DNS is enabled by default, using `119.29.29.29` and `223.5.5.5`
   over TCP. To use the profile's DNS settings (including supported DoT/DoH
-  upstreams), turn off Settings > Network > Built-in DNS and reconnect.
+  upstreams), turn off Settings > Network > Built-in DNS; a running VPN
+  switches over without reconnecting, keeping its fake IPs.
   An explicitly saved choice is preserved, and every query type (A/AAAA,
   HTTPS, TXT, MX, PTR, …) uses the chosen upstreams. Profile mode falls
   back to the built-in pool on configuration-load failure, not on later

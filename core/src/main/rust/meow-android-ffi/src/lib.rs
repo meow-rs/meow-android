@@ -8,18 +8,21 @@
 //! in-process via `meow_tunnel::tcp::handle_tcp` — no SOCKS5 loopback
 //! hop. DNS is delegated to meow's resolver, pinned to fake-IP mode
 //! (28.0.0.0/8) by `engine::strip_and_inject` but on the profile's own
-//! upstreams (the built-in CN-side pool when it names none); the tun2socks
-//! UDP/53 intercept hands every in-TUN DNS datagram straight to
-//! `meow_dns::DnsServer::handle_query` (A/AAAA) or forwards verbatim to the
-//! built-in upstreams (anything else).
+//! upstreams (the built-in CN-side pool when it names none, or when Settings'
+//! "Built-in DNS" switch is on; `live_dns` applies a flip without a restart);
+//! the tun2socks UDP/53 intercept hands every in-TUN DNS datagram straight to
+//! `meow_dns::DnsServer::handle_query`.
 
 mod diagnostics;
 mod engine;
 mod ip_info;
+mod live_dns;
 mod logging;
 mod owner;
 mod probe;
 mod protect;
+#[cfg(test)]
+mod test_support;
 mod tun2socks;
 
 use dashmap::DashMap;
@@ -77,6 +80,8 @@ pub(crate) struct EngineState {
     pub(crate) tunnel: Tunnel,
     /// The API server's secret (see `engine::api_secret`); empty for none.
     api_secret: String,
+    /// What Settings' "Built-in DNS" switch rebuilds the resolver from.
+    pub(crate) live_dns: Arc<live_dns::LiveDns>,
     _handles: Vec<tokio::task::JoinHandle<()>>,
 }
 
@@ -257,19 +262,33 @@ async fn start_engine_async(
     // and pins the profile's DNS to in-process fake-IP, on the upstreams
     // `dns` picks. Falls back to the minimal config (also passed through
     // strip_and_inject) when no home dir is set or the file is unreadable.
-    let mut config = match config_path.as_deref() {
+    let (loaded, loaded_from) = match config_path.as_deref() {
         Some(path) if std::path::Path::new(path).exists() => {
             logging::bridge_log(&format!(
                 "start_engine_async: loading config from {path}, DNS upstreams: {dns:?}"
             ));
-            engine::load_stripped_config(path, dns).await?
+            let stripped_path = engine::sibling_stripped_path(path);
+            (
+                engine::load_stripped_config(path, dns).await?,
+                stripped_path.to_str().map(str::to_string),
+            )
         }
         _ => {
             logging::bridge_log("start_engine_async: using minimal config");
             let stripped = engine::strip_and_inject(MINIMAL_CONFIG, engine::DnsUpstreams::Builtin)?;
-            meow_config::load_config_from_str(&stripped).await?
+            let loaded = engine::Loaded {
+                config: meow_config::load_config_from_str(&stripped).await?,
+                profile_dns: None,
+                upstreams: engine::DnsUpstreams::Builtin,
+            };
+            (loaded, None)
         }
     };
+    let engine::Loaded {
+        mut config,
+        profile_dns,
+        upstreams,
+    } = loaded;
     logging::bridge_log(&format!(
         "start_engine_async: config loaded, proxies={}, rules={}",
         config.proxies.len(),
@@ -332,6 +351,16 @@ async fn start_engine_async(
     let proxy_providers: Arc<DashMap<_, _>> =
         Arc::new(config.proxy_providers.into_iter().collect());
     let rule_providers = Arc::new(RwLock::new(config.rule_providers));
+    // No DNS listener: tun2socks answers in-TUN queries in-process.
+    let dns_server = Arc::new(RwLock::new(None));
+    let live_dns = Arc::new(live_dns::LiveDns::new(
+        profile_dns,
+        loaded_from,
+        upstreams,
+        Arc::clone(&raw_config),
+        Arc::clone(&rule_providers),
+        Arc::clone(&dns_server),
+    ));
 
     // `interval:` refresh loops for rule and proxy providers.
     let rule_provider_refresh =
@@ -367,8 +396,7 @@ async fn start_engine_async(
             // No external web UI dashboard — the app talks to the API
             // directly (added in meow-rs v0.15.1, #223).
             None,
-            // No DNS listener: tun2socks answers in-TUN queries in-process.
-            Arc::new(RwLock::new(None)),
+            dns_server,
             config.provider_dialer_registry.clone(),
         );
         handles.push(tokio::spawn(async move {
@@ -390,6 +418,7 @@ async fn start_engine_async(
     Ok(EngineState {
         tunnel,
         api_secret,
+        live_dns,
         _handles: handles,
     })
 }
@@ -473,18 +502,40 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStartEngin
         .map(|s| s.into())
         .unwrap_or_default();
     let mode_str: String = env.get_string(&mode).map(|s| s.into()).unwrap_or_default();
-    // Settings' "Built-in DNS" switch: ignore the profile's upstreams.
-    let dns = if builtin_dns == JNI_FALSE {
-        engine::DnsUpstreams::Profile
-    } else {
-        engine::DnsUpstreams::Builtin
-    };
     start_engine(
         Some(addr_str),
         Some(secret_str),
         parse_mode_override(&mode_str),
-        dns,
+        dns_upstreams(builtin_dns),
     )
+}
+
+/// Settings' "Built-in DNS" switch: on ignores the profile's upstreams.
+fn dns_upstreams(builtin_dns: jboolean) -> engine::DnsUpstreams {
+    if builtin_dns == JNI_FALSE {
+        engine::DnsUpstreams::Profile
+    } else {
+        engine::DnsUpstreams::Builtin
+    }
+}
+
+/// Applies Settings' "Built-in DNS" switch to the running engine, keeping
+/// the VPN up (see `live_dns`). Returns 0 when it is applied or nothing is
+/// running, -1 with `nativeGetLastError` set when the engine keeps its DNS.
+#[no_mangle]
+pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeSetBuiltinDns(
+    _env: JNIEnv,
+    _class: JClass,
+    builtin_dns: jboolean,
+) -> jint {
+    match live_dns::switch(dns_upstreams(builtin_dns)) {
+        Ok(()) => 0,
+        Err(e) => {
+            logging::bridge_log(&format!("nativeSetBuiltinDns: ERROR: {e:#}"));
+            set_error(format!("{e:#}"));
+            -1
+        }
+    }
 }
 
 /// Empty means "keep the config's `mode:`". An unknown value is logged and
@@ -507,14 +558,20 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeStopEngine
     _env: JNIEnv,
     _class: JClass,
 ) {
+    stop_engine();
+}
+
+fn stop_engine() {
     // A probe holds a route snapshot, so it would keep dialing through the
     // stopped engine's proxies until its own budget ran out.
     probe::cancel_all();
     tun2socks::stop();
     protect::clear();
     owner::clear();
-    *DNS_RESOLVER.write() = None;
     let mut engine = ENGINE.lock();
+    // Under the lock: a start or a DNS switch (`live_dns`) still running
+    // would otherwise install its resolver after this.
+    *DNS_RESOLVER.write() = None;
     if let Some(state) = engine.take() {
         // Ends the tun2socks UDP reply readers now rather than at their next
         // idle check.

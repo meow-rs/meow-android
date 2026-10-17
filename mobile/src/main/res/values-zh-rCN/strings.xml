@@ -187,7 +187,8 @@
     <string name="settings_engine_offline">连接 VPN 后可用</string>
     <string name="settings_network">网络</string>
     <string name="settings_builtin_dns">内置 DNS</string>
-    <string name="settings_builtin_dns_desc">忽略配置里的 nameserver，改用 119.29.29.29 和 223.5.5.5（TCP）；重连 VPN 后生效</string>
+    <string name="settings_builtin_dns_desc">忽略配置里的 nameserver，改用 119.29.29.29 和 223.5.5.5（TCP）</string>
+    <string name="settings_builtin_dns_failed">切换 DNS 失败：%1$s</string>
     <string name="settings_show_exit_ip">显示出口 IP</string>
     <string name="settings_show_exit_ip_desc">在首页通过 ip.sb、ipwho.is 或 ipinfo.io 查询公网 IP</string>
     <string name="settings_privacy_policy">隐私政策</string>

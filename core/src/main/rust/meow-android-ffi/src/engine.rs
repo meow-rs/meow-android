@@ -37,7 +37,7 @@ pub fn tunnel() -> Option<Tunnel> {
 /// resolver into the same pool lets it win the race from outside CN —
 /// returning the global / SG / HK PoP for split-horizon hosts like
 /// xiaohongshu.com.
-const BUILTIN_NAMESERVERS: &[&str] = &["tcp://119.29.29.29", "tcp://223.5.5.5"];
+pub(crate) const BUILTIN_NAMESERVERS: &[&str] = &["tcp://119.29.29.29", "tcp://223.5.5.5"];
 
 /// Where the engine's DNS upstreams come from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,11 +56,11 @@ pub enum DnsUpstreams {
 /// own block, if it has one.
 ///
 /// The plumbing is fixed whoever picks the upstreams: the tun2socks UDP/53
-/// intercept hands every in-TUN A/AAAA query straight to
+/// intercept hands every in-TUN query straight to
 /// `meow_dns::DnsServer::handle_query`, so this resolver — fake-IP mode on
 /// the FFI's CIDR, no listen socket — is the single source of truth for
 /// synthesis, reverse mapping, hosts and NXDOMAIN.
-fn engine_dns_block(
+pub(crate) fn engine_dns_block(
     profile_dns: Option<serde_yaml::Value>,
     upstreams: DnsUpstreams,
 ) -> serde_yaml::Mapping {
@@ -108,9 +108,15 @@ fn lists_anything(value: Option<&serde_yaml::Value>) -> bool {
 /// generic `serde_yaml::Value` so unmodelled top-level keys (`tun:`,
 /// `experimental:`, `profile:`, etc.) round-trip unchanged.
 pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
+    strip(yaml, upstreams).map(|(stripped, _)| stripped)
+}
+
+/// [`strip_and_inject`], also handing back the profile's own `dns:` block.
+fn strip(yaml: &str, upstreams: DnsUpstreams) -> Result<(String, Option<serde_yaml::Value>)> {
     let mut doc: serde_yaml::Value = serde_yaml::from_str(yaml).context("parsing config YAML")?;
+    let mut profile_dns = None;
     if let serde_yaml::Value::Mapping(m) = &mut doc {
-        let profile_dns = m.remove("dns");
+        profile_dns = m.remove("dns");
         for key in [
             "port",
             "socks-port",
@@ -131,7 +137,7 @@ pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
         }
         m.insert(
             serde_yaml::Value::String("dns".into()),
-            serde_yaml::Value::Mapping(engine_dns_block(profile_dns, upstreams)),
+            serde_yaml::Value::Mapping(engine_dns_block(profile_dns.clone(), upstreams)),
         );
         // In the YAML rather than only on the tunnel: the API's config
         // rebuilds re-read the flag from the raw config they apply.
@@ -140,7 +146,8 @@ pub fn strip_and_inject(yaml: &str, upstreams: DnsUpstreams) -> Result<String> {
             m.insert(notes, serde_yaml::Value::Bool(true));
         }
     }
-    serde_yaml::to_string(&doc).context("serializing stripped config YAML")
+    let stripped = serde_yaml::to_string(&doc).context("serializing stripped config YAML")?;
+    Ok((stripped, profile_dns))
 }
 
 /// The secret the API server runs with: the profile's `secret:` when it sets
@@ -154,29 +161,44 @@ pub fn api_secret(profile: Option<String>, minted: Option<String>) -> Option<Str
         .or(minted.filter(|s| !s.is_empty()))
 }
 
+/// A loaded config, with what a live DNS switch (`live_dns`) rebuilds from.
+#[derive(Debug)]
+pub struct Loaded<T> {
+    pub config: T,
+    /// The profile's own `dns:` block, as it was before the strip.
+    pub profile_dns: Option<serde_yaml::Value>,
+    /// What the config runs on: `Builtin` also when the profile's own DNS
+    /// failed to set up.
+    pub upstreams: DnsUpstreams,
+}
+
 /// Strip `yaml` and hand it to `load`: first with the profile's DNS
 /// upstreams, then — when that fails and the profile's `dns:` block made a
 /// difference — with the built-in pool. Upstreams are set up while the
 /// config loads, so a DoT hostname the bootstrap servers cannot resolve
 /// would otherwise keep the engine from starting at all. When both loads
 /// fail, the first error is returned: it is the one the profile caused.
-pub async fn load_with_dns_fallback<T, F, Fut>(yaml: &str, load: F) -> Result<T>
+pub async fn load_with_dns_fallback<T, F, Fut>(yaml: &str, load: F) -> Result<Loaded<T>>
 where
     F: Fn(String) -> Fut,
     Fut: std::future::Future<Output = Result<T>>,
 {
-    let profile = strip_and_inject(yaml, DnsUpstreams::Profile)?;
+    let (profile, profile_dns) = strip(yaml, DnsUpstreams::Profile)?;
     let builtin = strip_and_inject(yaml, DnsUpstreams::Builtin)?;
-    if profile == builtin {
-        return load(profile).await;
-    }
-    match load(profile).await {
-        Ok(config) => Ok(config),
-        Err(e) => {
+    let fallback = profile != builtin;
+    let (config, upstreams) = match load(profile).await {
+        Ok(config) => (config, DnsUpstreams::Profile),
+        Err(e) if fallback => {
             tracing::warn!("config: the profile's DNS failed ({e:#}); using the built-in DNS");
-            load(builtin).await.map_err(|_| e)
+            (load(builtin).await.map_err(|_| e)?, DnsUpstreams::Builtin)
         }
-    }
+        Err(e) => return Err(e),
+    };
+    Ok(Loaded {
+        config,
+        profile_dns,
+        upstreams,
+    })
 }
 
 /// RAII handle that removes a file on drop. Used so the sibling
@@ -198,7 +220,10 @@ impl Drop for TempFileGuard {
 /// rule-/proxy-provider `cache_dir`, so colocating with the original keeps
 /// rule-provider cache files in the home dir. Using `load_config_from_str`
 /// would silently disable that caching.
-pub async fn load_stripped_config(config_path: &str, upstreams: DnsUpstreams) -> Result<Config> {
+pub async fn load_stripped_config(
+    config_path: &str,
+    upstreams: DnsUpstreams,
+) -> Result<Loaded<Config>> {
     let original = std::fs::read_to_string(config_path)
         .with_context(|| format!("reading config from {config_path}"))?;
     let stripped_path = sibling_stripped_path(config_path);
@@ -217,11 +242,21 @@ pub async fn load_stripped_config(config_path: &str, upstreams: DnsUpstreams) ->
     };
     match upstreams {
         DnsUpstreams::Profile => load_with_dns_fallback(&original, load).await,
-        DnsUpstreams::Builtin => load(strip_and_inject(&original, upstreams)?).await,
+        DnsUpstreams::Builtin => {
+            let (stripped, profile_dns) = strip(&original, upstreams)?;
+            Ok(Loaded {
+                config: load(stripped).await?,
+                profile_dns,
+                upstreams,
+            })
+        }
     }
 }
 
-fn sibling_stripped_path(config_path: &str) -> PathBuf {
+/// The file [`load_stripped_config`] hands to `load_config`. A rebuild
+/// passes it on too: it picks the provider cache dir, and with it the
+/// fake-IP store file.
+pub fn sibling_stripped_path(config_path: &str) -> PathBuf {
     Path::new(config_path).with_extension("android-stripped.yaml")
 }
 
@@ -380,9 +415,10 @@ rules:
         .await
         .unwrap();
         assert_eq!(
-            dns_of(&loaded)["nameserver"],
+            dns_of(&loaded.config)["nameserver"],
             list(&["tls://dns.alidns.com"])
         );
+        assert_eq!(loaded.upstreams, DnsUpstreams::Profile);
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
@@ -400,16 +436,20 @@ rules:
         })
         .await
         .unwrap();
-        let dns = dns_of(&loaded);
+        let dns = dns_of(&loaded.config);
         assert_eq!(dns["nameserver"], list(BUILTIN_NAMESERVERS));
         assert!(dns.get("fake-ip-filter").is_none());
+        assert_eq!(loaded.upstreams, DnsUpstreams::Builtin);
+        // Kept for a later switch back to it.
+        let profile_dns = loaded.profile_dns.expect("the profile's dns block");
+        assert_eq!(profile_dns["nameserver"], list(&["tls://dns.alidns.com"]));
         assert_eq!(calls.load(Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
     async fn a_profile_that_fails_either_way_reports_its_own_error() {
         let calls = AtomicUsize::new(0);
-        let loaded: Result<()> = load_with_dns_fallback(PROFILE, |s| {
+        let loaded: Result<Loaded<()>> = load_with_dns_fallback(PROFILE, |s| {
             calls.fetch_add(1, Ordering::SeqCst);
             async move {
                 if s.contains("dns.alidns.com") {
@@ -426,7 +466,7 @@ rules:
     #[tokio::test]
     async fn a_profile_without_dns_loads_once() {
         let calls = AtomicUsize::new(0);
-        let loaded: Result<()> = load_with_dns_fallback("rules: [MATCH,DIRECT]\n", |_| {
+        let loaded: Result<Loaded<()>> = load_with_dns_fallback("rules: [MATCH,DIRECT]\n", |_| {
             calls.fetch_add(1, Ordering::SeqCst);
             async { anyhow::bail!("bad proxies") }
         })

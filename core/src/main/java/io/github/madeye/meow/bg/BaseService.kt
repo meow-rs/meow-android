@@ -168,6 +168,16 @@ object BaseService {
 
         override fun cancelProxyProbe(id: Long) = MeowCore.nativeCancelProxyProbe(id)
 
+        // On the binder thread too: a switch builds a resolver, and waits out
+        // an engine start in progress. With no instance there is no engine,
+        // and the next one reads the store, so the engine library is not
+        // loaded into an idle :vpn just to say so.
+        override fun setBuiltinDns(enabled: Boolean): String? = when {
+            data?.meowInstance == null -> null
+            MeowCore.nativeSetBuiltinDns(enabled) == 0 -> null
+            else -> MeowCore.nativeGetLastError()
+        }
+
         fun stateChanged(s: State, msg: String?) = launch {
             val profileName = profileName
             broadcast { it.stateChanged(s.ordinal, profileName, msg) }

@@ -199,7 +199,8 @@
     <string name="settings_engine_offline">پس از اتصال VPN در دسترس است</string>
     <string name="settings_network">شبکه</string>
     <string name="settings_builtin_dns">\u200FDNS داخلی</string>
-    <string name="settings_builtin_dns_desc">به‌جای سرورهای DNS پروفایل، از 119.29.29.29 و 223.5.5.5 روی TCP استفاده می‌شود؛ اتصال مجدد VPN لازم است</string>
+    <string name="settings_builtin_dns_desc">به‌جای سرورهای DNS پروفایل، از 119.29.29.29 و 223.5.5.5 روی TCP استفاده می‌شود</string>
+    <string name="settings_builtin_dns_failed">تغییر DNS ناموفق بود: \u2068%1$s\u2069</string>
     <string name="settings_show_exit_ip">نمایش آی‌پی خروجی</string>
     <string name="settings_show_exit_ip_desc">آی‌پی عمومی شما را در صفحهٔ خانه از طریق ip.sb یا ipwho.is یا ipinfo.io بررسی می‌کند</string>
     <string name="settings_privacy_policy">سیاست حفظ حریم خصوصی</string>

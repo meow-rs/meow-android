@@ -27,7 +27,7 @@ data class SettingsUiState(
     val appVersion: String = "",
     val engineVersion: String = "",
     val showExitIp: Boolean = false,
-    /** Settings' "Built-in DNS" switch; applies from the next connect. */
+    /** Settings' "Built-in DNS" switch; a running VPN follows it. */
     val builtinDns: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** An update check is waiting on GitHub. */
@@ -37,12 +37,14 @@ data class SettingsUiState(
 )
 
 /**
- * The snackbar outcomes of an update check. A newer release is state instead
+ * Settings' snackbars: the outcomes of an update check, and a DNS switch the
+ * running VPN refused. A newer release is state instead
  * ([SettingsUiState.update]), so its dialog survives rotation.
  */
 sealed interface SettingsEvent {
     data class UpToDate(val version: String) : SettingsEvent
     data class UpdateCheckFailed(val reason: String) : SettingsEvent
+    data class BuiltinDnsFailed(val reason: String) : SettingsEvent
 }
 
 class SettingsViewModel(
@@ -90,6 +92,9 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch { versionPair.value = versions.read() }
+        viewModelScope.launch {
+            builtinDns.applyFailures.collect { _events.tryEmit(SettingsEvent.BuiltinDnsFailed(it)) }
+        }
     }
 
     fun onShowExitIpChange(show: Boolean) = exitIp.set(show)

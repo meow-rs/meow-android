@@ -187,7 +187,8 @@
     <string name="settings_engine_offline">Kết nối VPN để sử dụng</string>
     <string name="settings_network">Mạng</string>
     <string name="settings_builtin_dns">DNS tích hợp</string>
-    <string name="settings_builtin_dns_desc">Bỏ qua máy chủ DNS của cấu hình, dùng 119.29.29.29 và 223.5.5.5 qua TCP; kết nối lại VPN để áp dụng</string>
+    <string name="settings_builtin_dns_desc">Bỏ qua máy chủ DNS của cấu hình, dùng 119.29.29.29 và 223.5.5.5 qua TCP</string>
+    <string name="settings_builtin_dns_failed">Không thể chuyển DNS: %1$s</string>
     <string name="settings_show_exit_ip">Hiển thị IP đầu ra</string>
     <string name="settings_show_exit_ip_desc">Tra cứu IP công khai qua ip.sb, ipwho.is hoặc ipinfo.io và hiển thị ở Trang chủ</string>
     <string name="settings_privacy_policy">Chính sách quyền riêng tư</string>

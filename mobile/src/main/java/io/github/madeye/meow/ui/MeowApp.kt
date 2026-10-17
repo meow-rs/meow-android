@@ -717,6 +717,7 @@ private fun SettingsRoute(
 
     val upToDateFmt = stringResource(R.string.settings_update_latest)
     val checkFailedFmt = stringResource(R.string.settings_update_failed)
+    val dnsFailedFmt = stringResource(R.string.settings_builtin_dns_failed)
     val noApp = stringResource(R.string.settings_update_no_app)
 
     LaunchedEffect(viewModel) {
@@ -724,6 +725,7 @@ private fun SettingsRoute(
             val message = when (event) {
                 is SettingsEvent.UpToDate -> String.format(upToDateFmt, event.version)
                 is SettingsEvent.UpdateCheckFailed -> String.format(checkFailedFmt, event.reason)
+                is SettingsEvent.BuiltinDnsFailed -> String.format(dnsFailedFmt, event.reason)
             }
             snackbarHost.showSnackbar(message)
         }

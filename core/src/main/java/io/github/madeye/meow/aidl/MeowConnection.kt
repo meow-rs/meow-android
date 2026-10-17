@@ -125,6 +125,22 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
         }
     }
 
+    /**
+     * Puts the running VPN on Settings' "Built-in DNS" position, blocking
+     * until it is applied. Null then, or when no VPN runs: its next start
+     * reads the store. Else why the VPN kept the DNS it had.
+     */
+    fun setBuiltinDns(enabled: Boolean): String? {
+        // Not bound: the :vpn process is restarting, and no VPN runs in it.
+        val service = service ?: return null
+        return try {
+            service.setBuiltinDns(enabled)
+        } catch (_: RemoteException) {
+            // Gone with its process, and the VPN with it.
+            null
+        }
+    }
+
     private fun unregisterCallback() {
         val service = service ?: return
         if (callbackRegistered) try {

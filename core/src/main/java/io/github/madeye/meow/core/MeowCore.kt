@@ -12,9 +12,18 @@ object MeowCore {
      * [secret] guards the controller API unless the profile sets its own
      * `secret:`; [nativeApiSecret] says which one the engine runs with.
      * [mode] overrides the config's `mode:` (`rule`/`global`/`direct`); empty keeps it.
-     * [builtinDns] drops the profile's DNS upstreams for the built-in pool.
+     * [builtinDns] drops the profile's DNS upstreams for the built-in pool;
+     * [nativeSetBuiltinDns] flips it on the running engine.
      */
     external fun nativeStartEngine(addr: String, secret: String, mode: String, builtinDns: Boolean): Int
+
+    /**
+     * Puts the running engine on the built-in pool ([builtinDns]) or the
+     * profile's DNS, without a restart. 0 when applied or no engine runs;
+     * -1 with [nativeGetLastError] set when the new DNS did not build, and
+     * the engine keeps the one it had.
+     */
+    external fun nativeSetBuiltinDns(builtinDns: Boolean): Int
 
     /** The running engine's API secret; empty when it is stopped or has none. */
     external fun nativeApiSecret(): String?

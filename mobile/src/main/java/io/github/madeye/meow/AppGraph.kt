@@ -85,7 +85,9 @@ object AppGraph {
 
     /** Settings flips it; Home's exit-IP card follows. */
     val showExitIp: ExitIpPreference by lazy { ExitIpPreference(scope) }
-    val builtinDns: BuiltinDnsPreference by lazy { BuiltinDnsPreference(scope) }
+    val builtinDns: BuiltinDnsPreference by lazy {
+        BuiltinDnsPreference(scope) { vpn.applyBuiltinDns(it) }
+    }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
     val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
 

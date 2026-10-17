@@ -710,6 +710,7 @@ fn ipv4_header_checksum(h: &[u8]) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::{dns_query, from_the_profile_nameserver, txt_nameserver, SERIAL};
     use std::time::Instant;
 
     struct ReplyConn {
@@ -773,9 +774,6 @@ mod tests {
             }
         }
     }
-
-    // The tests share the session globals.
-    static SERIAL: Mutex<()> = Mutex::new(());
 
     /// `stop()` runs on JNI threads, which are outside the runtime.
     #[test]
@@ -915,60 +913,10 @@ mod tests {
         assert_eq!(reply[33] & 0x12, 0x12, "not a SYN-ACK");
     }
 
-    /// What [`txt_nameserver`] answers every query with.
-    const PROFILE_TXT: &[u8] = b"from-the-profile-nameserver";
-
-    /// Where a DNS message's question ends: the header, the name, then
-    /// qtype and qclass.
-    fn question_end(msg: &[u8]) -> Option<usize> {
-        let mut pos = 12;
-        loop {
-            let len = usize::from(*msg.get(pos)?);
-            pos += 1;
-            if len == 0 {
-                break;
-            }
-            pos += len;
-        }
-        Some(pos + 4).filter(|&end| end <= msg.len())
-    }
-
-    /// A UDP nameserver on loopback that answers every query with one TXT
-    /// record holding [`PROFILE_TXT`].
-    async fn txt_nameserver() -> SocketAddr {
-        let socket = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
-        let addr = socket.local_addr().unwrap();
-        tokio::spawn(async move {
-            let mut buf = [0u8; 1500];
-            while let Ok((n, peer)) = socket.recv_from(&mut buf).await {
-                let Some(end) = question_end(&buf[..n]) else {
-                    continue;
-                };
-                let mut reply = buf[..end].to_vec();
-                reply[2..4].copy_from_slice(&0x8180u16.to_be_bytes()); // response, RD, RA
-                reply[6..12].copy_from_slice(&[0, 1, 0, 0, 0, 0]); // one answer
-                reply.extend_from_slice(&[0xc0, 0x0c, 0, 16, 0, 1, 0, 0, 0, 60]);
-                reply.extend_from_slice(&(PROFILE_TXT.len() as u16 + 1).to_be_bytes());
-                reply.push(PROFILE_TXT.len() as u8);
-                reply.extend_from_slice(PROFILE_TXT);
-                let _ = socket.send_to(&reply, peer).await;
-            }
-        });
-        addr
-    }
-
     /// An IPv4 UDP packet from 172.19.0.1:40001 to the VPN's DNS address,
     /// asking for `name`'s records of `qtype`.
     fn dns_query_packet(name: &str, qtype: u16) -> Vec<u8> {
-        let mut dns = vec![0x12, 0x34, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0];
-        for label in name.split('.') {
-            dns.push(label.len() as u8);
-            dns.extend_from_slice(label.as_bytes());
-        }
-        dns.push(0);
-        dns.extend_from_slice(&qtype.to_be_bytes());
-        dns.extend_from_slice(&1u16.to_be_bytes());
-
+        let dns = dns_query(name, qtype);
         let mut pkt = vec![0u8; 28];
         pkt[0] = 0x45;
         pkt[2..4].copy_from_slice(&((28 + dns.len()) as u16).to_be_bytes());
@@ -1029,9 +977,7 @@ mod tests {
             "not from :53 to :40001"
         );
         assert!(
-            reply[28..]
-                .windows(PROFILE_TXT.len())
-                .any(|w| w == PROFILE_TXT),
+            from_the_profile_nameserver(&reply[28..]),
             "the answer did not come from the profile's nameserver"
         );
     }

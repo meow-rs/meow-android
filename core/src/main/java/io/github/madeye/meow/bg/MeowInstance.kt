@@ -97,6 +97,12 @@ class MeowInstance(val profile: ClashProfile) {
         if (result != 0) {
             throw RuntimeException("Failed to start engine: ${MeowCore.nativeGetLastError()}")
         }
+        // A flip saved after the read above, and sent before the engine was
+        // up, found nothing to switch; the store has it.
+        val flipped = BuiltinDnsStore.default.load()
+        if (flipped != builtinDns && MeowCore.nativeSetBuiltinDns(flipped) != 0) {
+            Timber.w("MeowInstance: built-in DNS switch: ${MeowCore.nativeGetLastError()}")
+        }
         // Before the service reports Connected, which is when the UI starts
         // calling the API. Should the write fail, the VPN still runs; only the
         // app's own screens are refused (401) until the next start.

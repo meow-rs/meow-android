@@ -86,4 +86,7 @@ class VpnStateRepository(
         connection.probeProxy(id, proxy, kind, arg)
 
     override fun cancel(id: Long) = connection.cancelProxyProbe(id)
+
+    /** See [MeowConnection.setBuiltinDns]; blocks, so not on Main. */
+    fun applyBuiltinDns(enabled: Boolean): String? = connection.setBuiltinDns(enabled)
 }
