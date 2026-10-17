@@ -28,7 +28,7 @@ data class SettingsUiState(
     val engineVersion: String = "",
     val showExitIp: Boolean = false,
     /** Settings' "Built-in DNS" switch; applies from the next connect. */
-    val builtinDns: Boolean = false,
+    val builtinDns: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** An update check is waiting on GitHub. */
     val checkingForUpdate: Boolean = false,
@@ -67,7 +67,7 @@ class SettingsViewModel(
 
     /** The two switches, as (show exit IP, built-in DNS). */
     private val switches = combine(exitIp.enabled, builtinDns.enabled) { showExitIp, builtin ->
-        (showExitIp == true) to (builtin == true)
+        (showExitIp == true) to (builtin != false)
     }
 
     val uiState: StateFlow<SettingsUiState> = combine(

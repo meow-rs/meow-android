@@ -6,9 +6,9 @@ import java.io.IOException
 
 /**
  * Settings' "Built-in DNS" switch, replayed into every engine start. On, the
- * engine drops the profile's DNS upstreams for the built-in pool; off — the
- * default, and what a missing or unreadable file means — it runs on the
- * profile's `dns:` nameservers.
+ * engine drops the profile's DNS upstreams for the built-in pool (the
+ * default). Only an explicitly saved off value opts into the profile's
+ * `dns:` nameservers; missing, unreadable or invalid state stays built-in.
  *
  * Same constraint as [RouteModeStore]: the UI process writes and `:vpn`
  * reads, so it is a one-line file read fresh on every start rather than
@@ -18,12 +18,12 @@ class BuiltinDnsStore(private val file: File) {
 
     fun load(): Boolean =
         try {
-            file.readText() == BUILTIN
+            file.readText() != PROFILE
         } catch (_: Exception) {
             // IOException for a missing/gone file; the wide catch keeps an
             // undeclared RuntimeException from aborting MeowInstance.start
-            // in :vpn — a lost switch just follows the profile.
-            false
+            // in :vpn — a lost switch restores the built-in default.
+            true
         }
 
     fun save(enabled: Boolean) {

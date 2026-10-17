@@ -15,8 +15,8 @@ class BuiltinDnsStoreTest {
     private fun storeFile(): File = File(tmp.root, "builtin_dns")
 
     @Test
-    fun `nothing saved means the profile's DNS`() {
-        assertFalse(BuiltinDnsStore(storeFile()).load())
+    fun `nothing saved means built-in DNS`() {
+        assertTrue(BuiltinDnsStore(storeFile()).load())
     }
 
     @Test
@@ -34,13 +34,37 @@ class BuiltinDnsStoreTest {
         store.save(false)
 
         assertFalse(store.load())
+        assertFalse(BuiltinDnsStore(storeFile()).load())
         assertFalse(File(tmp.root, "builtin_dns.tmp").exists())
     }
 
     @Test
-    fun `an unreadable value means the profile's DNS`() {
+    fun `an invalid value means built-in DNS`() {
         storeFile().writeText("yes")
 
-        assertFalse(BuiltinDnsStore(storeFile()).load())
+        assertTrue(BuiltinDnsStore(storeFile()).load())
+    }
+
+    @Test
+    fun `an empty file means built-in DNS`() {
+        storeFile().writeText("")
+
+        assertTrue(BuiltinDnsStore(storeFile()).load())
+    }
+
+    @Test
+    fun `an unreadable path means built-in DNS`() {
+        // A directory reliably fails readText even when tests run as root.
+        assertTrue(storeFile().mkdir())
+
+        assertTrue(BuiltinDnsStore(storeFile()).load())
+    }
+
+    @Test
+    fun `removing a saved preference restores built-in DNS`() {
+        BuiltinDnsStore(storeFile()).save(false)
+        assertTrue(storeFile().delete())
+
+        assertTrue(BuiltinDnsStore(storeFile()).load())
     }
 }
