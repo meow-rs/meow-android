@@ -2,6 +2,7 @@ package io.github.madeye.meow.bg
 
 import android.content.Context
 import io.github.madeye.meow.Core
+import io.github.madeye.meow.aidl.SessionStats
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.database.ClashProfile
@@ -64,6 +65,10 @@ class MeowInstance(val profile: ClashProfile) {
     private var prevRx: Long = 0
     private var lastUpdate: Long = 0
 
+    // Set once the engine is up, for the Statistics screen; see sessionStats.
+    @Volatile private var meter: NetworkTrafficMeter? = null
+    private var networks: DefaultNetworkKind? = null
+
     // JNI startup blocks while loading remote proxy/rule providers. Keep it
     // off the service's main thread so lifecycle callbacks remain responsive.
     // Await completion before establishing the TUN; cancellation still waits
@@ -103,6 +108,11 @@ class MeowInstance(val profile: ClashProfile) {
         if (flipped != builtinDns && MeowCore.nativeSetBuiltinDns(flipped) != 0) {
             Timber.w("MeowInstance: built-in DNS switch: ${MeowCore.nativeGetLastError()}")
         }
+        val meter = NetworkTrafficMeter(startedAt = System.currentTimeMillis())
+        networks = DefaultNetworkKind(context) { kind ->
+            meter.onNetwork(kind, MeowCore.nativeGetUploadTraffic(), MeowCore.nativeGetDownloadTraffic())
+        }.also { it.start() }
+        this@MeowInstance.meter = meter
         // Before the service reports Connected, which is when the UI starts
         // calling the API. Should the write fail, the VPN still runs; only the
         // app's own screens are refused (401) until the next start.
@@ -123,9 +133,16 @@ class MeowInstance(val profile: ClashProfile) {
     }
 
     fun stop() {
+        networks?.stop()
+        networks = null
+        meter = null
         MeowCore.nativeStopEngine()
         Timber.d("MeowInstance: engine stopped")
     }
+
+    /** The session so far, or null until the engine is up. Any thread. */
+    fun sessionStats(): SessionStats? =
+        meter?.read(MeowCore.nativeGetUploadTraffic(), MeowCore.nativeGetDownloadTraffic())
 
     fun requestTrafficUpdate(): TrafficStats {
         val tx = MeowCore.nativeGetUploadTraffic()

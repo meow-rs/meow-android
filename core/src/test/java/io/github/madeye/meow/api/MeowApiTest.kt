@@ -1,5 +1,6 @@
 package io.github.madeye.meow.api
 
+import io.github.madeye.meow.aidl.ByteTotals
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.mockwebserver.Dispatcher
@@ -487,6 +488,33 @@ class MeowApiTest {
         assertNull(api.connectionNotes("gone"))
         enqueue("", code = 405)
         assertNull(api.connectionNotes("old-engine"))
+    }
+
+    @Test
+    fun `proxyTraffic reads what each proxy carried`() = runTest {
+        enqueue(
+            """{"uploadTotal": 330, "downloadTotal": 3300, "proxies": {
+                "DIRECT": {"upload": 30, "download": 300},
+                "daniel-TW": {"upload": 300, "download": 3000}
+            }}""",
+        )
+
+        val traffic = api.proxyTraffic()
+
+        assertEquals("/statistics", server.takeRequest().requestUrl!!.encodedPath)
+        assertEquals(
+            mapOf(
+                "DIRECT" to ByteTotals(upload = 30, download = 300),
+                "daniel-TW" to ByteTotals(upload = 300, download = 3000),
+            ),
+            traffic,
+        )
+    }
+
+    @Test
+    fun `proxyTraffic is null for an engine without statistics`() = runTest {
+        enqueue("", code = 404)
+        assertNull(api.proxyTraffic())
     }
 
     @Test

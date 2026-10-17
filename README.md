@@ -69,7 +69,9 @@ Network
   - Proxy Groups: proxy group & node selection, per-group latency tests
   - Utility: live Connections and DNS-cache views powered by the REST API,
     Traffic (real-time speed chart, session upload/download stats, daily
-    history) and Logs, grouped as on the iOS app
+    history), Statistics (as on Surge: session start and uptime, traffic by
+    Wi-Fi / Ethernet and cellular, and by proxy) and Logs, grouped as on the
+    iOS app
   - Settings: Version, network config, per-app VPN proxy/bypass,
     connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN), Russian, Persian, Arabic, Vietnamese,
@@ -117,7 +119,7 @@ core/                           Android library module
 mobile/                         Android app module (Compose UI host)
   src/main/java/.../ui/theme/   Brand tokens shared with the iOS app
   src/main/java/.../ui/screens/ Home, Subscribe, Utility, Settings,
-                                Traffic, Connections, Logs, DNS, Rules,
+                                Traffic, Statistics, Connections, Logs, DNS, Rules,
                                 Per-app proxy, YAML editor
   src/main/res/values{,-zh-rCN,-ru,-fa,-ar,-vi,-tr,-my}
                                 Localization (en, zh_CN, ru, fa)

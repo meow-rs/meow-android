@@ -1,5 +1,6 @@
 package io.github.madeye.meow.api
 
+import io.github.madeye.meow.aidl.ByteTotals
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -225,6 +226,10 @@ data class DnsResult(
     @SerialName("from_server") val fromServer: String? = null,
     val ttl: Long = 0,
 )
+
+/** `GET /statistics`; only the proxies are read, the totals come with the session over AIDL. */
+@Serializable
+internal data class StatisticsResponse(val proxies: Map<String, ByteTotals> = emptyMap())
 
 /** One entry of `GET /api/proxy-groups`; only the name is read, for ordering. */
 @Serializable

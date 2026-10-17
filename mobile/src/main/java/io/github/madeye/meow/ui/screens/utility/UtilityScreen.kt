@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
@@ -28,8 +29,9 @@ import io.github.madeye.meow.ui.theme.meow
  * monitoring screens, most-used first.
  *
  * Traffic reads the app's own history, so it is always open. Connections,
- * DNS and Logs read the engine's controller API, so — as when Connections and
- * Logs lived in Settings — they are only reachable while it is listening.
+ * DNS and Logs read the engine's controller API, and Statistics the running
+ * session, so — as when Connections and Logs lived in Settings — they are
+ * only reachable while it is listening.
  */
 @Composable
 fun UtilityScreen(
@@ -38,6 +40,7 @@ fun UtilityScreen(
     onConnections: () -> Unit,
     onDns: () -> Unit,
     onTraffic: () -> Unit,
+    onStatistics: () -> Unit,
     onLogs: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,6 +80,15 @@ fun UtilityScreen(
                 icon = Icons.AutoMirrored.Filled.ShowChart,
                 onClick = onTraffic,
                 modifier = Modifier.testTag("utility_traffic"),
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.statistics_title),
+                icon = Icons.Filled.DataUsage,
+                onClick = onStatistics,
+                modifier = Modifier.testTag("utility_statistics"),
+                enabled = engineOnline,
+                subtitle = offlineHint.takeUnless { engineOnline },
             )
             HorizontalDivider(color = MaterialTheme.meow.border)
             NavRow(

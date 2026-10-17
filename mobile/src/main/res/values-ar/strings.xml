@@ -313,6 +313,17 @@
     <string name="dns_ttl">\u200FTTL %1$d ث</string>
     <string name="dns_load_error">تعذّر تحميل نتائج DNS</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">الإحصائيات</string>
+    <string name="statistics_start_date">وقت البدء</string>
+    <string name="statistics_uptime">مدة التشغيل</string>
+    <string name="statistics_interfaces">الواجهات</string>
+    <string name="statistics_wifi_ethernet">\u200FWi-Fi / إيثرنت</string>
+    <string name="statistics_cellular">بيانات الجوال</string>
+    <string name="statistics_other_network">شبكات أخرى</string>
+    <string name="statistics_policies">السياسات</string>
+    <string name="statistics_total">الإجمالي \u2068%1$s\u2069</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">بروكسي لكل تطبيق</string>
     <string name="perapp_desc">حدِّد التطبيقات التي تستخدم VPN</string>

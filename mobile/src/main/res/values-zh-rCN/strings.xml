@@ -276,6 +276,17 @@
     <string name="dns_ttl">TTL %1$d 秒</string>
     <string name="dns_load_error">加载 DNS 结果失败</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">统计</string>
+    <string name="statistics_start_date">启动时间</string>
+    <string name="statistics_uptime">运行时长</string>
+    <string name="statistics_interfaces">网络接口</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / 以太网</string>
+    <string name="statistics_cellular">蜂窝数据</string>
+    <string name="statistics_other_network">其他网络</string>
+    <string name="statistics_policies">策略</string>
+    <string name="statistics_total">总计 %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">分应用代理</string>
     <string name="perapp_desc">选择哪些应用使用 VPN</string>

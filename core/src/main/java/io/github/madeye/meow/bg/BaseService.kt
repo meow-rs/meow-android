@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.IMeowService
 import io.github.madeye.meow.aidl.IMeowServiceCallback
+import io.github.madeye.meow.aidl.SessionStats
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.core.MeowCore
 import io.github.madeye.meow.utils.Action
@@ -177,6 +178,9 @@ object BaseService {
             MeowCore.nativeSetBuiltinDns(enabled) == 0 -> null
             else -> MeowCore.nativeGetLastError()
         }
+
+        // On the binder thread: two counter reads, nothing that blocks.
+        override fun getSessionStats(): SessionStats? = data?.meowInstance?.sessionStats()
 
         fun stateChanged(s: State, msg: String?) = launch {
             val profileName = profileName

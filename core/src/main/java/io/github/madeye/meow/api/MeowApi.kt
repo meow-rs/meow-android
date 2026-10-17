@@ -1,5 +1,6 @@
 package io.github.madeye.meow.api
 
+import io.github.madeye.meow.aidl.ByteTotals
 import java.io.IOException
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
@@ -365,6 +366,25 @@ class MeowApi(
     /** Switches routing for new flows; open connections keep their route. */
     suspend fun setMode(mode: RouteMode) {
         patchConfigs(JsonObject(mapOf("mode" to kotlinx.serialization.json.JsonPrimitive(mode.wire))))
+    }
+
+    // -------------------------------------------------------------------------
+    // Statistics
+    // -------------------------------------------------------------------------
+
+    /**
+     * What each proxy carried since the engine started, by name; a group's
+     * traffic counts at the member that carried it. Null for an engine that
+     * predates `GET /statistics`.
+     */
+    suspend fun proxyTraffic(): Map<String, ByteTotals>? {
+        val body = try {
+            get("/statistics", operation = "statistics")
+        } catch (e: MeowApiException.Http) {
+            if (e.code == 404) return null
+            throw e
+        }
+        return decode("statistics") { json.decodeFromString(StatisticsResponse.serializer(), body).proxies }
     }
 
     // -------------------------------------------------------------------------

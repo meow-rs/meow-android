@@ -292,6 +292,17 @@
     <string name="dns_ttl">TTL %1$d s</string>
     <string name="dns_load_error">Failed to load DNS results</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">Statistics</string>
+    <string name="statistics_start_date">Start Date</string>
+    <string name="statistics_uptime">Uptime</string>
+    <string name="statistics_interfaces">Interfaces</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / Ethernet</string>
+    <string name="statistics_cellular">Cellular Data</string>
+    <string name="statistics_other_network">Other Networks</string>
+    <string name="statistics_policies">Policies</string>
+    <string name="statistics_total">Total %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Per-App Proxy</string>
     <string name="perapp_desc">Select which apps use the VPN</string>

@@ -281,6 +281,17 @@
     <string name="dns_ttl">TTL %1$d စက္ကန့်</string>
     <string name="dns_load_error">DNS ရလဒ်များ ရယူ၍ မရပါ</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">စာရင်းအင်း</string>
+    <string name="statistics_start_date">စတင်ချိန်</string>
+    <string name="statistics_uptime">လည်ပတ်ချိန်</string>
+    <string name="statistics_interfaces">အင်တာဖေ့စ်များ</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / Ethernet</string>
+    <string name="statistics_cellular">မိုဘိုင်းဒေတာ</string>
+    <string name="statistics_other_network">အခြားကွန်ရက်များ</string>
+    <string name="statistics_policies">မူဝါဒများ</string>
+    <string name="statistics_total">စုစုပေါင်း %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">အက်ပ်အလိုက် ပရောက်စီ</string>
     <string name="perapp_desc">VPN သုံးမည့် အက်ပ်များကို ရွေးပါ</string>

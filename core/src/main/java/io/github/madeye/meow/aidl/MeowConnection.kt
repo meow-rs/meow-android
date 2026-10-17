@@ -141,6 +141,14 @@ class MeowConnection(private var listenForBandwidth: Boolean = false) : ServiceC
         }
     }
 
+    /** The running session's stats; null when no VPN runs or `:vpn` is not bound. */
+    fun sessionStats(): SessionStats? = try {
+        service?.sessionStats
+    } catch (_: RemoteException) {
+        // Gone with its process, and the session with it.
+        null
+    }
+
     private fun unregisterCallback() {
         val service = service ?: return
         if (callbackRegistered) try {

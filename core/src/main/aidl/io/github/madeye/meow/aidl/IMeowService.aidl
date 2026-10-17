@@ -1,5 +1,6 @@
 package io.github.madeye.meow.aidl;
 import io.github.madeye.meow.aidl.IMeowServiceCallback;
+import io.github.madeye.meow.aidl.SessionStats;
 import io.github.madeye.meow.aidl.TrafficStats;
 
 interface IMeowService {
@@ -20,4 +21,8 @@ interface IMeowService {
     // the FFI crate's src/live_dns.rs). Blocks until it is; returns null
     // then or when no VPN runs, else why the engine kept the DNS it had.
     String setBuiltinDns(boolean enabled);
+
+    // The running session's start time and its traffic per kind of network;
+    // null while no engine is up.
+    SessionStats getSessionStats();
 }

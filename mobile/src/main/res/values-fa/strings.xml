@@ -289,6 +289,17 @@
     <string name="dns_ttl">\u200FTTL %1$d ثانیه</string>
     <string name="dns_load_error">بارگیری نتایج DNS ناموفق بود</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">آمار</string>
+    <string name="statistics_start_date">زمان شروع</string>
+    <string name="statistics_uptime">مدت فعالیت</string>
+    <string name="statistics_interfaces">رابط‌ها</string>
+    <string name="statistics_wifi_ethernet">\u200FWi-Fi / اترنت</string>
+    <string name="statistics_cellular">داده تلفن همراه</string>
+    <string name="statistics_other_network">شبکه‌های دیگر</string>
+    <string name="statistics_policies">سیاست‌ها</string>
+    <string name="statistics_total">مجموع \u2068%1$s\u2069</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">پروکسی به تفکیک برنامه</string>
     <string name="perapp_desc">انتخاب کنید کدام برنامه‌ها از VPN استفاده کنند</string>

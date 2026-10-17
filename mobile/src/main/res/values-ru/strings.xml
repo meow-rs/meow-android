@@ -291,6 +291,17 @@
     <string name="dns_ttl">TTL %1$d с</string>
     <string name="dns_load_error">Не удалось загрузить результаты DNS</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">Статистика</string>
+    <string name="statistics_start_date">Время запуска</string>
+    <string name="statistics_uptime">Время работы</string>
+    <string name="statistics_interfaces">Интерфейсы</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / Ethernet</string>
+    <string name="statistics_cellular">Мобильные данные</string>
+    <string name="statistics_other_network">Другие сети</string>
+    <string name="statistics_policies">Политики</string>
+    <string name="statistics_total">Всего %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Прокси для приложений</string>
     <string name="perapp_desc">Выберите, какие приложения используют VPN</string>

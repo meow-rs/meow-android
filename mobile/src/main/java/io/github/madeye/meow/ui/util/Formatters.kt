@@ -98,6 +98,10 @@ object Formatters {
     fun dateTime(iso: String, zone: ZoneId = ZoneId.systemDefault()): String =
         runCatching { DATE_TIME.format(Instant.parse(iso).atZone(zone)) }.getOrDefault("")
 
+    /** Local date and time of a Unix time in milliseconds, e.g. `2026-10-16 10:13:01`; empty for 0. */
+    fun dateTime(epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
+        if (epochMillis <= 0) "" else DATE_TIME.format(Instant.ofEpochMilli(epochMillis).atZone(zone))
+
     /**
      * Local calendar date of a Unix time in **seconds** (the unit subscription
      * headers use), e.g. `2026-12-31`. Empty for 0, and for a value too far out

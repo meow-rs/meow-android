@@ -39,6 +39,7 @@ import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
+import io.github.madeye.meow.ui.screens.statistics.StatisticsViewModel
 import io.github.madeye.meow.ui.screens.subscribe.RuleSetUpdater
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.traffic.TrafficViewModel
@@ -51,6 +52,7 @@ import io.github.madeye.meow.vpn.VpnStateRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 
 /**
  * Hand-written dependency graph.
@@ -190,6 +192,11 @@ object AppGraph {
                     connectionNotes = api::connectionNotes,
                 )
                 DnsViewModel::class.java -> DnsViewModel(fetch = { search -> api.dnsResults(search) })
+                StatisticsViewModel::class.java -> StatisticsViewModel(
+                    // A binder call into :vpn; not on the main thread.
+                    session = { withContext(Dispatchers.IO) { vpn.sessionStats() } },
+                    proxyTraffic = api::proxyTraffic,
+                )
                 LogsViewModel::class.java -> LogsViewModel(api)
 
                 else -> error("unknown ViewModel: ${modelClass.name}")

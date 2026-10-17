@@ -87,6 +87,8 @@ import io.github.madeye.meow.ui.screens.settings.SettingsEvent
 import io.github.madeye.meow.ui.screens.settings.SettingsScreen
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
 import io.github.madeye.meow.ui.screens.settings.UpdateDialog
+import io.github.madeye.meow.ui.screens.statistics.StatisticsScreen
+import io.github.madeye.meow.ui.screens.statistics.StatisticsViewModel
 import io.github.madeye.meow.ui.screens.subscribe.InstallConfigDialog
 import io.github.madeye.meow.ui.screens.subscribe.InstallConfigLink
 import io.github.madeye.meow.ui.screens.subscribe.ProfileUi
@@ -220,6 +222,7 @@ private fun MeowNavHost(
                 onConnections = { navController.navigate(Dest.Connections) },
                 onLogs = { navController.navigate(Dest.Logs) },
                 onDns = { navController.navigate(Dest.Dns) },
+                onStatistics = { navController.navigate(Dest.Statistics) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
@@ -280,6 +283,7 @@ private fun MeowNavHost(
         composable<Dest.Rules> { RulesRoute(onBack = navController::popBackStack) }
         composable<Dest.Logs> { LogsRoute(onBack = navController::popBackStack) }
         composable<Dest.Dns> { DnsRoute(onBack = navController::popBackStack) }
+        composable<Dest.Statistics> { StatisticsRoute(onBack = navController::popBackStack) }
         composable<Dest.ProxyDetail> { ProxyDetailRoute(onBack = navController::popBackStack) }
     }
 
@@ -670,6 +674,7 @@ private fun UtilityRoute(
     onConnections: () -> Unit,
     onLogs: () -> Unit,
     onDns: () -> Unit,
+    onStatistics: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val vpnState by AppGraph.vpn.state.collectAsStateWithLifecycle()
@@ -681,6 +686,7 @@ private fun UtilityRoute(
             onConnections = onConnections,
             onDns = onDns,
             onTraffic = onTraffic,
+            onStatistics = onStatistics,
             onLogs = onLogs,
         )
     }
@@ -1099,6 +1105,19 @@ private fun DnsRoute(onBack: () -> Unit) {
         navigationIcon = { BackButton(onBack) },
     ) { padding ->
         DnsScreen(state = state, contentPadding = padding, onQueryChange = viewModel::onQueryChange)
+    }
+}
+
+@Composable
+private fun StatisticsRoute(onBack: () -> Unit) {
+    val viewModel: StatisticsViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    MeowScaffold(
+        title = stringResource(R.string.statistics_title),
+        navigationIcon = { BackButton(onBack) },
+    ) { padding ->
+        StatisticsScreen(state = state, contentPadding = padding)
     }
 }
 

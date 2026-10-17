@@ -3,6 +3,7 @@ package io.github.madeye.meow.vpn
 import android.content.Context
 import android.content.Intent
 import io.github.madeye.meow.aidl.MeowConnection
+import io.github.madeye.meow.aidl.SessionStats
 import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.bg.BaseService
 import io.github.madeye.meow.net.ProxyProbeTransport
@@ -89,4 +90,7 @@ class VpnStateRepository(
 
     /** See [MeowConnection.setBuiltinDns]; blocks, so not on Main. */
     fun applyBuiltinDns(enabled: Boolean): String? = connection.setBuiltinDns(enabled)
+
+    /** See [MeowConnection.sessionStats]; a binder call, so not on Main. */
+    fun sessionStats(): SessionStats? = connection.sessionStats()
 }

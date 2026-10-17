@@ -281,6 +281,17 @@
     <string name="dns_ttl">TTL %1$d sn</string>
     <string name="dns_load_error">DNS sonuçları yüklenemedi</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">İstatistikler</string>
+    <string name="statistics_start_date">Başlangıç zamanı</string>
+    <string name="statistics_uptime">Çalışma süresi</string>
+    <string name="statistics_interfaces">Arayüzler</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / Ethernet</string>
+    <string name="statistics_cellular">Mobil veri</string>
+    <string name="statistics_other_network">Diğer ağlar</string>
+    <string name="statistics_policies">Politikalar</string>
+    <string name="statistics_total">Toplam %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Uygulama bazlı proxy</string>
     <string name="perapp_desc">VPN kullanacak uygulamaları seçin</string>

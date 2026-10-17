@@ -89,6 +89,7 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 - **bg/VpnService.kt**: Creates TUN interface (172.19.0.1/30, MTU 1500, route 0.0.0.0/0). Passes TUN fd + `this` (VpnService) to Rust via JNI. DNS set to 172.19.0.2 (routed through TUN → in-process DNS interception in tun2socks).
 - **bg/ServiceNotification.kt**: The foreground-service notification (type `systemExempted` on API 34+, which Android grants VPN apps holding consent): profile name, live ↑/↓ speed from the FFI byte counters (1 s ticks, only while the screen is on), Stop (`Action.CLOSE`), tap opens the app. Callers start the service with `startForegroundService` (`VpnService.start`), so `onStartCommand` posts it before any early return; a restart (`stopRunner(true)`) keeps it, and the foreground, up.
 - **bg/MeowInstance.kt**: Writes config.yaml (stripping only the app-managed `subscriptions:` block — listeners/`sniffer:` and the `dns:` pinning are handled by `engine::strip_and_inject` on the Rust side), calls JNI start/stop. Passes the Home route-mode pick (`preference/RouteModeStore`, a one-line file because `:vpn` can't see fresh SharedPreferences writes from the UI process) to `nativeStartEngine`, which overrides the profile's `mode:`, and the Settings "Built-in DNS" switch (`preference/BuiltinDnsStore`, same one-line-file reason). Settings saves a flip, then sends it over the binder (`BuiltinDnsPreference`'s `applyLive`); a start re-reads the store once the engine is up, for a flip that came in before there was one to switch.
+- **bg/NetworkTraffic.kt**: the Statistics screen's per-network split. `DefaultNetworkKind` follows the best non-VPN network (`registerBestMatchingNetworkCallback` on API 31+, `requestNetwork` on 28-30, the default-network callback below; shadowsocks-android's registration), and `NetworkTrafficMeter` charges the engine's byte totals gained since the last change to the network in use meanwhile (bytes counted with none go to the next one). `MeowInstance` runs one per engine start and the binder's `getSessionStats` returns its start time and Wi-Fi/Ethernet, cellular and other totals.
 - **core/MeowCore.kt**: JNI bridge object. `System.loadLibrary("meow_android_ffi")`.
 - **database/**: Room database with `ClashProfile` entity (id, name, url, yamlContent, selected, lastUpdated, tx, rx).
   A profile with a `url` is a subscription, and its config is read-only, as on Surge: it
@@ -102,7 +103,8 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   Clash-compatible controller (`http://127.0.0.1:9090`, started by `MeowInstance`).
   Proxies/groups, delay probes, rules, rule providers (`updateRuleProvider` gets its
   own 90 s read timeout: the engine answers only after the download), connections,
-  configs, and the `/logs` websocket (500ms→30s reconnect ramp). Every call,
+  configs, per-proxy traffic (`proxyTraffic`, `GET /statistics`; null on an engine
+  without it), and the `/logs` websocket (500ms→30s reconnect ramp). Every call,
   the websocket handshake included, sends `Authorization: Bearer` with the
   secret read from `preference/ApiSecretStore` at call time: `MeowInstance`
   mints a fresh one per engine start, the profile's own `secret:` wins (kept by
@@ -140,7 +142,7 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   switch, route mode, exit IP —, Proxy Groups, Utility, Settings);
   Subscriptions/Rules (from Home), the YAML editor (from Subscriptions; read-only
   for a subscription, with a banner whose "Create a copy" opens the copy's editor in
-  its place), Connections/DNS/Traffic/Logs (from Utility) and Per-App Proxy (from
+  its place), Connections/DNS/Traffic/Statistics/Logs (from Utility) and Per-App Proxy (from
   Settings) are pushed routes. `SubscriptionsRoute` owns the subscription dialogs and
   launchers and answers `clash://install-config` links, which `MeowNavHost`
   routes to it; its ViewModel lives on Home's back-stack entry, so an add or

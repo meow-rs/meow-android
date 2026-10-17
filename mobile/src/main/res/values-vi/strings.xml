@@ -276,6 +276,17 @@
     <string name="dns_ttl">TTL %1$d giây</string>
     <string name="dns_load_error">Không thể tải kết quả DNS</string>
 
+    <!-- Statistics -->
+    <string name="statistics_title">Thống kê</string>
+    <string name="statistics_start_date">Thời điểm bắt đầu</string>
+    <string name="statistics_uptime">Thời gian hoạt động</string>
+    <string name="statistics_interfaces">Giao diện mạng</string>
+    <string name="statistics_wifi_ethernet">Wi-Fi / Ethernet</string>
+    <string name="statistics_cellular">Dữ liệu di động</string>
+    <string name="statistics_other_network">Mạng khác</string>
+    <string name="statistics_policies">Chính sách</string>
+    <string name="statistics_total">Tổng %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Proxy theo ứng dụng</string>
     <string name="perapp_desc">Chọn những ứng dụng sẽ dùng VPN</string>
