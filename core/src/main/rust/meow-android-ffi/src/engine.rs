@@ -43,11 +43,12 @@ const BUILTIN_NAMESERVERS: &[&str] = &["tcp://119.29.29.29", "tcp://223.5.5.5"];
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DnsUpstreams {
     /// The profile's own `dns:` settings; the built-in pool fills in a
-    /// missing `nameserver` / `default-nameserver`. The default.
+    /// missing `nameserver` / `default-nameserver`. Chosen by turning off
+    /// Settings' "Built-in DNS" switch.
     Profile,
-    /// The built-in pool only; the profile's `dns:` block is dropped. Chosen
-    /// by Settings' "Built-in DNS" switch, for a profile whose upstreams load
-    /// but do not answer on the current network.
+    /// The built-in pool only; the profile's `dns:` block is dropped. The
+    /// default (Settings' "Built-in DNS" switch on): TCP-only, so a network
+    /// that filters UDP/53 does not break it.
     Builtin,
 }
 

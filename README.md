@@ -47,9 +47,10 @@ Network
   Built-in DNS is enabled by default, using `119.29.29.29` and `223.5.5.5`
   over TCP. To use the profile's DNS settings (including supported DoT/DoH
   upstreams), turn off Settings > Network > Built-in DNS and reconnect.
-  An explicitly saved choice is preserved. Profile mode falls back to the
-  built-in pool on configuration-load failure, not on later query timeouts;
-  non-A/AAAA passthrough still uses the built-in pool.
+  An explicitly saved choice is preserved, and every query type (A/AAAA,
+  HTTPS, TXT, MX, PTR, …) uses the chosen upstreams. Profile mode falls
+  back to the built-in pool on configuration-load failure, not on later
+  query timeouts.
 - **Socket Protection**: Per-socket `VpnService.protect(fd)` via JNI callback
 - **REST API**: Embedded external controller (`127.0.0.1:9090`) drives the
   live connections, logs, rules, DNS cache, and traffic views. It requires a

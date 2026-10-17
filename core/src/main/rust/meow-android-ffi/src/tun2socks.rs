@@ -3,10 +3,10 @@
 //! dispatches every accepted flow in-process via
 //! `meow_tunnel::tcp::handle_tcp` — same pattern as meow-ios.
 //!
-//! DNS is handled in-process: UDP/53 packets are intercepted pre-stack,
-//! A/AAAA queries go to `DnsServer::handle_query` for fake-IP synthesis,
-//! and all other qtypes are forwarded verbatim to the pinned upstream pool.
-//! No loopback DNS server socket exists.
+//! DNS is handled in-process: UDP/53 packets are intercepted pre-stack and
+//! every query goes to `DnsServer::handle_query` — A/AAAA for fake-IP
+//! synthesis, other qtypes forwarded over the same upstreams. No loopback
+//! DNS server socket exists.
 
 use crate::engine;
 use crate::logging;
@@ -54,9 +54,6 @@ const TUN2SOCKS_STOP_TIMEOUT: Duration = Duration::from_secs(3);
 const DNS_BURST_CAP: usize = 256;
 const DNS_TASK_TIMEOUT: Duration = Duration::from_secs(5);
 static DNS_CAP_LOG_LAST_MS: AtomicU64 = AtomicU64::new(0);
-
-const DNS_PASSTHROUGH_UPSTREAMS: &[&str] = &["119.29.29.29:53", "223.5.5.5:53"];
-const DNS_PASSTHROUGH_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// How often a UDP reply reader checks whether its session is still live.
 /// A DIRECT session's read never ends on its own, so this bounds how long a
@@ -316,38 +313,23 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                             let Some(parsed) = parse_udp_packet(&request) else {
                                 return;
                             };
-                            let qtype = parse_dns_qtype(parsed.payload);
-
-                            let response_payload = if matches!(qtype, Some(1) | Some(28)) {
-                                let Some(resolver) = crate::DNS_RESOLVER.read().clone() else {
-                                    trace!("tun2socks: DNS dropped — resolver not ready");
-                                    return;
-                                };
+                            // Every qtype, not just A/AAAA: HTTPS, TXT, MX,
+                            // PTR, … then use the upstreams Settings' Built-in
+                            // DNS switch picked, and HTTPS/SVCB answers for a
+                            // fake-IP name lose the address hints that would
+                            // route around it.
+                            let Some(resolver) = crate::DNS_RESOLVER.read().clone() else {
+                                trace!("tun2socks: DNS dropped — resolver not ready");
+                                return;
+                            };
+                            let response_payload =
                                 match DnsServer::handle_query(parsed.payload, &resolver).await {
                                     Ok(bytes) => bytes,
                                     Err(e) => {
                                         trace!("tun2socks: DnsServer::handle_query error: {}", e);
                                         return;
                                     }
-                                }
-                            } else {
-                                match forward_dns_to_upstream(
-                                    parsed.payload,
-                                    DNS_PASSTHROUGH_UPSTREAMS,
-                                    DNS_PASSTHROUGH_TIMEOUT,
-                                )
-                                .await
-                                {
-                                    Some(bytes) => bytes,
-                                    None => {
-                                        trace!(
-                                            "tun2socks: DNS passthrough timed out (qtype={:?})",
-                                            qtype
-                                        );
-                                        return;
-                                    }
-                                }
-                            };
+                                };
                             let Some(reply_pkt) = build_udp_reply(&request, &response_payload)
                             else {
                                 return;
@@ -635,91 +617,6 @@ async fn relay_udp_replies(
             break;
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// DNS passthrough for non-A/AAAA qtypes
-// ---------------------------------------------------------------------------
-
-async fn forward_dns_to_upstream(
-    query: &[u8],
-    upstreams: &[&str],
-    timeout: Duration,
-) -> Option<Vec<u8>> {
-    if upstreams.is_empty() || query.len() < 2 {
-        return None;
-    }
-    let query_id = u16::from_be_bytes([query[0], query[1]]);
-    let query_owned = query.to_vec();
-
-    type DnsForwardFut = Pin<Box<dyn std::future::Future<Output = Option<Vec<u8>>> + Send>>;
-    let mut futs: Vec<DnsForwardFut> = Vec::with_capacity(upstreams.len());
-    for upstream in upstreams {
-        let Ok(addr) = upstream.parse::<SocketAddr>() else {
-            continue;
-        };
-        let q = query_owned.clone();
-        futs.push(Box::pin(async move {
-            use tokio::io::{AsyncReadExt, AsyncWriteExt};
-            let stream = meow_common::connect_tcp(addr).await.ok()?;
-            let mut stream = tokio::io::BufStream::new(stream);
-            let len = u16::try_from(q.len()).ok()?;
-            stream.write_all(&len.to_be_bytes()).await.ok()?;
-            stream.write_all(&q).await.ok()?;
-            stream.flush().await.ok()?;
-            let mut len_buf = [0u8; 2];
-            tokio::time::timeout(timeout, stream.read_exact(&mut len_buf))
-                .await
-                .ok()?
-                .ok()?;
-            let resp_len = u16::from_be_bytes(len_buf) as usize;
-            let mut buf = vec![0u8; resp_len];
-            stream.read_exact(&mut buf).await.ok()?;
-            if buf.len() >= 2 && u16::from_be_bytes([buf[0], buf[1]]) == query_id {
-                Some(buf)
-            } else {
-                None
-            }
-        }));
-    }
-    while !futs.is_empty() {
-        let (result, _idx, remaining) = futures::future::select_all(futs).await;
-        if result.is_some() {
-            return result;
-        }
-        futs = remaining;
-    }
-    None
-}
-
-// ---------------------------------------------------------------------------
-// DNS helpers
-// ---------------------------------------------------------------------------
-
-fn parse_dns_qtype(payload: &[u8]) -> Option<u16> {
-    if payload.len() < 12 {
-        return None;
-    }
-    let qdcount = u16::from_be_bytes([payload[4], payload[5]]);
-    if qdcount == 0 {
-        return None;
-    }
-    let mut pos = 12usize;
-    loop {
-        let len = *payload.get(pos)? as usize;
-        if len == 0 {
-            pos = pos.checked_add(1)?;
-            break;
-        }
-        if len & 0xC0 == 0xC0 {
-            pos = pos.checked_add(2)?;
-            break;
-        }
-        pos = pos.checked_add(1 + len)?;
-    }
-    let hi = *payload.get(pos)?;
-    let lo = *payload.get(pos.checked_add(1)?)?;
-    Some(u16::from_be_bytes([hi, lo]))
 }
 
 // ---------------------------------------------------------------------------
@@ -1016,6 +913,127 @@ mod tests {
             "not from :80 to :40000"
         );
         assert_eq!(reply[33] & 0x12, 0x12, "not a SYN-ACK");
+    }
+
+    /// What [`txt_nameserver`] answers every query with.
+    const PROFILE_TXT: &[u8] = b"from-the-profile-nameserver";
+
+    /// Where a DNS message's question ends: the header, the name, then
+    /// qtype and qclass.
+    fn question_end(msg: &[u8]) -> Option<usize> {
+        let mut pos = 12;
+        loop {
+            let len = usize::from(*msg.get(pos)?);
+            pos += 1;
+            if len == 0 {
+                break;
+            }
+            pos += len;
+        }
+        Some(pos + 4).filter(|&end| end <= msg.len())
+    }
+
+    /// A UDP nameserver on loopback that answers every query with one TXT
+    /// record holding [`PROFILE_TXT`].
+    async fn txt_nameserver() -> SocketAddr {
+        let socket = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let addr = socket.local_addr().unwrap();
+        tokio::spawn(async move {
+            let mut buf = [0u8; 1500];
+            while let Ok((n, peer)) = socket.recv_from(&mut buf).await {
+                let Some(end) = question_end(&buf[..n]) else {
+                    continue;
+                };
+                let mut reply = buf[..end].to_vec();
+                reply[2..4].copy_from_slice(&0x8180u16.to_be_bytes()); // response, RD, RA
+                reply[6..12].copy_from_slice(&[0, 1, 0, 0, 0, 0]); // one answer
+                reply.extend_from_slice(&[0xc0, 0x0c, 0, 16, 0, 1, 0, 0, 0, 60]);
+                reply.extend_from_slice(&(PROFILE_TXT.len() as u16 + 1).to_be_bytes());
+                reply.push(PROFILE_TXT.len() as u8);
+                reply.extend_from_slice(PROFILE_TXT);
+                let _ = socket.send_to(&reply, peer).await;
+            }
+        });
+        addr
+    }
+
+    /// An IPv4 UDP packet from 172.19.0.1:40001 to the VPN's DNS address,
+    /// asking for `name`'s records of `qtype`.
+    fn dns_query_packet(name: &str, qtype: u16) -> Vec<u8> {
+        let mut dns = vec![0x12, 0x34, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0];
+        for label in name.split('.') {
+            dns.push(label.len() as u8);
+            dns.extend_from_slice(label.as_bytes());
+        }
+        dns.push(0);
+        dns.extend_from_slice(&qtype.to_be_bytes());
+        dns.extend_from_slice(&1u16.to_be_bytes());
+
+        let mut pkt = vec![0u8; 28];
+        pkt[0] = 0x45;
+        pkt[2..4].copy_from_slice(&((28 + dns.len()) as u16).to_be_bytes());
+        pkt[8] = 64;
+        pkt[9] = 17;
+        pkt[12..16].copy_from_slice(&[172, 19, 0, 1]);
+        pkt[16..20].copy_from_slice(&[172, 19, 0, 2]);
+        let sum = ipv4_header_checksum(&pkt[..20]);
+        pkt[10..12].copy_from_slice(&sum.to_be_bytes());
+        pkt[20..22].copy_from_slice(&40001u16.to_be_bytes());
+        pkt[22..24].copy_from_slice(&53u16.to_be_bytes());
+        pkt[24..26].copy_from_slice(&((8 + dns.len()) as u16).to_be_bytes());
+        pkt.extend_from_slice(&dns);
+        pkt
+    }
+
+    /// A TXT query — like HTTPS, MX or PTR, not an address — is answered
+    /// through the engine's resolver, so it reaches the nameserver the
+    /// profile names instead of a fixed pool.
+    #[test]
+    fn non_address_queries_use_the_engine_upstreams() {
+        let _serial = SERIAL.lock();
+        let rt = crate::get_runtime();
+        let nameserver = rt.block_on(txt_nameserver());
+        let profile =
+            format!("dns:\n  nameserver: [\"udp://{nameserver}\"]\nrules: [MATCH,DIRECT]\n");
+        let stripped = engine::strip_and_inject(&profile, engine::DnsUpstreams::Profile).unwrap();
+        let config = rt
+            .block_on(meow_config::load_config_from_str(&stripped))
+            .unwrap();
+        *crate::DNS_RESOLVER.write() = Some(Arc::clone(&config.dns.resolver));
+        let fds = start_on_fake_tun();
+        let (_, peer) = fds;
+
+        let query = dns_query_packet("meow-test.invalid", 16);
+        let sent = unsafe { libc::write(peer, query.as_ptr() as *const c_void, query.len()) };
+        assert_eq!(sent, query.len() as isize);
+        let mut pfd = libc::pollfd {
+            fd: peer,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let ready = unsafe { libc::poll(&mut pfd, 1, 5000) };
+        let mut reply = [0u8; 1500];
+        let n = if ready == 1 {
+            unsafe { libc::read(peer, reply.as_mut_ptr() as *mut c_void, reply.len()) }
+        } else {
+            0
+        };
+
+        stop_and_close(fds);
+        *crate::DNS_RESOLVER.write() = None;
+        assert!(n > 28, "no answer to the TXT query");
+        let reply = &reply[..n as usize];
+        assert_eq!(
+            &reply[20..24],
+            &[0, 53, 0x9c, 0x41],
+            "not from :53 to :40001"
+        );
+        assert!(
+            reply[28..]
+                .windows(PROFILE_TXT.len())
+                .any(|w| w == PROFILE_TXT),
+            "the answer did not come from the profile's nameserver"
+        );
     }
 
     /// With the reader asleep on an idle fd, stop() has to wake it rather
