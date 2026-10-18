@@ -1846,8 +1846,8 @@ dependencies = [
 
 [[package]]
 name = "meow-anytls"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1869,8 +1869,8 @@ dependencies = [
 
 [[package]]
 name = "meow-api"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "anyhow",
  "axum",
@@ -1904,8 +1904,8 @@ dependencies = [
 
 [[package]]
 name = "meow-common"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1928,8 +1928,8 @@ dependencies = [
 
 [[package]]
 name = "meow-config"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1958,8 +1958,8 @@ dependencies = [
 
 [[package]]
 name = "meow-dns"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "async-trait",
  "dashmap",
@@ -1984,8 +1984,8 @@ dependencies = [
 
 [[package]]
 name = "meow-proxy"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "aes 0.8.4",
  "argon2",
@@ -2030,8 +2030,8 @@ dependencies = [
 
 [[package]]
 name = "meow-rules"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "ipnet",
  "maxminddb",
@@ -2046,8 +2046,8 @@ dependencies = [
 
 [[package]]
 name = "meow-transport"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "aes 0.9.3",
  "aes-gcm 0.10.3",
@@ -2092,13 +2092,13 @@ dependencies = [
 
 [[package]]
 name = "meow-trie"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 
 [[package]]
 name = "meow-tunnel"
-version = "0.23.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.23.0#d32a8ce8b1a768fd666fe03f9611783d7b5a57cd"
+version = "0.24.0"
+source = "git+https://github.com/meow-rs/meow-rs.git?tag=v0.24.0#b63ec4b5e5403a95a492bab765624a65dc6b96df"
 dependencies = [
  "async-trait",
  "dashmap",
