@@ -154,9 +154,16 @@ class VpnService : BaseVpnService(), BaseService.Interface {
             .setMtu(VPN_MTU)
             .addAddress(PRIVATE_VLAN4_CLIENT, 30)
             .addDnsServer(PRIVATE_VLAN4_ROUTER)
-            .addAddress(PRIVATE_VLAN6_CLIENT, 126)
             .addRoute("0.0.0.0", 0)
-            .addRoute("::", 0)
+        // `ipv6: false` keeps IPv6 off the VPN, as mihomo drops its TUN's IPv6
+        // address. With no IPv6 address or route, Android blocks the family
+        // for the apps the VPN covers, so they fall back to IPv4 at once
+        // instead of reaching DIRECT over IPv6 with an address from their own
+        // DNS.
+        if (data.meowInstance!!.tunIpv6()) {
+            builder.addAddress(PRIVATE_VLAN6_CLIENT, 126)
+                .addRoute("::", 0)
+        }
 
         // Per-app VPN routing — the file store is authoritative: this process
         // caches SharedPreferences for its whole lifetime, so edits saved

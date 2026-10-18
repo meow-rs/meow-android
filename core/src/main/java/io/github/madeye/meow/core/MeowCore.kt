@@ -27,6 +27,11 @@ object MeowCore {
 
     /** The running engine's API secret; empty when it is stopped or has none. */
     external fun nativeApiSecret(): String?
+    /**
+     * Whether the VPN routes IPv6 for the running engine's profile: off only
+     * for an explicit `ipv6: false`, as in mihomo. False when it is stopped.
+     */
+    external fun nativeTunIpv6(): Boolean
     external fun nativeStopEngine()
     external fun nativeStartTun2Socks(vpnService: Any, fd: Int, dnsPort: Int): Int
     external fun nativeIsRunning(): Boolean

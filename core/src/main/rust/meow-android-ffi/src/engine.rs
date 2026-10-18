@@ -161,6 +161,16 @@ pub fn api_secret(profile: Option<String>, minted: Option<String>) -> Option<Str
         .or(minted.filter(|s| !s.is_empty()))
 }
 
+/// Whether the VPN carries IPv6, from the profile's top-level `ipv6:`. Like
+/// mihomo, whose `parseIPV6` drops the TUN's IPv6 address only for an
+/// explicit `ipv6: false` (its `ipv6` defaults to on), an unset key keeps
+/// IPv6 on. The engine's `ipv6` only filters AAAA answers: an app that
+/// brings its own IPv6 address (HTTPDNS, a cached literal) would still
+/// reach DIRECT over IPv6 through a TUN that routes `::/0`.
+pub fn tun_ipv6(raw_ipv6: Option<bool>) -> bool {
+    raw_ipv6.unwrap_or(true)
+}
+
 /// A loaded config, with what a live DNS switch (`live_dns`) rebuilds from.
 #[derive(Debug)]
 pub struct Loaded<T> {
@@ -403,6 +413,16 @@ rules:
         let stripped = strip_and_inject("rules: [MATCH,DIRECT]\n", DnsUpstreams::Builtin).unwrap();
         let config = meow_config::load_config_from_str(&stripped).await.unwrap();
         assert!(config.general.connection_notes);
+    }
+
+    #[tokio::test]
+    async fn the_vpn_carries_ipv6_unless_the_profile_turns_it_off() {
+        for (profile, want) in [("ipv6: false\n", false), ("ipv6: true\n", true), ("", true)] {
+            let yaml = format!("{profile}rules: [MATCH,DIRECT]\n");
+            let stripped = strip_and_inject(&yaml, DnsUpstreams::Builtin).unwrap();
+            let config = meow_config::load_config_from_str(&stripped).await.unwrap();
+            assert_eq!(tun_ipv6(config.raw.ipv6), want, "{profile:?}");
+        }
     }
 
     #[tokio::test]

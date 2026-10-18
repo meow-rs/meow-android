@@ -124,6 +124,9 @@ class MeowInstance(val profile: ClashProfile) {
         Timber.d("MeowInstance: engine started")
     }
 
+    /** Whether the started engine's profile lets the VPN carry IPv6. */
+    fun tunIpv6(): Boolean = MeowCore.nativeTunIpv6()
+
     fun startTun2Socks(vpnService: android.net.VpnService, fd: Int) {
         val result = MeowCore.nativeStartTun2Socks(vpnService, fd, 1053)
         if (result != 0) {

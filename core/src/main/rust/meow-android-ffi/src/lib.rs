@@ -80,6 +80,8 @@ pub(crate) struct EngineState {
     pub(crate) tunnel: Tunnel,
     /// The API server's secret (see `engine::api_secret`); empty for none.
     api_secret: String,
+    /// Whether the VPN routes IPv6 into the TUN (see `engine::tun_ipv6`).
+    tun_ipv6: bool,
     /// What Settings' "Built-in DNS" switch rebuilds the resolver from.
     pub(crate) live_dns: Arc<live_dns::LiveDns>,
     _handles: Vec<tokio::task::JoinHandle<()>>,
@@ -300,6 +302,7 @@ async fn start_engine_async(
     }
     config.api.secret = engine::api_secret(config.api.secret.take(), secret);
     let api_secret = config.api.secret.clone().unwrap_or_default();
+    let tun_ipv6 = engine::tun_ipv6(config.raw.ipv6);
     // The app's route-mode picker outlives a session, so its pick replaces
     // the profile's `mode:`. `raw` is what `GET /configs` echoes back.
     if let Some(mode) = mode {
@@ -418,6 +421,7 @@ async fn start_engine_async(
     Ok(EngineState {
         tunnel,
         api_secret,
+        tun_ipv6,
         live_dns,
         _handles: handles,
     })
@@ -709,6 +713,20 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeApiSecret(
     env.new_string(&secret)
         .map(|s| s.into_raw())
         .unwrap_or(std::ptr::null_mut())
+}
+
+/// Whether `VpnService` routes IPv6 into the TUN for the running engine's
+/// profile (see `engine::tun_ipv6`); false when the engine is stopped.
+#[no_mangle]
+pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeTunIpv6(
+    _env: JNIEnv,
+    _class: JClass,
+) -> jboolean {
+    if ENGINE.lock().as_ref().is_some_and(|s| s.tun_ipv6) {
+        JNI_TRUE
+    } else {
+        JNI_FALSE
+    }
 }
 
 /// What Settings shows as the engine version; `build.rs` reads the release
