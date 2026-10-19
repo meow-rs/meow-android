@@ -320,8 +320,9 @@
     <string name="logbook_kind_geodata_update">Geodata Update</string>
     <string name="logbook_kind_listener_start">Listener Start</string>
     <string name="logbook_kind_network_interface">Outbound Interface</string>
-    <string name="logbook_kind_group_health">Group Health</string>
     <string name="logbook_kind_group_switch">Group Switch</string>
+    <string name="logbook_kind_dialer_proxy_switch">Dialer Proxy Switch</string>
+    <string name="logbook_kind_dialer_proxy_check">Dialer Proxy Check</string>
     <string name="logbook_search">Search events…</string>
     <string name="logbook_search_empty">No events match “%1$s”</string>
     <string name="logbook_filter">Filter events</string>

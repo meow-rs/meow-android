@@ -309,8 +309,9 @@
     <string name="logbook_kind_geodata_update">ပထဝီဒေတာ အပ်ဒိတ်</string>
     <string name="logbook_kind_listener_start">Listener စတင်ခြင်း</string>
     <string name="logbook_kind_network_interface">အထွက် အင်တာဖေ့စ်</string>
-    <string name="logbook_kind_group_health">အုပ်စု ကျန်းမာရေး</string>
     <string name="logbook_kind_group_switch">အုပ်စု ပြောင်းခြင်း</string>
+    <string name="logbook_kind_dialer_proxy_switch">ကြားခံ ပရောက်စီ ပြောင်းခြင်း</string>
+    <string name="logbook_kind_dialer_proxy_check">ကြားခံ ပရောက်စီ စစ်ဆေးခြင်း</string>
     <string name="logbook_search">ဖြစ်ရပ်များ ရှာရန်…</string>
     <string name="logbook_search_empty">“%1$s” နှင့် ကိုက်ညီသော ဖြစ်ရပ် မရှိပါ</string>
     <string name="logbook_filter">ဖြစ်ရပ်များ စစ်ထုတ်ရန်</string>

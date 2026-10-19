@@ -317,8 +317,9 @@
     <string name="logbook_kind_geodata_update">به‌روزرسانی داده‌های جغرافیایی</string>
     <string name="logbook_kind_listener_start">راه‌اندازی شنونده</string>
     <string name="logbook_kind_network_interface">رابط خروجی</string>
-    <string name="logbook_kind_group_health">سلامت گروه</string>
     <string name="logbook_kind_group_switch">تعویض گروه</string>
+    <string name="logbook_kind_dialer_proxy_switch">تعویض پراکسی واسط</string>
+    <string name="logbook_kind_dialer_proxy_check">بررسی پراکسی واسط</string>
     <string name="logbook_search">جستجوی رویدادها…</string>
     <string name="logbook_search_empty">رویدادی با «\u2068%1$s\u2069» پیدا نشد</string>
     <string name="logbook_filter">فیلتر رویدادها</string>

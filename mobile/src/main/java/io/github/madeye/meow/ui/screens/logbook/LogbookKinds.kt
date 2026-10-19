@@ -9,13 +9,14 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lan
-import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewList
@@ -33,7 +34,7 @@ data class LogbookKind(@StringRes val label: Int, val icon: ImageVector)
  * under its level's icon.
  */
 object LogbookKinds {
-    /** Every kind, in the filter menu's order: the engine, its config and sources, then groups and the network. */
+    /** Every kind, in the filter menu's order: the engine, its config and sources, then groups, chains and the network. */
     val all: Map<String, LogbookKind> = linkedMapOf(
         "engine.start" to LogbookKind(R.string.logbook_kind_engine_start, Icons.Filled.PlayCircle),
         "engine.stop" to LogbookKind(R.string.logbook_kind_engine_stop, Icons.Filled.StopCircle),
@@ -44,8 +45,9 @@ object LogbookKinds {
         "proxy-provider.update" to LogbookKind(R.string.logbook_kind_proxy_provider_update, Icons.Filled.Hub),
         "rule-provider.update" to LogbookKind(R.string.logbook_kind_rule_provider_update, Icons.Filled.ViewList),
         "geodata.update" to LogbookKind(R.string.logbook_kind_geodata_update, Icons.Filled.Public),
-        "group.health" to LogbookKind(R.string.logbook_kind_group_health, Icons.Filled.MonitorHeart),
         "group.switch" to LogbookKind(R.string.logbook_kind_group_switch, Icons.Filled.AltRoute),
+        "dialer-proxy.switch" to LogbookKind(R.string.logbook_kind_dialer_proxy_switch, Icons.Filled.SwapHoriz),
+        "dialer-proxy.check" to LogbookKind(R.string.logbook_kind_dialer_proxy_check, Icons.Filled.NetworkCheck),
         "network.interface" to LogbookKind(R.string.logbook_kind_network_interface, Icons.Filled.SettingsEthernet),
         "listener.start" to LogbookKind(R.string.logbook_kind_listener_start, Icons.Filled.Lan),
         "logbook.cleared" to LogbookKind(R.string.logbook_kind_logbook_cleared, Icons.Filled.DeleteSweep),

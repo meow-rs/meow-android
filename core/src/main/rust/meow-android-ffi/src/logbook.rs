@@ -168,7 +168,7 @@ mod tests {
             ["third", "second", "first"]
         );
         assert_eq!(
-            messages(&of_kind(&home.path(), 0, 0, 0, "", "group.health")),
+            messages(&of_kind(&home.path(), 0, 0, 0, "", "dialer-proxy.switch")),
             Vec::<&str>::new()
         );
 

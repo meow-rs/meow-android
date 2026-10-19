@@ -309,8 +309,9 @@
     <string name="logbook_kind_geodata_update">Coğrafi veri güncellemesi</string>
     <string name="logbook_kind_listener_start">Dinleyici başlatma</string>
     <string name="logbook_kind_network_interface">Giden arayüz</string>
-    <string name="logbook_kind_group_health">Grup durumu</string>
     <string name="logbook_kind_group_switch">Grup geçişi</string>
+    <string name="logbook_kind_dialer_proxy_switch">Ön proxy geçişi</string>
+    <string name="logbook_kind_dialer_proxy_check">Ön proxy denetimi</string>
     <string name="logbook_search">Olay ara…</string>
     <string name="logbook_search_empty">“%1$s” ile eşleşen olay yok</string>
     <string name="logbook_filter">Olayları filtrele</string>

@@ -274,7 +274,7 @@ class LogbookViewModelTest {
     @Test
     fun `an event and a search narrow each other, from one read of the logbook`() = runTest {
         write("now on HK 02", kind = "group.switch", subject = "Auto")
-        write("Auto is down", kind = "group.health", subject = "Auto")
+        write("Auto is down", kind = "dialer-proxy.check", subject = "Auto")
         write("reloaded")
         val vm = viewModel()
 

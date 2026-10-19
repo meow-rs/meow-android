@@ -304,8 +304,9 @@
     <string name="logbook_kind_geodata_update">Cập nhật dữ liệu địa lý</string>
     <string name="logbook_kind_listener_start">Khởi động cổng nghe</string>
     <string name="logbook_kind_network_interface">Giao diện mạng đi</string>
-    <string name="logbook_kind_group_health">Tình trạng nhóm</string>
     <string name="logbook_kind_group_switch">Chuyển nhóm</string>
+    <string name="logbook_kind_dialer_proxy_switch">Chuyển proxy trung gian</string>
+    <string name="logbook_kind_dialer_proxy_check">Kiểm tra proxy trung gian</string>
     <string name="logbook_search">Tìm sự kiện…</string>
     <string name="logbook_search_empty">Không có sự kiện nào khớp với “%1$s”</string>
     <string name="logbook_filter">Lọc sự kiện</string>
