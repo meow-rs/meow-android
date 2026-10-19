@@ -33,6 +33,7 @@ import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
 import io.github.madeye.meow.ui.screens.home.RouteChanges
 import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
+import io.github.madeye.meow.ui.screens.logbook.LogbookKinds
 import io.github.madeye.meow.ui.screens.logbook.LogbookViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
@@ -201,7 +202,10 @@ object AppGraph {
                     proxyTraffic = api::proxyTraffic,
                 )
                 LogsViewModel::class.java -> LogsViewModel(api)
-                LogbookViewModel::class.java -> LogbookViewModel(read = logbookReader::read)
+                LogbookViewModel::class.java -> LogbookViewModel(
+                    read = { before, since, limit -> logbookReader.read(before, since, limit) },
+                    kindLabel = { kind -> LogbookKinds.of(kind)?.let { appContext.getString(it.label) } },
+                )
 
                 else -> error("unknown ViewModel: ${modelClass.name}")
             } as T

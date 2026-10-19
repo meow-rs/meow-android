@@ -15,17 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,14 +29,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.logbook.LogbookEntry
@@ -58,14 +53,11 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.serialization.json.JsonPrimitive
 
-/** The filters, lowest level shown: everything, warnings and errors, errors. */
-private val FILTERS = listOf(null, LogbookLevel.Warning, LogbookLevel.Error)
-
 @Composable
 fun LogbookScreen(
     state: LogbookUiState,
     contentPadding: PaddingValues,
-    onLevelChange: (LogbookLevel?) -> Unit,
+    onQueryChange: (String) -> Unit,
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,35 +66,21 @@ fun LogbookScreen(
             .fillMaxSize()
             .padding(top = contentPadding.calculateTopPadding()),
     ) {
-        SingleChoiceSegmentedButtonRow(
+        OutlinedTextField(
+            value = state.query,
+            onValueChange = onQueryChange,
+            placeholder = { Text(stringResource(R.string.logbook_search)) },
+            singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .testTag("logbook_filter"),
-        ) {
-            FILTERS.forEachIndexed { index, level ->
-                SegmentedButton(
-                    selected = state.level == level,
-                    onClick = { onLevelChange(level) },
-                    shape = SegmentedButtonDefaults.itemShape(index, FILTERS.size),
-                ) {
-                    Text(
-                        stringResource(
-                            when (level) {
-                                null -> R.string.logbook_level_all
-                                LogbookLevel.Warning -> R.string.logbook_level_warning
-                                else -> R.string.logbook_level_error
-                            },
-                        ),
-                    )
-                }
-            }
-        }
+                .testTag("logbook_search"),
+        )
         Spacer(Modifier.height(8.dp))
 
         if (!state.loaded) return@Column
         if (state.entries.isEmpty()) {
-            Empty(state.error, Modifier.padding(bottom = contentPadding.calculateBottomPadding()))
+            Empty(state.error, state.search, Modifier.padding(bottom = contentPadding.calculateBottomPadding()))
             return@Column
         }
 
@@ -116,14 +94,15 @@ fun LogbookScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // A day header above the first entry of each day.
+            // A day header above the first entry of each day, keyed by that
+            // entry: a clock set back can bring a day round twice.
             var day: LocalDate? = null
             for (entry in state.entries) {
                 val millis = epochMillis(entry.time)
                 val entryDay = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
                 if (entryDay != day) {
                     day = entryDay
-                    item(key = "day-$entryDay", contentType = "day") { DayHeader(millis) }
+                    item(key = "day-${entry.id}", contentType = "day") { DayHeader(millis) }
                 }
                 item(key = entry.id, contentType = "entry") { EntryCard(entry, millis) }
             }
@@ -140,23 +119,23 @@ fun LogbookScreen(
 }
 
 @Composable
-private fun Empty(error: String?, modifier: Modifier = Modifier) {
+private fun Empty(error: String?, search: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize().padding(horizontal = 32.dp).testTag("logbook_empty"),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (error == null) {
-                    stringResource(R.string.logbook_empty)
-                } else {
-                    stringResource(R.string.logbook_read_failed, error)
+                text = when {
+                    error != null -> stringResource(R.string.logbook_read_failed, error)
+                    search.isNotEmpty() -> stringResource(R.string.logbook_search_empty, search)
+                    else -> stringResource(R.string.logbook_empty)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.meow.mutedText,
                 textAlign = TextAlign.Center,
             )
-            if (error == null) {
+            if (error == null && search.isEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.logbook_empty_hint),
@@ -183,12 +162,21 @@ private fun DayHeader(epochMillis: Long) {
     SectionHeader(label, Modifier.padding(top = 8.dp))
 }
 
-/** One entry; a tap shows its times in full and the details the engine recorded. */
+/**
+ * One entry, drawn as its kind of event and tinted by how it went; a tap
+ * shows its times in full and the details the engine recorded.
+ */
 @Composable
 private fun EntryCard(entry: LogbookEntry, epochMillis: Long) {
     val colors = MaterialTheme.meow
     var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
-    val (icon, tint) = levelIcon(entry.level)
+    val kind = LogbookKinds.of(entry.kind)
+    val label = kind?.let { stringResource(it.label) } ?: entry.kind
+    val tint = when (entry.level) {
+        LogbookLevel.Info -> colors.accent
+        LogbookLevel.Warning -> colors.warning
+        LogbookLevel.Error -> colors.danger
+    }
 
     GlassCard(
         modifier = Modifier.fillMaxWidth().testTag("logbook_entry"),
@@ -196,18 +184,27 @@ private fun EntryCard(entry: LogbookEntry, epochMillis: Long) {
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Icon(icon, contentDescription = entry.level.wire, tint = tint, modifier = Modifier.size(18.dp))
+            Icon(
+                imageVector = kind?.icon ?: LogbookKinds.fallbackIcon(entry.level),
+                // The label next to it already names the event.
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp),
+            )
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // "group.switch · Auto": what kind of event, and what about.
+                    // "Group Switch · Auto": what happened, and to what.
                     Text(
-                        text = listOf(entry.kind, entry.subject).filter { it.isNotEmpty() }.joinToString(" · "),
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(color = tint, fontWeight = FontWeight.SemiBold)) { append(label) }
+                            if (entry.subject.isNotEmpty()) append(" · ${entry.subject}")
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = colors.mutedText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).testTag("logbook_kind"),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -246,16 +243,6 @@ private fun Details(entry: LogbookEntry) {
             val text = (value as? JsonPrimitive)?.content ?: value.toString()
             Text("$key: $text", style = style, color = muted)
         }
-    }
-}
-
-@Composable
-private fun levelIcon(level: LogbookLevel): Pair<ImageVector, Color> {
-    val colors = MaterialTheme.meow
-    return when (level) {
-        LogbookLevel.Info -> Icons.Filled.Info to colors.accent
-        LogbookLevel.Warning -> Icons.Filled.Warning to colors.warning
-        LogbookLevel.Error -> Icons.Filled.Error to colors.danger
     }
 }
 

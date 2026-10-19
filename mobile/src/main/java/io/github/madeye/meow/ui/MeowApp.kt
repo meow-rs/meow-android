@@ -1126,7 +1126,7 @@ private fun LogbookRoute(onBack: () -> Unit) {
         LogbookScreen(
             state = state,
             contentPadding = padding,
-            onLevelChange = viewModel::onLevelChange,
+            onQueryChange = viewModel::onQueryChange,
             onLoadMore = viewModel::loadMore,
         )
     }
