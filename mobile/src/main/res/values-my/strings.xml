@@ -292,6 +292,17 @@
     <string name="statistics_policies">မူဝါဒများ</string>
     <string name="statistics_total">စုစုပေါင်း %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">ဖြစ်ရပ်မှတ်တမ်း</string>
+    <string name="logbook_empty">မှတ်တမ်းတင်ထားခြင်း မရှိသေးပါ</string>
+    <string name="logbook_empty_hint">Engine စတင်ခြင်းနှင့် ရပ်တန့်ခြင်း၊ ပုံမှန်မဟုတ်သော ထွက်ခြင်း၊ ပြင်ဆင်မှုနှင့် ပံ့ပိုးသူ မအောင်မြင်မှုများ၊ ပရောက်စီအုပ်စု ပြောင်းလဲမှုများကို ဤနေရာတွင် တစ်ပတ် သိမ်းထားသည်။</string>
+    <string name="logbook_level_all">အားလုံး</string>
+    <string name="logbook_level_warning">သတိပေးချက်များ</string>
+    <string name="logbook_level_error">အမှားများ</string>
+    <string name="logbook_first">ပထမဆုံး</string>
+    <string name="logbook_last">နောက်ဆုံး</string>
+    <string name="logbook_read_failed">ဖြစ်ရပ်မှတ်တမ်းကို ဖတ်၍မရပါ- %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">အက်ပ်အလိုက် ပရောက်စီ</string>
     <string name="perapp_desc">VPN သုံးမည့် အက်ပ်များကို ရွေးပါ</string>

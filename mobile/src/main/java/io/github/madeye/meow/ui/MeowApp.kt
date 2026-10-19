@@ -71,6 +71,8 @@ import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeScreen
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
+import io.github.madeye.meow.ui.screens.logbook.LogbookScreen
+import io.github.madeye.meow.ui.screens.logbook.LogbookViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsActions
 import io.github.madeye.meow.ui.screens.logs.LogsScreen
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
@@ -223,6 +225,7 @@ private fun MeowNavHost(
                 onLogs = { navController.navigate(Dest.Logs) },
                 onDns = { navController.navigate(Dest.Dns) },
                 onStatistics = { navController.navigate(Dest.Statistics) },
+                onLogbook = { navController.navigate(Dest.Logbook) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
@@ -284,6 +287,7 @@ private fun MeowNavHost(
         composable<Dest.Logs> { LogsRoute(onBack = navController::popBackStack) }
         composable<Dest.Dns> { DnsRoute(onBack = navController::popBackStack) }
         composable<Dest.Statistics> { StatisticsRoute(onBack = navController::popBackStack) }
+        composable<Dest.Logbook> { LogbookRoute(onBack = navController::popBackStack) }
         composable<Dest.ProxyDetail> { ProxyDetailRoute(onBack = navController::popBackStack) }
     }
 
@@ -675,6 +679,7 @@ private fun UtilityRoute(
     onLogs: () -> Unit,
     onDns: () -> Unit,
     onStatistics: () -> Unit,
+    onLogbook: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val vpnState by AppGraph.vpn.state.collectAsStateWithLifecycle()
@@ -688,6 +693,7 @@ private fun UtilityRoute(
             onTraffic = onTraffic,
             onStatistics = onStatistics,
             onLogs = onLogs,
+            onLogbook = onLogbook,
         )
     }
 }
@@ -1105,6 +1111,24 @@ private fun DnsRoute(onBack: () -> Unit) {
         navigationIcon = { BackButton(onBack) },
     ) { padding ->
         DnsScreen(state = state, contentPadding = padding, onQueryChange = viewModel::onQueryChange)
+    }
+}
+
+@Composable
+private fun LogbookRoute(onBack: () -> Unit) {
+    val viewModel: LogbookViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    MeowScaffold(
+        title = stringResource(R.string.logbook_title),
+        navigationIcon = { BackButton(onBack) },
+    ) { padding ->
+        LogbookScreen(
+            state = state,
+            contentPadding = padding,
+            onLevelChange = viewModel::onLevelChange,
+            onLoadMore = viewModel::loadMore,
+        )
     }
 }
 

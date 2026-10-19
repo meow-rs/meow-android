@@ -292,6 +292,17 @@
     <string name="statistics_policies">Politikalar</string>
     <string name="statistics_total">Toplam %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">Olay Günlüğü</string>
+    <string name="logbook_empty">Henüz kayıt yok</string>
+    <string name="logbook_empty_hint">Çekirdeğin başlatılıp durdurulması, beklenmedik kapanmalar, yapılandırma ve sağlayıcı hataları ile proxy grubu geçişleri burada bir hafta saklanır.</string>
+    <string name="logbook_level_all">Tümü</string>
+    <string name="logbook_level_warning">Uyarılar</string>
+    <string name="logbook_level_error">Hatalar</string>
+    <string name="logbook_first">İlk</string>
+    <string name="logbook_last">Son</string>
+    <string name="logbook_read_failed">Olay günlüğü okunamadı: %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Uygulama bazlı proxy</string>
     <string name="perapp_desc">VPN kullanacak uygulamaları seçin</string>

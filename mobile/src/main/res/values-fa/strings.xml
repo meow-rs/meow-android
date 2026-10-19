@@ -300,6 +300,17 @@
     <string name="statistics_policies">سیاست‌ها</string>
     <string name="statistics_total">مجموع \u2068%1$s\u2069</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">دفتر رویدادها</string>
+    <string name="logbook_empty">هنوز چیزی ثبت نشده است</string>
+    <string name="logbook_empty_hint">راه‌اندازی و توقف هسته، خروج‌های ناهنجار، خطاهای پیکربندی و ارائه‌دهنده و تغییر گروه‌های پراکسی به مدت یک هفته اینجا نگه داشته می‌شوند.</string>
+    <string name="logbook_level_all">همه</string>
+    <string name="logbook_level_warning">هشدارها</string>
+    <string name="logbook_level_error">خطاها</string>
+    <string name="logbook_first">نخستین بار</string>
+    <string name="logbook_last">آخرین بار</string>
+    <string name="logbook_read_failed">خواندن دفتر رویدادها ممکن نشد: \u2068%1$s\u2069</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">پروکسی به تفکیک برنامه</string>
     <string name="perapp_desc">انتخاب کنید کدام برنامه‌ها از VPN استفاده کنند</string>

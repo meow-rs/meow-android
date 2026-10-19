@@ -10,6 +10,7 @@ import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.bg.MeowInstance
 import io.github.madeye.meow.net.ExitIpLookup
+import io.github.madeye.meow.logbook.LogbookReader
 import io.github.madeye.meow.net.IpGeoLookup
 import io.github.madeye.meow.net.ProxyProber
 import io.github.madeye.meow.preference.ApiSecretStore
@@ -32,6 +33,7 @@ import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
 import io.github.madeye.meow.ui.screens.home.RouteChanges
 import io.github.madeye.meow.ui.screens.home.defaultNetworkIsVpn
+import io.github.madeye.meow.ui.screens.logbook.LogbookViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsViewModel
 import io.github.madeye.meow.ui.screens.perapp.PerAppProxyViewModel
 import io.github.madeye.meow.ui.nav.Dest
@@ -92,6 +94,7 @@ object AppGraph {
     }
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
     val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
+    val logbookReader: LogbookReader by lazy { LogbookReader { MeowInstance.homeDir(appContext) } }
 
     /** A proxy detail page's tests, run in `:vpn` over the activity's binding. */
     val proxyProber: ProxyProber by lazy { ProxyProber(vpn) }
@@ -198,6 +201,7 @@ object AppGraph {
                     proxyTraffic = api::proxyTraffic,
                 )
                 LogsViewModel::class.java -> LogsViewModel(api)
+                LogbookViewModel::class.java -> LogbookViewModel(read = logbookReader::read)
 
                 else -> error("unknown ViewModel: ${modelClass.name}")
             } as T

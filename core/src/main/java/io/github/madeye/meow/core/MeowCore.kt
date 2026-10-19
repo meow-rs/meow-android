@@ -59,4 +59,15 @@ object MeowCore {
      * JVM could not take the answer.
      */
     external fun nativeLookupIp(dir: String, ip: String): String?
+
+    /**
+     * A page of the engine's logbook in [dir] (the engine home), newest
+     * first: `{"entries": [...], "rev": 7, "more": true}`, or
+     * `{"error": "…"}`. [before] pages back from an entry id, [since] polls
+     * for what was written after a page's `rev`, 0 leaving either unset;
+     * [limit] 0 is the engine's default page; [level] is the lowest level
+     * returned, empty for all. Read-only and offline: needs no running
+     * engine. Null only when the JVM could not take the answer.
+     */
+    external fun nativeReadLogbook(dir: String, before: Long, since: Long, limit: Int, level: String): String?
 }

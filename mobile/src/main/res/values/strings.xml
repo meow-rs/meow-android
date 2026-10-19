@@ -303,6 +303,17 @@
     <string name="statistics_policies">Policies</string>
     <string name="statistics_total">Total %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">Logbook</string>
+    <string name="logbook_empty">Nothing recorded yet</string>
+    <string name="logbook_empty_hint">Engine starts and stops, unclean exits, config and provider failures, and proxy group switches are kept here for a week.</string>
+    <string name="logbook_level_all">All</string>
+    <string name="logbook_level_warning">Warnings</string>
+    <string name="logbook_level_error">Errors</string>
+    <string name="logbook_first">First</string>
+    <string name="logbook_last">Last</string>
+    <string name="logbook_read_failed">Could not read the logbook: %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Per-App Proxy</string>
     <string name="perapp_desc">Select which apps use the VPN</string>

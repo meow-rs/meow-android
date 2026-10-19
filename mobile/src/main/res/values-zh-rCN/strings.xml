@@ -287,6 +287,17 @@
     <string name="statistics_policies">策略</string>
     <string name="statistics_total">总计 %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">事件记录</string>
+    <string name="logbook_empty">暂无记录</string>
+    <string name="logbook_empty_hint">内核的启动与停止、异常退出、配置与订阅失败、策略组切换都会在这里保留一周。</string>
+    <string name="logbook_level_all">全部</string>
+    <string name="logbook_level_warning">警告</string>
+    <string name="logbook_level_error">错误</string>
+    <string name="logbook_first">首次</string>
+    <string name="logbook_last">最近</string>
+    <string name="logbook_read_failed">无法读取事件记录：%1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">分应用代理</string>
     <string name="perapp_desc">选择哪些应用使用 VPN</string>

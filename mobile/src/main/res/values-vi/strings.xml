@@ -287,6 +287,17 @@
     <string name="statistics_policies">Chính sách</string>
     <string name="statistics_total">Tổng %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">Nhật ký sự kiện</string>
+    <string name="logbook_empty">Chưa có bản ghi nào</string>
+    <string name="logbook_empty_hint">Các lần khởi động và dừng lõi, lần thoát bất thường, lỗi cấu hình và nhà cung cấp, cùng các lần chuyển nhóm proxy được lưu tại đây trong một tuần.</string>
+    <string name="logbook_level_all">Tất cả</string>
+    <string name="logbook_level_warning">Cảnh báo</string>
+    <string name="logbook_level_error">Lỗi</string>
+    <string name="logbook_first">Lần đầu</string>
+    <string name="logbook_last">Lần cuối</string>
+    <string name="logbook_read_failed">Không đọc được nhật ký sự kiện: %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Proxy theo ứng dụng</string>
     <string name="perapp_desc">Chọn những ứng dụng sẽ dùng VPN</string>

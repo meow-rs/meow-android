@@ -50,6 +50,8 @@ sealed interface Dest {
 
     @Serializable data object Statistics : Dest
 
+    @Serializable data object Logbook : Dest
+
     /** [testUrl]: the health-check URL of the group the node was opened from, if it has one. */
     @Serializable data class ProxyDetail(val name: String, val testUrl: String? = null) : Dest
 }

@@ -324,6 +324,17 @@
     <string name="statistics_policies">السياسات</string>
     <string name="statistics_total">الإجمالي \u2068%1$s\u2069</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">سجل الأحداث</string>
+    <string name="logbook_empty">لم يُسجَّل شيء بعد</string>
+    <string name="logbook_empty_hint">تُحفظ هنا لمدة أسبوع عمليات تشغيل النواة وإيقافها، وحالات الخروج غير السليم، وإخفاقات الإعدادات والمزوّدين، وتبديلات مجموعات الوكيل.</string>
+    <string name="logbook_level_all">الكل</string>
+    <string name="logbook_level_warning">التحذيرات</string>
+    <string name="logbook_level_error">الأخطاء</string>
+    <string name="logbook_first">أول مرة</string>
+    <string name="logbook_last">آخر مرة</string>
+    <string name="logbook_read_failed">تعذّرت قراءة سجل الأحداث: \u2068%1$s\u2069</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">بروكسي لكل تطبيق</string>
     <string name="perapp_desc">حدِّد التطبيقات التي تستخدم VPN</string>

@@ -17,6 +17,7 @@ mod diagnostics;
 mod engine;
 mod ip_info;
 mod live_dns;
+mod logbook;
 mod logging;
 mod owner;
 mod probe;
@@ -223,6 +224,9 @@ fn start_engine(
         }
         Err(e) => {
             logging::bridge_log(&format!("start_engine: ERROR: {}", e));
+            meow_common::logbook::engine_stopped(meow_common::logbook::Stop::Failed(&format!(
+                "{e:#}"
+            )));
             set_error(format!("start proxy: {}", e));
             -1
         }
@@ -269,6 +273,11 @@ async fn start_engine_async(
             logging::bridge_log(&format!(
                 "start_engine_async: loading config from {path}, DNS upstreams: {dns:?}"
             ));
+            // The logbook opens under the engine home (`XDG_CONFIG_HOME`,
+            // set above) before the load, so the load's own events — a
+            // provider that fails to fetch — are recorded.
+            let profile = std::fs::read_to_string(path).unwrap_or_default();
+            meow_common::logbook::apply(engine::logbook_enabled(&profile));
             let stripped_path = engine::sibling_stripped_path(path);
             (
                 engine::load_stripped_config(path, dns).await?,
@@ -277,6 +286,7 @@ async fn start_engine_async(
         }
         _ => {
             logging::bridge_log("start_engine_async: using minimal config");
+            meow_common::logbook::apply(true);
             let stripped = engine::strip_and_inject(MINIMAL_CONFIG, engine::DnsUpstreams::Builtin)?;
             let loaded = engine::Loaded {
                 config: meow_config::load_config_from_str(&stripped).await?,
@@ -285,6 +295,11 @@ async fn start_engine_async(
             };
             (loaded, None)
         }
+    };
+    // What the logbook's start entry names.
+    let config_source = match (&loaded_from, config_path) {
+        (Some(_), Some(path)) => path,
+        _ => "built-in config".to_owned(),
     };
     let engine::Loaded {
         mut config,
@@ -418,6 +433,8 @@ async fn start_engine_async(
         "start_engine_async: all tasks spawned, handles={}",
         handles.len()
     ));
+    // Last: a start that fails from here on is recorded as a failed stop.
+    meow_common::logbook::engine_started(&config_source);
     Ok(EngineState {
         tunnel,
         api_secret,
@@ -583,6 +600,7 @@ fn stop_engine() {
         for handle in state._handles {
             handle.abort();
         }
+        meow_common::logbook::engine_stopped(meow_common::logbook::Stop::Requested("app"));
     }
 }
 

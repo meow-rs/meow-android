@@ -302,6 +302,17 @@
     <string name="statistics_policies">Политики</string>
     <string name="statistics_total">Всего %1$s</string>
 
+    <!-- Logbook -->
+    <string name="logbook_title">Журнал событий</string>
+    <string name="logbook_empty">Пока ничего не записано</string>
+    <string name="logbook_empty_hint">Запуски и остановки ядра, аварийные завершения, ошибки конфигурации и провайдеров, переключения групп прокси хранятся здесь неделю.</string>
+    <string name="logbook_level_all">Все</string>
+    <string name="logbook_level_warning">Предупреждения</string>
+    <string name="logbook_level_error">Ошибки</string>
+    <string name="logbook_first">Впервые</string>
+    <string name="logbook_last">Последний раз</string>
+    <string name="logbook_read_failed">Не удалось прочитать журнал событий: %1$s</string>
+
     <!-- Per-app proxy -->
     <string name="perapp_title">Прокси для приложений</string>
     <string name="perapp_desc">Выберите, какие приложения используют VPN</string>

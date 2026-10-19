@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -28,10 +29,11 @@ import io.github.madeye.meow.ui.theme.meow
  * The Utility tab, modelled on meow-ios's: one card of entry points to the
  * monitoring screens, most-used first.
  *
- * Traffic reads the app's own history, so it is always open. Connections,
- * DNS and Logs read the engine's controller API, and Statistics the running
- * session, so — as when Connections and Logs lived in Settings — they are
- * only reachable while it is listening.
+ * Traffic reads the app's own history, and Logbook the engine's record on
+ * disk, so they are always open. Connections, DNS and Logs read the engine's
+ * controller API, and Statistics the running session, so — as when
+ * Connections and Logs lived in Settings — they are only reachable while it
+ * is listening.
  */
 @Composable
 fun UtilityScreen(
@@ -42,6 +44,7 @@ fun UtilityScreen(
     onTraffic: () -> Unit,
     onStatistics: () -> Unit,
     onLogs: () -> Unit,
+    onLogbook: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val offlineHint = stringResource(R.string.settings_engine_offline)
@@ -98,6 +101,13 @@ fun UtilityScreen(
                 modifier = Modifier.testTag("utility_logs"),
                 enabled = engineOnline,
                 subtitle = offlineHint.takeUnless { engineOnline },
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
+            NavRow(
+                title = stringResource(R.string.logbook_title),
+                icon = Icons.Filled.Book,
+                onClick = onLogbook,
+                modifier = Modifier.testTag("utility_logbook"),
             )
         }
     }

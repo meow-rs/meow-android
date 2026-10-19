@@ -171,6 +171,19 @@ pub fn tun_ipv6(raw_ipv6: Option<bool>) -> bool {
     raw_ipv6.unwrap_or(true)
 }
 
+/// The profile's `logbook.enable`, on unless it says otherwise — also when
+/// the YAML does not parse, so the failed load is recorded.
+pub fn logbook_enabled(yaml: &str) -> bool {
+    #[derive(serde::Deserialize)]
+    struct Profile {
+        logbook: Option<meow_config::raw::RawLogbook>,
+    }
+    let logbook = serde_yaml::from_str::<Profile>(yaml)
+        .ok()
+        .and_then(|profile| profile.logbook);
+    meow_config::raw::RawLogbook::enabled(logbook.as_ref())
+}
+
 /// A loaded config, with what a live DNS switch (`live_dns`) rebuilds from.
 #[derive(Debug)]
 pub struct Loaded<T> {
@@ -406,6 +419,15 @@ rules:
         assert_eq!(api_secret(s(""), s("minted")), s("minted"));
         assert_eq!(api_secret(None, s("")), None);
         assert_eq!(api_secret(None, None), None);
+    }
+
+    #[test]
+    fn the_logbook_is_on_unless_the_profile_turns_it_off() {
+        assert!(logbook_enabled("rules: [MATCH,DIRECT]\n"));
+        assert!(logbook_enabled("logbook: {}\n"));
+        assert!(logbook_enabled("logbook:\n  enable: true\n"));
+        assert!(!logbook_enabled("mode: rule\nlogbook:\n  enable: false\n"));
+        assert!(logbook_enabled("proxies: [\n"), "an unparsable profile");
     }
 
     #[tokio::test]

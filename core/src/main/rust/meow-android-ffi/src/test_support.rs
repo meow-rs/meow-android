@@ -4,7 +4,8 @@ use parking_lot::Mutex;
 use std::net::SocketAddr;
 
 /// Held by every test that touches the process-wide engine state: the
-/// tun2socks session, `ENGINE`, `HOME_DIR` and `DNS_RESOLVER`.
+/// tun2socks session, `ENGINE`, `HOME_DIR`, `DNS_RESOLVER` and the
+/// installed logbook.
 pub(crate) static SERIAL: Mutex<()> = Mutex::new(());
 
 /// What [`txt_nameserver`] answers every query with.

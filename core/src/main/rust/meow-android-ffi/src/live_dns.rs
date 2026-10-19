@@ -188,11 +188,14 @@ mod tests {
                 let _ = std::fs::remove_dir_all(&self.0);
             }
         }
-        let home = std::env::temp_dir().join(format!("meow-{name}-{}", std::process::id()));
+        // `<dir>/meow`, as the app's `no_backup/meow`: the engine takes the
+        // parent for `XDG_CONFIG_HOME`, and keeps its logbook under the home.
+        let dir = std::env::temp_dir().join(format!("meow-{name}-{}", std::process::id()));
+        let home = dir.join("meow");
         std::fs::create_dir_all(&home).unwrap();
         std::fs::write(home.join("config.yaml"), profile).unwrap();
         *crate::HOME_DIR.lock() = Some(home.to_str().unwrap().to_string());
-        let running = Running(home);
+        let running = Running(dir);
         assert_eq!(
             crate::start_engine(None, None, None, upstreams),
             0,
