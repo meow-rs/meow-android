@@ -15,8 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -29,9 +37,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -80,7 +91,12 @@ fun LogbookScreen(
 
         if (!state.loaded) return@Column
         if (state.entries.isEmpty()) {
-            Empty(state.error, state.search, Modifier.padding(bottom = contentPadding.calculateBottomPadding()))
+            Empty(
+                error = state.error,
+                search = state.search,
+                kind = state.kind,
+                modifier = Modifier.padding(bottom = contentPadding.calculateBottomPadding()),
+            )
             return@Column
         }
 
@@ -118,8 +134,57 @@ fun LogbookScreen(
     }
 }
 
+/** The top bar's event filter: every event, or one kind of it. */
 @Composable
-private fun Empty(error: String?, search: String, modifier: Modifier = Modifier) {
+fun LogbookActions(kind: String?, onKindChange: (String?) -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { menuOpen = true }, modifier = Modifier.testTag("logbook_filter")) {
+            Icon(
+                imageVector = Icons.Filled.FilterList,
+                contentDescription = stringResource(R.string.logbook_filter),
+                // Lit while an event is picked, so one event's entries do not pass for the whole logbook.
+                tint = if (kind == null) LocalContentColor.current else MaterialTheme.meow.accent,
+            )
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            FilterItem(stringResource(R.string.logbook_filter_all), Icons.Filled.Book, selected = kind == null) {
+                menuOpen = false
+                onKindChange(null)
+            }
+            for ((name, event) in LogbookKinds.all) {
+                FilterItem(stringResource(event.label), event.icon, selected = kind == name) {
+                    menuOpen = false
+                    onKindChange(name)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterItem(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        onClick = onClick,
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        trailingIcon = if (selected) {
+            { Icon(Icons.Filled.Check, contentDescription = null) }
+        } else {
+            null
+        },
+        modifier = Modifier
+            .semantics { this.selected = selected }
+            .testTag("logbook_filter_item"),
+    )
+}
+
+/** The name of [kind], or the kind itself when this build does not know it. */
+@Composable
+private fun kindName(kind: String): String = LogbookKinds.of(kind)?.let { stringResource(it.label) } ?: kind
+
+@Composable
+private fun Empty(error: String?, search: String, kind: String?, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize().padding(horizontal = 32.dp).testTag("logbook_empty"),
         contentAlignment = Alignment.Center,
@@ -129,13 +194,14 @@ private fun Empty(error: String?, search: String, modifier: Modifier = Modifier)
                 text = when {
                     error != null -> stringResource(R.string.logbook_read_failed, error)
                     search.isNotEmpty() -> stringResource(R.string.logbook_search_empty, search)
+                    kind != null -> stringResource(R.string.logbook_filter_empty, kindName(kind))
                     else -> stringResource(R.string.logbook_empty)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.meow.mutedText,
                 textAlign = TextAlign.Center,
             )
-            if (error == null && search.isEmpty()) {
+            if (error == null && search.isEmpty() && kind == null) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.logbook_empty_hint),
@@ -171,7 +237,7 @@ private fun EntryCard(entry: LogbookEntry, epochMillis: Long) {
     val colors = MaterialTheme.meow
     var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
     val kind = LogbookKinds.of(entry.kind)
-    val label = kind?.let { stringResource(it.label) } ?: entry.kind
+    val label = kindName(entry.kind)
     val tint = when (entry.level) {
         LogbookLevel.Info -> colors.accent
         LogbookLevel.Warning -> colors.warning

@@ -203,7 +203,7 @@ object AppGraph {
                 )
                 LogsViewModel::class.java -> LogsViewModel(api)
                 LogbookViewModel::class.java -> LogbookViewModel(
-                    read = { before, since, limit -> logbookReader.read(before, since, limit) },
+                    read = { before, since, limit, kind -> logbookReader.read(before, since, limit, kind = kind) },
                     kindLabel = { kind -> LogbookKinds.of(kind)?.let { appContext.getString(it.label) } },
                 )
 

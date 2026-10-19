@@ -71,8 +71,16 @@ class LogbookReader(private val dir: () -> File) {
         since: Long = 0,
         limit: Int = 0,
         level: LogbookLevel? = null,
+        kind: String? = null,
     ): LogbookPage = withContext(Dispatchers.IO) {
-        val answer = MeowCore.nativeReadLogbook(dir().absolutePath, before, since, limit, level?.wire.orEmpty())
+        val answer = MeowCore.nativeReadLogbook(
+            dir().absolutePath,
+            before,
+            since,
+            limit,
+            level?.wire.orEmpty(),
+            kind.orEmpty(),
+        )
             ?: throw IOException("no answer from the engine library")
         val page = try {
             json.decodeFromString(LogbookPage.serializer(), answer)

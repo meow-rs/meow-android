@@ -313,6 +313,9 @@
     <string name="logbook_kind_group_switch">အုပ်စု ပြောင်းခြင်း</string>
     <string name="logbook_search">ဖြစ်ရပ်များ ရှာရန်…</string>
     <string name="logbook_search_empty">“%1$s” နှင့် ကိုက်ညီသော ဖြစ်ရပ် မရှိပါ</string>
+    <string name="logbook_filter">ဖြစ်ရပ်များ စစ်ထုတ်ရန်</string>
+    <string name="logbook_filter_all">ဖြစ်ရပ်အားလုံး</string>
+    <string name="logbook_filter_empty">“%1$s” ဖြစ်ရပ် မရှိသေးပါ</string>
     <string name="logbook_first">ပထမဆုံး</string>
     <string name="logbook_last">နောက်ဆုံး</string>
     <string name="logbook_read_failed">ဖြစ်ရပ်မှတ်တမ်းကို ဖတ်၍မရပါ- %1$s</string>

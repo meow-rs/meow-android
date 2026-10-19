@@ -38,6 +38,8 @@ data class LogbookUiState(
     val query: String = "",
     /** The search [entries] answer; empty for the newest entries. */
     val search: String = "",
+    /** The event picked in the filter menu; null for every event. */
+    val kind: String? = null,
     /** Why the logbook could not be read; shown only while there is nothing else to show. */
     val error: String? = null,
     /** False until the first read, so the empty hint does not flash on open. */
@@ -51,12 +53,13 @@ data class LogbookUiState(
  * the VPN is down; polled while shown, re-reading only once something was
  * written.
  *
- * The engine reads by time and level only, so a search reads the whole
- * logbook (a few MiB at most) once and matches locally: every word must
- * appear in the entry's message, subject, details or event name.
+ * One event can be picked, which the engine filters by. It has no text
+ * search, so a search reads the whole logbook (a few MiB at most) once and
+ * matches locally: every word must appear in the entry's message, subject,
+ * details or event name.
  */
 class LogbookViewModel(
-    private val read: suspend (before: Long, since: Long, limit: Int) -> LogbookPage,
+    private val read: suspend (before: Long, since: Long, limit: Int, kind: String?) -> LogbookPage,
     /** The event name shown for a kind, so a search can find it; null for a kind without one. */
     private val kindLabel: (String) -> String? = { null },
     /** Where matching runs; off the main thread, since it walks every entry. */
@@ -76,39 +79,48 @@ class LogbookViewModel(
         private val WHITESPACE = Regex("\\s+")
     }
 
-    /** What is shown, and the logbook's latest write when it was read. */
-    private data class Shown(val state: LogbookUiState = LogbookUiState(), val rev: Long = 0)
+    /** What is shown, the logbook's latest write when it was read, and the event it is of. */
+    private data class Shown(val state: LogbookUiState = LogbookUiState(), val rev: Long = 0, val kind: String? = null)
+
+    private data class Filter(val search: String, val kind: String?)
 
     /** The whole logbook, newest first, with each entry's text to search; kept while searching. */
     private class Everything(val entries: List<LogbookEntry>, val texts: List<String>, val rev: Long)
 
     private val query = MutableStateFlow("")
+    private val kind = MutableStateFlow<String?>(null)
     private val latest = MutableStateFlow(Shown())
     private var everything: Everything? = null
 
     /** One read at a time: a poll and a page back both rewrite [latest]. */
     private val reading = Mutex()
 
-    /** Runs only while [uiState] is collected; a new search restarts it. */
+    /** Runs only while [uiState] is collected; a new search or event restarts it. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val polling: Flow<Unit> = query
-        .map { it.trim() }
+    private val polling: Flow<Unit> = combine(query.map { it.trim() }, kind) { search, kind -> Filter(search, kind) }
         .distinctUntilChanged()
-        .transformLatest<String, Unit> { search ->
-            if (search.isNotEmpty()) delay(DEBOUNCE_MS)
+        .transformLatest<Filter, Unit> { filter ->
+            // Typing waits for a pause; picking an event does not.
+            if (filter.search.isNotEmpty() && filter.search != latest.value.state.search) delay(DEBOUNCE_MS)
             while (true) {
-                if (search.isEmpty()) poll() else poll(search)
+                if (filter.search.isEmpty()) poll(filter.kind) else poll(filter.search, filter.kind)
                 delay(POLL_INTERVAL_MS)
             }
         }
         .onStart { emit(Unit) }
 
     val uiState: StateFlow<LogbookUiState> =
-        combine(latest, query, polling) { shown, typed, _ -> shown.state.copy(query = typed) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogbookUiState())
+        combine(latest, query, kind, polling) { shown, typed, picked, _ ->
+            shown.state.copy(query = typed, kind = picked)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogbookUiState())
 
     fun onQueryChange(value: String) {
         query.value = value
+    }
+
+    /** Shows only [value]'s entries; null shows every event. */
+    fun onKindChange(value: String?) {
+        kind.value = value
     }
 
     /** Reads the page past the oldest entry shown. */
@@ -119,7 +131,7 @@ class LogbookViewModel(
                 val oldest = shown.state.entries.lastOrNull()?.id
                 if (!shown.state.more || oldest == null) return@withLock
                 try {
-                    val page = read(oldest, 0, PAGE_SIZE)
+                    val page = read(oldest, 0, PAGE_SIZE, shown.kind)
                     latest.value = shown.copy(
                         state = shown.state.copy(entries = shown.state.entries + page.entries, more = page.more),
                     )
@@ -130,24 +142,28 @@ class LogbookViewModel(
         }
     }
 
-    /** The newest entries, and any shown pages back. */
-    private suspend fun poll() = reading.withLock {
+    /** The newest entries of [kind], and any shown pages back. */
+    private suspend fun poll(kind: String?) = reading.withLock {
         everything = null
-        val shown = latest.value.takeIf { it.state.loaded && it.state.search.isEmpty() }
+        val shown = latest.value.takeIf { it.state.loaded && it.state.search.isEmpty() && it.kind == kind }
         try {
             if (shown != null && shown.state.error == null && !written(shown.rev)) return@withLock
             // As many entries as are shown, so a page back stays on screen.
             val limit = (shown?.state?.entries?.size ?: 0).coerceIn(PAGE_SIZE, MAX_PAGE)
-            val page = read(0, 0, limit)
-            latest.value = Shown(LogbookUiState(entries = page.entries, more = page.more, loaded = true), page.rev)
+            val page = read(0, 0, limit, kind)
+            latest.value = Shown(
+                LogbookUiState(entries = page.entries, more = page.more, loaded = true),
+                page.rev,
+                kind,
+            )
         } catch (e: IOException) {
-            failed(e, "")
+            failed(e, Filter("", kind))
         }
     }
 
-    /** Every entry matching [search]. */
-    private suspend fun poll(search: String) = reading.withLock {
-        val shown = latest.value.takeIf { it.state.loaded && it.state.search == search }
+    /** Every entry of [kind] matching [search]. */
+    private suspend fun poll(search: String, kind: String?) = reading.withLock {
+        val shown = latest.value.takeIf { it.state.loaded && it.state.search == search && it.kind == kind }
         try {
             var book = everything
             if (book == null || written(book.rev)) {
@@ -158,16 +174,18 @@ class LogbookViewModel(
             }
             val terms = search.lowercase(Locale.ROOT).split(WHITESPACE)
             val matches = withContext(compute) {
-                book.entries.filterIndexed { i, _ -> terms.all { it in book.texts[i] } }
+                book.entries.filterIndexed { i, entry ->
+                    (kind == null || isOf(entry.kind, kind)) && terms.all { it in book.texts[i] }
+                }
             }
-            latest.value = Shown(LogbookUiState(entries = matches, search = search, loaded = true), book.rev)
+            latest.value = Shown(LogbookUiState(entries = matches, search = search, loaded = true), book.rev, kind)
         } catch (e: IOException) {
-            failed(e, search)
+            failed(e, Filter(search, kind))
         }
     }
 
     /** Whether anything was written after [rev]: a one-entry read answers with the latest write. */
-    private suspend fun written(rev: Long) = read(0, rev, 1).rev != rev
+    private suspend fun written(rev: Long) = read(0, rev, 1, null).rev != rev
 
     private suspend fun readEverything(): Everything {
         val entries = mutableListOf<LogbookEntry>()
@@ -175,7 +193,7 @@ class LogbookViewModel(
         var rev = 0L
         var before = 0L
         do {
-            val page = read(before, 0, MAX_PAGE)
+            val page = read(before, 0, MAX_PAGE, null)
             if (before == 0L) rev = page.rev
             entries += page.entries
             before = page.entries.lastOrNull()?.id ?: break
@@ -193,11 +211,16 @@ class LogbookViewModel(
         }
     }.lowercase(Locale.ROOT)
 
-    private fun failed(e: IOException, search: String) {
+    private fun failed(e: IOException, filter: Filter) {
         latest.update {
-            // What another search found does not answer this one.
-            val state = if (it.state.search == search) it.state else LogbookUiState(search = search)
-            it.copy(state = state.copy(loaded = true, error = e.message.orEmpty()))
+            // What another filter found does not answer this one.
+            val answers = it.state.search == filter.search && it.kind == filter.kind
+            val shown = if (answers) it else Shown(LogbookUiState(search = filter.search), kind = filter.kind)
+            shown.copy(state = shown.state.copy(loaded = true, error = e.message.orEmpty()))
         }
     }
 }
+
+/** The engine's kind filter: a kind, or its area (`config` matches `config.reload`). */
+private fun isOf(entryKind: String, kind: String) =
+    entryKind == kind || (entryKind.startsWith(kind) && entryKind.getOrNull(kind.length) == '.')

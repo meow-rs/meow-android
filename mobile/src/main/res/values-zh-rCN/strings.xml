@@ -308,6 +308,9 @@
     <string name="logbook_kind_group_switch">分组切换</string>
     <string name="logbook_search">搜索事件…</string>
     <string name="logbook_search_empty">没有与“%1$s”匹配的事件</string>
+    <string name="logbook_filter">筛选事件</string>
+    <string name="logbook_filter_all">全部事件</string>
+    <string name="logbook_filter_empty">还没有“%1$s”事件</string>
     <string name="logbook_first">首次</string>
     <string name="logbook_last">最近</string>
     <string name="logbook_read_failed">无法读取事件记录：%1$s</string>

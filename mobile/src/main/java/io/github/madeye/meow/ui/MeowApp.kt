@@ -71,6 +71,7 @@ import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeScreen
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
+import io.github.madeye.meow.ui.screens.logbook.LogbookActions
 import io.github.madeye.meow.ui.screens.logbook.LogbookScreen
 import io.github.madeye.meow.ui.screens.logbook.LogbookViewModel
 import io.github.madeye.meow.ui.screens.logs.LogsActions
@@ -1122,6 +1123,7 @@ private fun LogbookRoute(onBack: () -> Unit) {
     MeowScaffold(
         title = stringResource(R.string.logbook_title),
         navigationIcon = { BackButton(onBack) },
+        actions = { LogbookActions(kind = state.kind, onKindChange = viewModel::onKindChange) },
     ) { padding ->
         LogbookScreen(
             state = state,

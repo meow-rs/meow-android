@@ -308,6 +308,9 @@
     <string name="logbook_kind_group_switch">Chuyển nhóm</string>
     <string name="logbook_search">Tìm sự kiện…</string>
     <string name="logbook_search_empty">Không có sự kiện nào khớp với “%1$s”</string>
+    <string name="logbook_filter">Lọc sự kiện</string>
+    <string name="logbook_filter_all">Tất cả sự kiện</string>
+    <string name="logbook_filter_empty">Chưa có sự kiện “%1$s” nào</string>
     <string name="logbook_first">Lần đầu</string>
     <string name="logbook_last">Lần cuối</string>
     <string name="logbook_read_failed">Không đọc được nhật ký sự kiện: %1$s</string>

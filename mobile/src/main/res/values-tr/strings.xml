@@ -313,6 +313,9 @@
     <string name="logbook_kind_group_switch">Grup geçişi</string>
     <string name="logbook_search">Olay ara…</string>
     <string name="logbook_search_empty">“%1$s” ile eşleşen olay yok</string>
+    <string name="logbook_filter">Olayları filtrele</string>
+    <string name="logbook_filter_all">Tüm olaylar</string>
+    <string name="logbook_filter_empty">Henüz “%1$s” olayı yok</string>
     <string name="logbook_first">İlk</string>
     <string name="logbook_last">Son</string>
     <string name="logbook_read_failed">Olay günlüğü okunamadı: %1$s</string>

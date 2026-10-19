@@ -16,7 +16,8 @@ use std::path::Path;
 /// `GET /logbook` serves it: `{"entries": [...], "rev": n, "more": bool}`,
 /// or `{"error": "..."}`. `before` pages back from an entry id, `since`
 /// polls for what was written after a page's `rev`; 0 leaves either unset.
-/// `level` is the lowest level returned, empty for all.
+/// `level` is the lowest level returned, `kind` a kind or its area
+/// (`config` matches `config.reload`); empty for all.
 #[no_mangle]
 pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeReadLogbook(
     mut env: JNIEnv,
@@ -26,19 +27,21 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeReadLogboo
     since: jlong,
     limit: jint,
     level: JString,
+    kind: JString,
 ) -> jstring {
     let mut read =
         |s: &JString| -> String { env.get_string(s).map(Into::into).unwrap_or_default() };
-    let (home, level) = (read(&home), read(&level));
-    let json =
-        std::panic::catch_unwind(|| read_page(Path::new(&home), before, since, limit, &level))
-            .unwrap_or_else(|_| error_json("logbook read panicked"));
+    let (home, level, kind) = (read(&home), read(&level), read(&kind));
+    let json = std::panic::catch_unwind(|| {
+        read_page(Path::new(&home), before, since, limit, &level, &kind)
+    })
+    .unwrap_or_else(|_| error_json("logbook read panicked"));
     env.new_string(json)
         .map(|s| s.into_raw())
         .unwrap_or(std::ptr::null_mut())
 }
 
-fn read_page(home: &Path, before: i64, since: i64, limit: i32, level: &str) -> String {
+fn read_page(home: &Path, before: i64, since: i64, limit: i32, level: &str, kind: &str) -> String {
     let level = match level {
         "" => None,
         level => match level.parse::<Level>() {
@@ -51,6 +54,7 @@ fn read_page(home: &Path, before: i64, since: i64, limit: i32, level: &str) -> S
         before: u64::try_from(before).ok().filter(|&id| id > 0),
         since: u64::try_from(since).ok().filter(|&rev| rev > 0),
         level,
+        kind: Some(kind).filter(|kind| !kind.is_empty()).map(Into::into),
         ..Query::default()
     };
     match logbook::read(&home.join(logbook::DIR_NAME), &query) {
@@ -94,7 +98,11 @@ mod tests {
     }
 
     fn page(home: &Path, before: i64, since: i64, limit: i32, level: &str) -> Value {
-        serde_json::from_str(&read_page(home, before, since, limit, level)).unwrap()
+        of_kind(home, before, since, limit, level, "")
+    }
+
+    fn of_kind(home: &Path, before: i64, since: i64, limit: i32, level: &str, kind: &str) -> Value {
+        serde_json::from_str(&read_page(home, before, since, limit, level, kind)).unwrap()
     }
 
     fn messages(page: &Value) -> Vec<&str> {
@@ -128,24 +136,40 @@ mod tests {
         ] {
             logbook::event(logbook::kind::CONFIG_RELOAD, level, message).record();
         }
+        logbook::event(logbook::kind::GROUP_SWITCH, Level::Info, "switched")
+            .subject("Auto")
+            .record();
         // Writes out what is pending and closes the database, as a stopped
         // `:vpn` process would have.
         logbook::uninstall();
 
         let all = page(&home.path(), 0, 0, 0, "");
-        assert_eq!(messages(&all), ["third", "second", "first"]);
-        assert_eq!(all["entries"][0]["kind"], "config.reload");
-        assert_eq!(all["entries"][0]["level"], "warning");
+        assert_eq!(messages(&all), ["switched", "third", "second", "first"]);
+        assert_eq!(all["entries"][1]["kind"], "config.reload");
+        assert_eq!(all["entries"][1]["level"], "warning");
         let rev = all["rev"].as_i64().unwrap();
         assert!(rev > 0);
 
         let newest = page(&home.path(), 0, 0, 1, "");
-        assert_eq!(messages(&newest), ["third"]);
+        assert_eq!(messages(&newest), ["switched"]);
         assert_eq!(newest["more"], true);
         let older = newest["entries"][0]["id"].as_i64().unwrap();
         assert_eq!(
             messages(&page(&home.path(), older, 0, 0, "")),
-            ["second", "first"]
+            ["third", "second", "first"]
+        );
+
+        // A kind, or its area; the page's rev is the logbook's either way.
+        let switches = of_kind(&home.path(), 0, 0, 0, "", "group.switch");
+        assert_eq!(messages(&switches), ["switched"]);
+        assert_eq!(switches["rev"], all["rev"]);
+        assert_eq!(
+            messages(&of_kind(&home.path(), 0, 0, 0, "", "config")),
+            ["third", "second", "first"]
+        );
+        assert_eq!(
+            messages(&of_kind(&home.path(), 0, 0, 0, "", "group.health")),
+            Vec::<&str>::new()
         );
 
         assert_eq!(

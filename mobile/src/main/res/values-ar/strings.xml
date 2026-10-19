@@ -345,6 +345,9 @@
     <string name="logbook_kind_group_switch">تبديل المجموعة</string>
     <string name="logbook_search">البحث في الأحداث…</string>
     <string name="logbook_search_empty">لا توجد أحداث تطابق «\u2068%1$s\u2069»</string>
+    <string name="logbook_filter">تصفية الأحداث</string>
+    <string name="logbook_filter_all">كل الأحداث</string>
+    <string name="logbook_filter_empty">لا توجد أحداث «\u2068%1$s\u2069» بعد</string>
     <string name="logbook_first">أول مرة</string>
     <string name="logbook_last">آخر مرة</string>
     <string name="logbook_read_failed">تعذّرت قراءة سجل الأحداث: \u2068%1$s\u2069</string>

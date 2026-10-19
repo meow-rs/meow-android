@@ -323,6 +323,9 @@
     <string name="logbook_kind_group_switch">Смена узла группы</string>
     <string name="logbook_search">Поиск событий…</string>
     <string name="logbook_search_empty">Нет событий по запросу «%1$s»</string>
+    <string name="logbook_filter">Фильтр событий</string>
+    <string name="logbook_filter_all">Все события</string>
+    <string name="logbook_filter_empty">Событий «%1$s» пока нет</string>
     <string name="logbook_first">Впервые</string>
     <string name="logbook_last">Последний раз</string>
     <string name="logbook_read_failed">Не удалось прочитать журнал событий: %1$s</string>

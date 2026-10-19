@@ -321,6 +321,9 @@
     <string name="logbook_kind_group_switch">تعویض گروه</string>
     <string name="logbook_search">جستجوی رویدادها…</string>
     <string name="logbook_search_empty">رویدادی با «\u2068%1$s\u2069» پیدا نشد</string>
+    <string name="logbook_filter">فیلتر رویدادها</string>
+    <string name="logbook_filter_all">همه رویدادها</string>
+    <string name="logbook_filter_empty">هنوز رویداد «\u2068%1$s\u2069» ثبت نشده است</string>
     <string name="logbook_first">نخستین بار</string>
     <string name="logbook_last">آخرین بار</string>
     <string name="logbook_read_failed">خواندن دفتر رویدادها ممکن نشد: \u2068%1$s\u2069</string>

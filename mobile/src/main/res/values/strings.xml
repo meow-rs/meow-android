@@ -324,6 +324,9 @@
     <string name="logbook_kind_group_switch">Group Switch</string>
     <string name="logbook_search">Search events…</string>
     <string name="logbook_search_empty">No events match “%1$s”</string>
+    <string name="logbook_filter">Filter events</string>
+    <string name="logbook_filter_all">All Events</string>
+    <string name="logbook_filter_empty">No “%1$s” events yet</string>
     <string name="logbook_first">First</string>
     <string name="logbook_last">Last</string>
     <string name="logbook_read_failed">Could not read the logbook: %1$s</string>
