@@ -4,17 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
-import android.net.Network
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.core.content.ContextCompat
 import io.github.madeye.meow.Core
-import io.github.madeye.meow.net.DefaultNetworkListener
 import io.github.madeye.meow.preference.DataStore
 import io.github.madeye.meow.preference.PerAppConfigStore
 import io.github.madeye.meow.repo.PerAppMode
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.json.JSONArray
 import timber.log.Timber
 import java.io.File
@@ -74,9 +71,9 @@ class VpnService : BaseVpnService(), BaseService.Interface {
     private var conn: ParcelFileDescriptor? = null
     private var active = false
     private var metered = false
-    @Volatile
-    private var underlyingNetwork: Network? = null
     private var networkChanges: NetworkChangeRecorder? = null
+    /** Keeps the declared underlying network current, below API 29 only. */
+    private var underlying: DefaultNetwork? = null
 
     override fun onBind(intent: Intent) = when (intent.action) {
         SERVICE_INTERFACE -> super<BaseVpnService>.onBind(intent)
@@ -86,11 +83,12 @@ class VpnService : BaseVpnService(), BaseService.Interface {
     override fun onRevoke() = stopRunner()
 
     override fun killProcesses(scope: CoroutineScope) {
+        underlying?.stop()
+        underlying = null
         networkChanges?.stop()
         networkChanges = null
         super.killProcesses(scope)
         active = false
-        scope.launch { DefaultNetworkListener.stop(this) }
         conn?.close()
         conn = null
     }
@@ -100,7 +98,6 @@ class VpnService : BaseVpnService(), BaseService.Interface {
 
     override suspend fun preInit() {
         if (prepare(this) != null) throw NullConnectionException()
-        DefaultNetworkListener.start(this) { underlyingNetwork = it }
     }
 
     override suspend fun startProcesses() {
@@ -219,25 +216,29 @@ class VpnService : BaseVpnService(), BaseService.Interface {
 
         val conn = builder.establish() ?: throw NullConnectionException()
         this.conn = conn
-        // Tell the system which networks the VPN sits on top of. Without
-        // this, `VpnService.protect(fd)` knows the bypass mark to apply but
-        // the platform's per-network firewall has no associated network for
-        // the marked traffic, so packets are silently dropped on Xiaomi /
-        // HyperOS builds. Prefer the listener's tracked default network;
-        // fall back to ConnectivityManager.getActiveNetwork() so we still
-        // have an underlying network on the first establish (the listener's
-        // first onAvailable can race the establish call).
-        val underlying = underlyingNetwork ?: run {
-            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
-                as android.net.ConnectivityManager
-            cm.activeNetwork
-        }
-        underlying?.let { setUnderlyingNetworks(arrayOf(it)) }
-        Timber.d("VpnService: setUnderlyingNetworks=$underlying")
-        // Records in the logbook whether the network declared here outlives a
-        // network switch, and what the apps on the VPN are told meanwhile.
+        // Records in the logbook which network the VPN sits on, and what the
+        // apps on it are told, as the networks change.
         networkChanges?.stop()
-        networkChanges = NetworkChangeRecorder(this).also { it.start(underlying) }
+        val networkChanges = NetworkChangeRecorder(this).also { it.start() }
+        this.networkChanges = networkChanges
+        // The underlying network. From API 29 a VPN that declares none sits on
+        // the default network and follows it, its capabilities included; one
+        // it declares is what Android answers the apps on it with
+        // (getActiveNetworkInfo), even once that network is gone. A VPN that
+        // declared the Wi-Fi it then left had the apps believe they were
+        // offline until it restarted. Below API 29 nothing is followed, so
+        // the declaration follows the default network instead, as
+        // Clash Meta for Android does.
+        underlying?.stop()
+        underlying = if (Build.VERSION.SDK_INT < 29) {
+            DefaultNetwork(this) { network, _ ->
+                setUnderlyingNetworks(network?.let { arrayOf(it) })
+                networkChanges.declare(network)
+                Timber.d("VpnService: setUnderlyingNetworks=$network")
+            }.also { it.start() }
+        } else {
+            null
+        }
         data.meowInstance!!.startTun2Socks(this, conn.fd)
     }
 

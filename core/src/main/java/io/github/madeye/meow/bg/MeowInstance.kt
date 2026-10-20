@@ -1,6 +1,7 @@
 package io.github.madeye.meow.bg
 
 import android.content.Context
+import android.net.Network
 import io.github.madeye.meow.Core
 import io.github.madeye.meow.aidl.SessionStats
 import io.github.madeye.meow.aidl.TrafficStats
@@ -67,7 +68,7 @@ class MeowInstance(val profile: ClashProfile) {
 
     // Set once the engine is up, for the Statistics screen; see sessionStats.
     @Volatile private var meter: NetworkTrafficMeter? = null
-    private var networks: DefaultNetworkKind? = null
+    private var networks: DefaultNetwork? = null
 
     // JNI startup blocks while loading remote proxy/rule providers. Keep it
     // off the service's main thread so lifecycle callbacks remain responsive.
@@ -109,8 +110,22 @@ class MeowInstance(val profile: ClashProfile) {
             Timber.w("MeowInstance: built-in DNS switch: ${MeowCore.nativeGetLastError()}")
         }
         val meter = NetworkTrafficMeter(startedAt = System.currentTimeMillis())
-        networks = DefaultNetworkKind(context) { kind ->
-            meter.onNetwork(kind, MeowCore.nativeGetUploadTraffic(), MeowCore.nativeGetDownloadTraffic())
+        var outbound: Network? = null
+        networks = DefaultNetwork(context) { network, capabilities ->
+            meter.onNetwork(
+                capabilities?.trafficKind(),
+                MeowCore.nativeGetUploadTraffic(),
+                MeowCore.nativeGetDownloadTraffic(),
+            )
+            if (network == null) return@DefaultNetwork
+            // What the engine opened on the network before (connections,
+            // pooled and QUIC sessions, DNS upstreams) is cut off with it or
+            // left on a network no longer in use: it is torn down for the
+            // apps and the engine to redial, as FlClash does.
+            if (outbound != null && network != outbound) {
+                MeowCore.nativeResetOutbound(network.describe(capabilities))
+            }
+            outbound = network
         }.also { it.start() }
         this@MeowInstance.meter = meter
         // Before the service reports Connected, which is when the UI starts

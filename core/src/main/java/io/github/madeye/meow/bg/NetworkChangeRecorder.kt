@@ -16,12 +16,12 @@ import timber.log.Timber
 
 /**
  * Records in the logbook (kind `network.change`) how the networks under the
- * VPN change while it runs, to find out why apps can lose the network after
- * a Wi-Fi switch while the engine still carries their traffic: whether the
- * network the VPN declared with [android.net.VpnService.setUnderlyingNetworks]
- * is still up, and what [ConnectivityManager.getActiveNetworkInfo] answers
- * the apps on the VPN. Android answers them with the declared network, and
- * Chromium's network stack (Cronet) goes offline when the answer is none.
+ * VPN change while it runs: the networks up, the one the VPN declared with
+ * [android.net.VpnService.setUnderlyingNetworks] and whether it is still up,
+ * and what [ConnectivityManager.getActiveNetworkInfo] answers the apps on
+ * the VPN. Android answers them with the declared network, and Chromium's
+ * network stack (Cronet) goes offline when the answer is none: a VPN that
+ * declared a Wi-Fi it then left had apps offline until it restarted.
  *
  * Diagnostics only: nothing the VPN does changes. A change is recorded once
  * the networks have been quiet for [SETTLE_MS], and only when it differs
@@ -70,10 +70,8 @@ internal class NetworkChangeRecorder(context: Context) {
         .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
         .build()
 
-    /** Starts recording; [declared] is what the VPN handed `setUnderlyingNetworks`, null for nothing. */
-    fun start(declared: Network?) {
-        this.declared = declared
-        declared?.let { network -> connectivity.getNetworkCapabilities(network)?.let { kinds[network] = it.kindName() } }
+    /** Starts recording, with nothing declared until [declare]. */
+    fun start() {
         started = try {
             connectivity.registerNetworkCallback(request, callback)
             true
@@ -84,6 +82,15 @@ internal class NetworkChangeRecorder(context: Context) {
         }
         // The networks at the start, once their first callbacks are in.
         if (started) changed()
+    }
+
+    /** The VPN handed [network] to `setUnderlyingNetworks`, null for nothing. Any thread. */
+    fun declare(network: Network?) {
+        handler.post {
+            declared = network
+            network?.let { connectivity.getNetworkCapabilities(it)?.let { capabilities -> kinds[it] = capabilities.kindName() } }
+            changed()
+        }
     }
 
     fun stop() {
@@ -170,15 +177,7 @@ internal class NetworkChangeRecorder(context: Context) {
         NetworkSnapshot.Active(it.typeName, it.isConnected, it.detailedState?.name ?: "UNKNOWN")
     }
 
-    private fun NetworkCapabilities.transportNames(): List<String> = listOfNotNull(
-        "Wi-Fi".takeIf { hasTransport(NetworkCapabilities.TRANSPORT_WIFI) },
-        "cellular".takeIf { hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) },
-        "Ethernet".takeIf { hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) },
-    )
-
-    private fun NetworkCapabilities.kindName(): String = transportNames().firstOrNull() ?: "network"
-
-    /** The VPN's capabilities as the apps on it see them: Android copies them from the declared network. */
+    /** The VPN's capabilities as the apps on it see them: Android copies them from the networks under it. */
     private fun NetworkCapabilities.vpnSummary(): String = (
         transportNames().ifEmpty { listOf("no underlying transport") } +
             (if (hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) "validated" else "not validated") +

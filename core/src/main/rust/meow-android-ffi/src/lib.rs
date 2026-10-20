@@ -19,6 +19,7 @@ mod ip_info;
 mod live_dns;
 mod logbook;
 mod logging;
+mod outbound;
 mod owner;
 mod probe;
 mod protect;
@@ -33,6 +34,7 @@ use jni::JNIEnv;
 use meow_api::log_stream::{LogBroadcastLayer, LogMessage};
 use meow_api::ApiServer;
 use meow_common::TunnelMode;
+use meow_config::proxy_provider::ProxyProvider;
 use meow_tunnel::Tunnel;
 use parking_lot::{Mutex, RwLock};
 use std::sync::{Arc, Once, OnceLock};
@@ -85,6 +87,9 @@ pub(crate) struct EngineState {
     tun_ipv6: bool,
     /// What Settings' "Built-in DNS" switch rebuilds the resolver from.
     pub(crate) live_dns: Arc<live_dns::LiveDns>,
+    /// The API's providers: a network switch resets the sessions of their
+    /// proxies too, as no group may reach them (`outbound`).
+    pub(crate) proxy_providers: Arc<DashMap<String, Arc<ProxyProvider>>>,
     _handles: Vec<tokio::task::JoinHandle<()>>,
 }
 
@@ -409,7 +414,7 @@ async fn start_engine_async(
             None,
             raw_config,
             log_tx,
-            proxy_providers,
+            Arc::clone(&proxy_providers),
             rule_providers,
             rule_provider_refresh,
             proxy_provider_refresh,
@@ -443,6 +448,7 @@ async fn start_engine_async(
         api_secret,
         tun_ipv6,
         live_dns,
+        proxy_providers,
         _handles: handles,
     })
 }

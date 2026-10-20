@@ -18,8 +18,9 @@ use std::path::Path;
 /// How the networks under the VPN changed, as the `:vpn` service sees them
 /// (`bg/NetworkChangeRecorder.kt`): which are up, the one the VPN declared
 /// as its underlying network, and what Android reports to the apps on the
-/// VPN. Not an engine kind: the engine cannot see any of it.
-const NETWORK_CHANGE: &str = "network.change";
+/// VPN; and what the engine tore down when the network its sockets go out
+/// on changed (`outbound`). Not an engine kind: the engine sees none of it.
+pub(crate) const NETWORK_CHANGE: &str = "network.change";
 
 /// A page of the logbook under the engine home `home`, newest first, as
 /// `GET /logbook` serves it: `{"entries": [...], "rev": n, "more": bool}`,
