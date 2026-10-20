@@ -305,7 +305,7 @@
     <!-- Logbook -->
     <string name="logbook_title">Журнал событий</string>
     <string name="logbook_empty">Пока ничего не записано</string>
-    <string name="logbook_empty_hint">Запуски и остановки ядра, аварийные завершения, ошибки конфигурации и провайдеров, переключения групп прокси хранятся здесь неделю.</string>
+    <string name="logbook_empty_hint">Запуски и остановки ядра, аварийные завершения, ошибки конфигурации и провайдеров, смены и проверки промежуточного прокси хранятся здесь неделю.</string>
     <string name="logbook_kind_engine_start">Запуск ядра</string>
     <string name="logbook_kind_engine_stop">Остановка ядра</string>
     <string name="logbook_kind_engine_unclean_exit">Аварийное завершение</string>
@@ -319,7 +319,6 @@
     <string name="logbook_kind_geodata_update">Обновление геоданных</string>
     <string name="logbook_kind_listener_start">Запуск слушателя</string>
     <string name="logbook_kind_network_interface">Исходящий интерфейс</string>
-    <string name="logbook_kind_group_switch">Смена узла группы</string>
     <string name="logbook_kind_dialer_proxy_switch">Смена промежуточного прокси</string>
     <string name="logbook_kind_dialer_proxy_check">Проверка через промежуточный прокси</string>
     <string name="logbook_search">Поиск событий…</string>

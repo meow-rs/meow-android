@@ -1,6 +1,6 @@
 //! Reads of the engine's logbook (`meow_common::logbook`), the persistent
 //! record of notable events: starts and stops, unclean exits, config and
-//! provider failures, group switches. The `:vpn` process writes it under the
+//! provider failures, dialer-proxy switches. The `:vpn` process writes it under the
 //! engine home; the Logbook page reads it from the UI process, also while
 //! the engine is stopped, through `logbook::read` — one SQLite library per
 //! process for the file, as the logbook requires of a process that links
@@ -136,8 +136,8 @@ mod tests {
         ] {
             logbook::event(logbook::kind::CONFIG_RELOAD, level, message).record();
         }
-        logbook::event(logbook::kind::GROUP_SWITCH, Level::Info, "switched")
-            .subject("Auto")
+        logbook::event(logbook::kind::DIALER_PROXY_SWITCH, Level::Info, "switched")
+            .subject("US Home")
             .record();
         // Writes out what is pending and closes the database, as a stopped
         // `:vpn` process would have.
@@ -160,7 +160,7 @@ mod tests {
         );
 
         // A kind, or its area; the page's rev is the logbook's either way.
-        let switches = of_kind(&home.path(), 0, 0, 0, "", "group.switch");
+        let switches = of_kind(&home.path(), 0, 0, 0, "", "dialer-proxy.switch");
         assert_eq!(messages(&switches), ["switched"]);
         assert_eq!(switches["rev"], all["rev"]);
         assert_eq!(
@@ -168,7 +168,7 @@ mod tests {
             ["third", "second", "first"]
         );
         assert_eq!(
-            messages(&of_kind(&home.path(), 0, 0, 0, "", "dialer-proxy.switch")),
+            messages(&of_kind(&home.path(), 0, 0, 0, "", "dialer-proxy.check")),
             Vec::<&str>::new()
         );
 
@@ -189,7 +189,19 @@ mod tests {
         // Another test's engine may have left its logbook installed.
         logbook::uninstall();
         let home = Home::new("logbook-run");
-        std::fs::write(home.path().join("config.yaml"), "rules: [MATCH,DIRECT]\n").unwrap();
+        // Providers the load leaves out are recorded once it runs.
+        let profile = "\
+proxy-providers:
+  dropped-proxy-provider:
+    type: bogus
+rule-providers:
+  dropped-rule-provider:
+    type: bogus
+    behavior: domain
+rules:
+  - MATCH,DIRECT
+";
+        std::fs::write(home.path().join("config.yaml"), profile).unwrap();
         *crate::HOME_DIR.lock() = Some(home.path().to_str().unwrap().to_string());
         let started = crate::start_engine(None, None, None, crate::engine::DnsUpstreams::Builtin);
         let error = crate::get_error();
@@ -199,12 +211,26 @@ mod tests {
         assert_eq!(started, 0, "{error}");
 
         let page = page(&home.path(), 0, 0, 0, "");
-        let kinds: Vec<_> = page["entries"]
+        let entries: Vec<_> = page["entries"]
             .as_array()
             .unwrap()
             .iter()
-            .map(|entry| entry["kind"].as_str().unwrap())
+            .map(|entry| {
+                (
+                    entry["kind"].as_str().unwrap(),
+                    entry["subject"].as_str().unwrap_or_default(),
+                    entry["level"].as_str().unwrap(),
+                )
+            })
             .collect();
-        assert_eq!(kinds, ["engine.stop", "engine.start"]);
+        assert_eq!(
+            entries,
+            [
+                ("engine.stop", "", "info"),
+                ("engine.start", "", "info"),
+                ("proxy-provider.update", "dropped-proxy-provider", "error"),
+                ("rule-provider.update", "dropped-rule-provider", "error"),
+            ]
+        );
     }
 }

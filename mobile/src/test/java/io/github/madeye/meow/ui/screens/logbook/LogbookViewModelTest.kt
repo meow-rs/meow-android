@@ -81,7 +81,7 @@ class LogbookViewModelTest {
     private fun TestScope.viewModel(): LogbookViewModel {
         val vm = LogbookViewModel(
             read = ::read,
-            kindLabel = { kind -> if (kind == "group.switch") "分组切换" else null },
+            kindLabel = { kind -> if (kind == "dialer-proxy.switch") "前置代理切换" else null },
             compute = EmptyCoroutineContext,
         )
         // uiState is WhileSubscribed, as it is under the real screen.
@@ -164,15 +164,15 @@ class LogbookViewModelTest {
     @Test
     fun `a search reads the whole logbook once and matches every word, the event name too`() = runTest {
         repeat(1_200) { write("filler $it") }
-        write("now on HK 02", kind = "group.switch", subject = "Auto")
-        write("now on JP 01", kind = "group.switch", subject = "Manual")
+        write("now on HK 02", kind = "dialer-proxy.switch", subject = "Auto")
+        write("now on JP 01", kind = "dialer-proxy.switch", subject = "Manual")
         write("reloaded")
         val vm = viewModel()
         reads.clear()
 
-        vm.onQueryChange("分组切换 auto")
+        vm.onQueryChange("前置代理切换 auto")
         runCurrent()
-        assertEquals("shown as typed", "分组切换 auto", vm.uiState.value.query)
+        assertEquals("shown as typed", "前置代理切换 auto", vm.uiState.value.query)
         assertTrue("waits for a pause in typing", reads.isEmpty())
 
         advanceTimeBy(LogbookViewModel.DEBOUNCE_MS)
@@ -180,7 +180,7 @@ class LogbookViewModelTest {
         val max = LogbookViewModel.MAX_PAGE
         assertEquals(listOf(Read(0, 0, max), Read(204, 0, max)), reads)
         assertEquals(listOf("now on HK 02"), vm.messages)
-        assertEquals("分组切换 auto", vm.uiState.value.search)
+        assertEquals("前置代理切换 auto", vm.uiState.value.search)
         assertFalse("every match is shown", vm.uiState.value.more)
 
         reads.clear()
@@ -189,7 +189,7 @@ class LogbookViewModelTest {
         assertEquals("nothing new: one probe", listOf(Read(0, 1203, 1)), reads)
 
         reads.clear()
-        write("now on HK 03", kind = "group.switch", subject = "Auto")
+        write("now on HK 03", kind = "dialer-proxy.switch", subject = "Auto")
         advanceTimeBy(LogbookViewModel.POLL_INTERVAL_MS)
         runCurrent()
         assertEquals(listOf(Read(0, 1203, 1), Read(0, 0, max), Read(205, 0, max)), reads)
@@ -237,22 +237,22 @@ class LogbookViewModelTest {
 
     @Test
     fun `picking an event reads only that event at once, and pages back within it`() = runTest {
-        repeat(150) { write("s$it", kind = "group.switch", subject = "Auto") }
+        repeat(150) { write("s$it", kind = "dialer-proxy.switch", subject = "Auto") }
         write("reloaded")
         val vm = viewModel()
         reads.clear()
 
-        vm.onKindChange("group.switch")
+        vm.onKindChange("dialer-proxy.switch")
         runCurrent()
-        assertEquals("group.switch", vm.uiState.value.kind)
-        assertEquals(listOf(Read(0, 0, LogbookViewModel.PAGE_SIZE, "group.switch")), reads)
+        assertEquals("dialer-proxy.switch", vm.uiState.value.kind)
+        assertEquals(listOf(Read(0, 0, LogbookViewModel.PAGE_SIZE, "dialer-proxy.switch")), reads)
         assertEquals(100, vm.uiState.value.entries.size)
-        assertTrue(vm.uiState.value.entries.all { it.kind == "group.switch" })
+        assertTrue(vm.uiState.value.entries.all { it.kind == "dialer-proxy.switch" })
         assertTrue(vm.uiState.value.more)
 
         vm.loadMore()
         runCurrent()
-        assertEquals(Read(51, 0, LogbookViewModel.PAGE_SIZE, "group.switch"), reads.last())
+        assertEquals(Read(51, 0, LogbookViewModel.PAGE_SIZE, "dialer-proxy.switch"), reads.last())
         assertEquals(150, vm.uiState.value.entries.size)
         assertFalse(vm.uiState.value.more)
 
@@ -261,7 +261,7 @@ class LogbookViewModelTest {
         write("again")
         advanceTimeBy(LogbookViewModel.POLL_INTERVAL_MS)
         runCurrent()
-        assertEquals(listOf(Read(0, 151, 1), Read(0, 0, 150, "group.switch")), reads)
+        assertEquals(listOf(Read(0, 151, 1), Read(0, 0, 150, "dialer-proxy.switch")), reads)
         assertEquals(150, vm.uiState.value.entries.size)
 
         vm.onKindChange(null)
@@ -273,7 +273,7 @@ class LogbookViewModelTest {
 
     @Test
     fun `an event and a search narrow each other, from one read of the logbook`() = runTest {
-        write("now on HK 02", kind = "group.switch", subject = "Auto")
+        write("now on HK 02", kind = "dialer-proxy.switch", subject = "Auto")
         write("Auto is down", kind = "dialer-proxy.check", subject = "Auto")
         write("reloaded")
         val vm = viewModel()
@@ -284,7 +284,7 @@ class LogbookViewModelTest {
         assertEquals(listOf("Auto is down", "now on HK 02"), vm.messages)
 
         reads.clear()
-        vm.onKindChange("group.switch")
+        vm.onKindChange("dialer-proxy.switch")
         runCurrent()
         assertEquals("no pause, and the copy read for the search is reused", listOf(Read(0, 3, 1)), reads)
         assertEquals(listOf("now on HK 02"), vm.messages)

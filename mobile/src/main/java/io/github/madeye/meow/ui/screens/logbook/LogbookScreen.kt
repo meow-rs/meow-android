@@ -260,7 +260,7 @@ private fun EntryCard(entry: LogbookEntry, epochMillis: Long) {
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // "Group Switch · Auto": what happened, and to what.
+                    // "Dialer Proxy Switch · US Home": what happened, and to what.
                     Text(
                         text = buildAnnotatedString {
                             withStyle(SpanStyle(color = tint, fontWeight = FontWeight.SemiBold)) { append(label) }

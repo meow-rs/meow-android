@@ -31,7 +31,7 @@ data class LogbookEntry(
     val last: String? = null,
     /** Occurrences folded into this entry. */
     val count: Int = 1,
-    /** e.g. `engine.start`, `proxy-provider.update`, `group.switch`. */
+    /** e.g. `engine.start`, `proxy-provider.update`, `dialer-proxy.switch`. */
     val kind: String,
     /** Unknown to this app (a newer engine's) reads as info. */
     val level: LogbookLevel = LogbookLevel.Info,
@@ -55,7 +55,7 @@ data class LogbookPage(
 
 /**
  * Reads the engine's logbook — the persistent record of starts, stops,
- * unclean exits, config and provider failures and group switches — from the
+ * unclean exits, config and provider failures and dialer-proxy switches — from the
  * database in the engine home, from this process: the engine writes it in
  * `:vpn`, and it stays readable after the VPN stops.
  */

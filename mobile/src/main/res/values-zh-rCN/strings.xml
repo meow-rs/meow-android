@@ -290,7 +290,7 @@
     <!-- Logbook -->
     <string name="logbook_title">事件记录</string>
     <string name="logbook_empty">暂无记录</string>
-    <string name="logbook_empty_hint">引擎的启动与停止、异常退出、配置与订阅失败、代理分组切换都会在这里保留一周。</string>
+    <string name="logbook_empty_hint">引擎的启动与停止、异常退出、配置与订阅失败、前置代理的切换与检查都会在这里保留一周。</string>
     <string name="logbook_kind_engine_start">引擎启动</string>
     <string name="logbook_kind_engine_stop">引擎停止</string>
     <string name="logbook_kind_engine_unclean_exit">异常退出</string>
@@ -304,7 +304,6 @@
     <string name="logbook_kind_geodata_update">地理数据更新</string>
     <string name="logbook_kind_listener_start">入站监听启动</string>
     <string name="logbook_kind_network_interface">出站网络接口</string>
-    <string name="logbook_kind_group_switch">分组切换</string>
     <string name="logbook_kind_dialer_proxy_switch">前置代理切换</string>
     <string name="logbook_kind_dialer_proxy_check">前置代理检查</string>
     <string name="logbook_search">搜索事件…</string>

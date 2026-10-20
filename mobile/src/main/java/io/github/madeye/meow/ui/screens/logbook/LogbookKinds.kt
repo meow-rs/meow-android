@@ -2,7 +2,6 @@ package io.github.madeye.meow.ui.screens.logbook
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AltRoute
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Error
@@ -34,7 +33,7 @@ data class LogbookKind(@StringRes val label: Int, val icon: ImageVector)
  * under its level's icon.
  */
 object LogbookKinds {
-    /** Every kind, in the filter menu's order: the engine, its config and sources, then groups, chains and the network. */
+    /** Every kind, in the filter menu's order: the engine, its config and sources, then dialer-proxy chains and the network. */
     val all: Map<String, LogbookKind> = linkedMapOf(
         "engine.start" to LogbookKind(R.string.logbook_kind_engine_start, Icons.Filled.PlayCircle),
         "engine.stop" to LogbookKind(R.string.logbook_kind_engine_stop, Icons.Filled.StopCircle),
@@ -45,7 +44,6 @@ object LogbookKinds {
         "proxy-provider.update" to LogbookKind(R.string.logbook_kind_proxy_provider_update, Icons.Filled.Hub),
         "rule-provider.update" to LogbookKind(R.string.logbook_kind_rule_provider_update, Icons.Filled.ViewList),
         "geodata.update" to LogbookKind(R.string.logbook_kind_geodata_update, Icons.Filled.Public),
-        "group.switch" to LogbookKind(R.string.logbook_kind_group_switch, Icons.Filled.AltRoute),
         "dialer-proxy.switch" to LogbookKind(R.string.logbook_kind_dialer_proxy_switch, Icons.Filled.SwapHoriz),
         "dialer-proxy.check" to LogbookKind(R.string.logbook_kind_dialer_proxy_check, Icons.Filled.NetworkCheck),
         "network.interface" to LogbookKind(R.string.logbook_kind_network_interface, Icons.Filled.SettingsEthernet),

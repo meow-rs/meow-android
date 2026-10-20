@@ -29,13 +29,13 @@ missing_const_for_thread_local = "allow"
 # uTLS fingerprints built in; hysteria2's quiche links the same copy).
 # boring-sys vendors BoringSSL (~few MB per ABI, needs cmake + NDK C++ at
 # build time).
-meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0" }
-meow-config = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
-meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0" }
-meow-api = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0" }
-meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0", features = ["logbook"] }
-meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
-meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.24.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
+meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14" }
+meow-config = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
+meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14" }
+meow-api = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14" }
+meow-common = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14", features = ["logbook"] }
+meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
+meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", rev = "672bd02d032a6fd32f4359262a60028b7bf88b14", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun"] }
 
 # Explicit pin (transitive through meow-tunnel; surfaced here because
 # engine startup builds DashMap<String, Arc<ProxyProvider>> for ApiServer::new

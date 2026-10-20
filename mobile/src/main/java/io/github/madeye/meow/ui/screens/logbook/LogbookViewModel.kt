@@ -48,7 +48,7 @@ data class LogbookUiState(
 
 /**
  * The engine's logbook: what happened to it, kept across restarts — runs
- * and how they ended, config and provider failures, group switches. Read
+ * and how they ended, config and provider failures, dialer-proxy switches. Read
  * from the database the engine keeps in its home, so it also opens while
  * the VPN is down; polled while shown, re-reading only once something was
  * written.

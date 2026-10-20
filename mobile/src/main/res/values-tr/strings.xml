@@ -295,7 +295,7 @@
     <!-- Logbook -->
     <string name="logbook_title">Olay Günlüğü</string>
     <string name="logbook_empty">Henüz kayıt yok</string>
-    <string name="logbook_empty_hint">Çekirdeğin başlatılıp durdurulması, beklenmedik kapanmalar, yapılandırma ve sağlayıcı hataları ile proxy grubu geçişleri burada bir hafta saklanır.</string>
+    <string name="logbook_empty_hint">Çekirdeğin başlatılıp durdurulması, beklenmedik kapanmalar, yapılandırma ve sağlayıcı hataları ile ön proxy geçişleri ve denetimleri burada bir hafta saklanır.</string>
     <string name="logbook_kind_engine_start">Çekirdek başlatıldı</string>
     <string name="logbook_kind_engine_stop">Çekirdek durduruldu</string>
     <string name="logbook_kind_engine_unclean_exit">Beklenmedik kapanma</string>
@@ -309,7 +309,6 @@
     <string name="logbook_kind_geodata_update">Coğrafi veri güncellemesi</string>
     <string name="logbook_kind_listener_start">Dinleyici başlatma</string>
     <string name="logbook_kind_network_interface">Giden arayüz</string>
-    <string name="logbook_kind_group_switch">Grup geçişi</string>
     <string name="logbook_kind_dialer_proxy_switch">Ön proxy geçişi</string>
     <string name="logbook_kind_dialer_proxy_check">Ön proxy denetimi</string>
     <string name="logbook_search">Olay ara…</string>

@@ -327,7 +327,7 @@
     <!-- Logbook -->
     <string name="logbook_title">سجل الأحداث</string>
     <string name="logbook_empty">لم يُسجَّل شيء بعد</string>
-    <string name="logbook_empty_hint">تُحفظ هنا لمدة أسبوع عمليات تشغيل النواة وإيقافها، وحالات الخروج غير السليم، وإخفاقات الإعدادات والمزوّدين، وتبديلات مجموعات الوكيل.</string>
+    <string name="logbook_empty_hint">تُحفظ هنا لمدة أسبوع عمليات تشغيل النواة وإيقافها، وحالات الخروج غير السليم، وإخفاقات الإعدادات والمزوّدين، وتبديلات البروكسي الوسيط وفحوصه.</string>
     <string name="logbook_kind_engine_start">بدء تشغيل النواة</string>
     <string name="logbook_kind_engine_stop">إيقاف النواة</string>
     <string name="logbook_kind_engine_unclean_exit">خروج غير سليم</string>
@@ -341,7 +341,6 @@
     <string name="logbook_kind_geodata_update">تحديث البيانات الجغرافية</string>
     <string name="logbook_kind_listener_start">بدء المستمع</string>
     <string name="logbook_kind_network_interface">واجهة الصادر</string>
-    <string name="logbook_kind_group_switch">تبديل المجموعة</string>
     <string name="logbook_kind_dialer_proxy_switch">تبديل البروكسي الوسيط</string>
     <string name="logbook_kind_dialer_proxy_check">فحص البروكسي الوسيط</string>
     <string name="logbook_search">البحث في الأحداث…</string>

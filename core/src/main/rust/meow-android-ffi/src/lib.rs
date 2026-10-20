@@ -384,6 +384,9 @@ async fn start_engine_async(
     let rule_provider_refresh =
         Arc::new(meow_config::rule_provider_refresh::RefreshSupervisor::default());
     rule_provider_refresh.reconcile(&rule_providers);
+    // The providers the load left out, recorded once now that it is the
+    // running config: a DNS fallback loads the profile twice.
+    config.dropped_providers.record();
     let proxy_provider_refresh =
         Arc::new(meow_config::proxy_provider_refresh::ProxyProviderRefreshSupervisor::default());
     proxy_provider_refresh.reconcile(&proxy_providers, config.raw.proxy_providers.as_ref());
