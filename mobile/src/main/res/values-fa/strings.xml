@@ -301,14 +301,14 @@
     <string name="statistics_total">مجموع \u2068%1$s\u2069</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">دفتر رویدادها</string>
+    <string name="logbook_title">ردپای گربه</string>
     <string name="logbook_empty">هنوز چیزی ثبت نشده است</string>
     <string name="logbook_empty_hint">راه‌اندازی و توقف هسته، خروج‌های ناهنجار، خطاهای پیکربندی و ارائه‌دهنده و تعویض و بررسی پراکسی واسط به مدت یک هفته اینجا نگه داشته می‌شوند.</string>
     <string name="logbook_kind_engine_start">راه‌اندازی هسته</string>
     <string name="logbook_kind_engine_stop">توقف هسته</string>
     <string name="logbook_kind_engine_unclean_exit">خروج ناهنجار</string>
-    <string name="logbook_kind_logbook_cleared">دفتر پاک شد</string>
-    <string name="logbook_kind_logbook_reset">دفتر از نو ساخته شد</string>
+    <string name="logbook_kind_logbook_cleared">ردپای گربه پاک شد</string>
+    <string name="logbook_kind_logbook_reset">ردپای گربه از نو ساخته شد</string>
     <string name="logbook_kind_config_reload">بارگذاری دوباره پیکربندی</string>
     <string name="logbook_kind_config_change">تغییر پیکربندی</string>
     <string name="logbook_kind_subscription_update">به‌روزرسانی اشتراک</string>
@@ -326,7 +326,7 @@
     <string name="logbook_filter_empty">هنوز رویداد «\u2068%1$s\u2069» ثبت نشده است</string>
     <string name="logbook_first">نخستین بار</string>
     <string name="logbook_last">آخرین بار</string>
-    <string name="logbook_read_failed">خواندن دفتر رویدادها ممکن نشد: \u2068%1$s\u2069</string>
+    <string name="logbook_read_failed">خواندن ردپای گربه ممکن نشد: \u2068%1$s\u2069</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">پروکسی به تفکیک برنامه</string>

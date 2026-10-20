@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -148,7 +148,7 @@ fun LogbookActions(kind: String?, onKindChange: (String?) -> Unit) {
             )
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            FilterItem(stringResource(R.string.logbook_filter_all), Icons.Filled.Book, selected = kind == null) {
+            FilterItem(stringResource(R.string.logbook_filter_all), Icons.Filled.Pets, selected = kind == null) {
                 menuOpen = false
                 onKindChange(null)
             }

@@ -325,14 +325,14 @@
     <string name="statistics_total">الإجمالي \u2068%1$s\u2069</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">سجل الأحداث</string>
+    <string name="logbook_title">بصمة القط</string>
     <string name="logbook_empty">لم يُسجَّل شيء بعد</string>
     <string name="logbook_empty_hint">تُحفظ هنا لمدة أسبوع عمليات تشغيل النواة وإيقافها، وحالات الخروج غير السليم، وإخفاقات الإعدادات والمزوّدين، وتبديلات البروكسي الوسيط وفحوصه.</string>
     <string name="logbook_kind_engine_start">بدء تشغيل النواة</string>
     <string name="logbook_kind_engine_stop">إيقاف النواة</string>
     <string name="logbook_kind_engine_unclean_exit">خروج غير سليم</string>
-    <string name="logbook_kind_logbook_cleared">مُسح السجل</string>
-    <string name="logbook_kind_logbook_reset">أُعيد إنشاء السجل</string>
+    <string name="logbook_kind_logbook_cleared">مُسحت بصمة القط</string>
+    <string name="logbook_kind_logbook_reset">أُعيد إنشاء بصمة القط</string>
     <string name="logbook_kind_config_reload">إعادة تحميل الإعدادات</string>
     <string name="logbook_kind_config_change">تغيير الإعدادات</string>
     <string name="logbook_kind_subscription_update">تحديث الاشتراك</string>
@@ -350,7 +350,7 @@
     <string name="logbook_filter_empty">لا توجد أحداث «\u2068%1$s\u2069» بعد</string>
     <string name="logbook_first">أول مرة</string>
     <string name="logbook_last">آخر مرة</string>
-    <string name="logbook_read_failed">تعذّرت قراءة سجل الأحداث: \u2068%1$s\u2069</string>
+    <string name="logbook_read_failed">تعذّرت قراءة بصمة القط: \u2068%1$s\u2069</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">بروكسي لكل تطبيق</string>

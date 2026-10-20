@@ -288,14 +288,14 @@
     <string name="statistics_total">Tổng %1$s</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">Nhật ký sự kiện</string>
+    <string name="logbook_title">Dấu chân mèo</string>
     <string name="logbook_empty">Chưa có bản ghi nào</string>
     <string name="logbook_empty_hint">Các lần khởi động và dừng lõi, lần thoát bất thường, lỗi cấu hình và nhà cung cấp, cùng các lần chuyển và kiểm tra proxy trung gian được lưu tại đây trong một tuần.</string>
     <string name="logbook_kind_engine_start">Lõi đã khởi động</string>
     <string name="logbook_kind_engine_stop">Lõi đã dừng</string>
     <string name="logbook_kind_engine_unclean_exit">Thoát bất thường</string>
-    <string name="logbook_kind_logbook_cleared">Đã xóa nhật ký</string>
-    <string name="logbook_kind_logbook_reset">Nhật ký đã được tạo lại</string>
+    <string name="logbook_kind_logbook_cleared">Đã xóa Dấu chân mèo</string>
+    <string name="logbook_kind_logbook_reset">Dấu chân mèo đã được tạo lại</string>
     <string name="logbook_kind_config_reload">Tải lại cấu hình</string>
     <string name="logbook_kind_config_change">Thay đổi cấu hình</string>
     <string name="logbook_kind_subscription_update">Cập nhật gói đăng ký</string>
@@ -313,7 +313,7 @@
     <string name="logbook_filter_empty">Chưa có sự kiện “%1$s” nào</string>
     <string name="logbook_first">Lần đầu</string>
     <string name="logbook_last">Lần cuối</string>
-    <string name="logbook_read_failed">Không đọc được nhật ký sự kiện: %1$s</string>
+    <string name="logbook_read_failed">Không đọc được Dấu chân mèo: %1$s</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">Proxy theo ứng dụng</string>

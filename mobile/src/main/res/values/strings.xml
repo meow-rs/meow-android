@@ -304,14 +304,14 @@
     <string name="statistics_total">Total %1$s</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">Logbook</string>
+    <string name="logbook_title">Paw Print</string>
     <string name="logbook_empty">Nothing recorded yet</string>
     <string name="logbook_empty_hint">Engine starts and stops, unclean exits, config and provider failures, and dialer proxy switches and checks are kept here for a week.</string>
     <string name="logbook_kind_engine_start">Engine Started</string>
     <string name="logbook_kind_engine_stop">Engine Stopped</string>
     <string name="logbook_kind_engine_unclean_exit">Unclean Exit</string>
-    <string name="logbook_kind_logbook_cleared">Logbook Cleared</string>
-    <string name="logbook_kind_logbook_reset">Logbook Reset</string>
+    <string name="logbook_kind_logbook_cleared">Paw Print Cleared</string>
+    <string name="logbook_kind_logbook_reset">Paw Print Reset</string>
     <string name="logbook_kind_config_reload">Config Reload</string>
     <string name="logbook_kind_config_change">Config Change</string>
     <string name="logbook_kind_subscription_update">Subscription Update</string>
@@ -329,7 +329,7 @@
     <string name="logbook_filter_empty">No “%1$s” events yet</string>
     <string name="logbook_first">First</string>
     <string name="logbook_last">Last</string>
-    <string name="logbook_read_failed">Could not read the logbook: %1$s</string>
+    <string name="logbook_read_failed">Could not read Paw Print: %1$s</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">Per-App Proxy</string>

@@ -303,14 +303,14 @@
     <string name="statistics_total">Всего %1$s</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">Журнал событий</string>
+    <string name="logbook_title">Отпечатки лап</string>
     <string name="logbook_empty">Пока ничего не записано</string>
     <string name="logbook_empty_hint">Запуски и остановки ядра, аварийные завершения, ошибки конфигурации и провайдеров, смены и проверки промежуточного прокси хранятся здесь неделю.</string>
     <string name="logbook_kind_engine_start">Запуск ядра</string>
     <string name="logbook_kind_engine_stop">Остановка ядра</string>
     <string name="logbook_kind_engine_unclean_exit">Аварийное завершение</string>
-    <string name="logbook_kind_logbook_cleared">Журнал очищен</string>
-    <string name="logbook_kind_logbook_reset">Журнал пересоздан</string>
+    <string name="logbook_kind_logbook_cleared">Отпечатки лап очищены</string>
+    <string name="logbook_kind_logbook_reset">Отпечатки лап пересозданы</string>
     <string name="logbook_kind_config_reload">Перезагрузка конфигурации</string>
     <string name="logbook_kind_config_change">Изменение конфигурации</string>
     <string name="logbook_kind_subscription_update">Обновление подписки</string>
@@ -328,7 +328,7 @@
     <string name="logbook_filter_empty">Событий «%1$s» пока нет</string>
     <string name="logbook_first">Впервые</string>
     <string name="logbook_last">Последний раз</string>
-    <string name="logbook_read_failed">Не удалось прочитать журнал событий: %1$s</string>
+    <string name="logbook_read_failed">Не удалось прочитать отпечатки лап: %1$s</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">Прокси для приложений</string>

@@ -293,14 +293,14 @@
     <string name="statistics_total">Toplam %1$s</string>
 
     <!-- Logbook -->
-    <string name="logbook_title">Olay Günlüğü</string>
+    <string name="logbook_title">Pati İzi</string>
     <string name="logbook_empty">Henüz kayıt yok</string>
     <string name="logbook_empty_hint">Çekirdeğin başlatılıp durdurulması, beklenmedik kapanmalar, yapılandırma ve sağlayıcı hataları ile ön proxy geçişleri ve denetimleri burada bir hafta saklanır.</string>
     <string name="logbook_kind_engine_start">Çekirdek başlatıldı</string>
     <string name="logbook_kind_engine_stop">Çekirdek durduruldu</string>
     <string name="logbook_kind_engine_unclean_exit">Beklenmedik kapanma</string>
-    <string name="logbook_kind_logbook_cleared">Günlük temizlendi</string>
-    <string name="logbook_kind_logbook_reset">Günlük sıfırlandı</string>
+    <string name="logbook_kind_logbook_cleared">Pati İzi temizlendi</string>
+    <string name="logbook_kind_logbook_reset">Pati İzi sıfırlandı</string>
     <string name="logbook_kind_config_reload">Yapılandırma yeniden yüklendi</string>
     <string name="logbook_kind_config_change">Yapılandırma değişikliği</string>
     <string name="logbook_kind_subscription_update">Abonelik güncellemesi</string>
@@ -318,7 +318,7 @@
     <string name="logbook_filter_empty">Henüz “%1$s” olayı yok</string>
     <string name="logbook_first">İlk</string>
     <string name="logbook_last">Son</string>
-    <string name="logbook_read_failed">Olay günlüğü okunamadı: %1$s</string>
+    <string name="logbook_read_failed">Pati İzi okunamadı: %1$s</string>
 
     <!-- Per-app proxy -->
     <string name="perapp_title">Uygulama bazlı proxy</string>
