@@ -78,4 +78,12 @@ object MeowCore {
         level: String,
         kind: String,
     ): String?
+
+    /**
+     * Records a `network.change` entry in the engine's logbook: [message]
+     * is one English sentence, [fields] a JSON object of its details, and
+     * [warning] picks the level over info. Dropped while no engine has
+     * started in this process or its profile turned the logbook off.
+     */
+    external fun nativeRecordNetworkChange(warning: Boolean, message: String, fields: String)
 }

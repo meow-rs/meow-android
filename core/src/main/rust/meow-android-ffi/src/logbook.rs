@@ -5,12 +5,21 @@
 //! the engine is stopped, through `logbook::read` — one SQLite library per
 //! process for the file, as the logbook requires of a process that links
 //! meow.
+//!
+//! The VPN service adds one kind of its own, [`NETWORK_CHANGE`].
 
 use jni::objects::{JClass, JString};
-use jni::sys::{jint, jlong, jstring};
+use jni::sys::{jboolean, jint, jlong, jstring, JNI_FALSE};
 use jni::JNIEnv;
 use meow_common::logbook::{self, Level, Query};
+use serde_json::{Map, Value};
 use std::path::Path;
+
+/// How the networks under the VPN changed, as the `:vpn` service sees them
+/// (`bg/NetworkChangeRecorder.kt`): which are up, the one the VPN declared
+/// as its underlying network, and what Android reports to the apps on the
+/// VPN. Not an engine kind: the engine cannot see any of it.
+const NETWORK_CHANGE: &str = "network.change";
 
 /// A page of the logbook under the engine home `home`, newest first, as
 /// `GET /logbook` serves it: `{"entries": [...], "rev": n, "more": bool}`,
@@ -61,6 +70,40 @@ fn read_page(home: &Path, before: i64, since: i64, limit: i32, level: &str, kind
         Ok(page) => serde_json::to_string(&page).unwrap_or_else(|e| error_json(&e.to_string())),
         Err(e) => error_json(&e.to_string()),
     }
+}
+
+/// Records a [`NETWORK_CHANGE`] event: `message` is one English sentence,
+/// `fields` a JSON object of its details. Dropped while no logbook is
+/// installed: no engine has started in this process, or its profile turned
+/// the logbook off.
+#[no_mangle]
+pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeRecordNetworkChange(
+    mut env: JNIEnv,
+    _class: JClass,
+    warning: jboolean,
+    message: JString,
+    fields: JString,
+) {
+    let mut read =
+        |s: &JString| -> String { env.get_string(s).map(Into::into).unwrap_or_default() };
+    let (message, fields) = (read(&message), read(&fields));
+    // A panic must not unwind into the JVM; the event is lost either way.
+    let _ = std::panic::catch_unwind(|| {
+        record_network_change(warning != JNI_FALSE, message, &fields);
+    });
+}
+
+fn record_network_change(warning: bool, message: String, fields: &str) {
+    let level = if warning { Level::Warning } else { Level::Info };
+    // Malformed fields leave the message standing on its own.
+    let fields: Map<String, Value> = serde_json::from_str(fields).unwrap_or_default();
+    fields
+        .into_iter()
+        .fold(
+            logbook::event(NETWORK_CHANGE, level, message),
+            |event, (key, value)| event.field(&key, value),
+        )
+        .record();
 }
 
 fn error_json(message: &str) -> String {
@@ -181,6 +224,37 @@ mod tests {
             Vec::<&str>::new()
         );
         assert!(page(&home.path(), 0, 0, 0, "loud")["error"].is_string());
+    }
+
+    #[test]
+    fn records_the_vpn_services_network_changes() {
+        let _serial = SERIAL.lock();
+        // Another test's engine may have left its logbook installed.
+        logbook::uninstall();
+        // No logbook yet: dropped.
+        record_network_change(false, "unrecorded".into(), "{}");
+        let home = Home::new("logbook-network");
+        logbook::install(&home.path().join(logbook::DIR_NAME), Default::default()).unwrap();
+        record_network_change(
+            false,
+            "Wi-Fi 101 is up.".into(),
+            r#"{"declared": "Wi-Fi 101", "declared_alive": true}"#,
+        );
+        record_network_change(true, "Wi-Fi 101 is gone.".into(), "not json");
+        logbook::uninstall();
+
+        let page = of_kind(&home.path(), 0, 0, 0, "", "network");
+        assert_eq!(messages(&page), ["Wi-Fi 101 is gone.", "Wi-Fi 101 is up."]);
+        let gone = &page["entries"][0];
+        assert_eq!(gone["kind"], "network.change");
+        assert_eq!(gone["level"], "warning");
+        assert!(gone.get("fields").is_none());
+        let up = &page["entries"][1];
+        assert_eq!(up["level"], "info");
+        assert_eq!(
+            up["fields"],
+            serde_json::json!({ "declared": "Wi-Fi 101", "declared_alive": true })
+        );
     }
 
     #[test]

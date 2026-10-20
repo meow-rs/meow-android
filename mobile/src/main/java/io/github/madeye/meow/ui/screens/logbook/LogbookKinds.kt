@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.madeye.meow.R
 import io.github.madeye.meow.logbook.LogbookLevel
@@ -28,9 +29,9 @@ import io.github.madeye.meow.logbook.LogbookLevel
 data class LogbookKind(@StringRes val label: Int, val icon: ImageVector)
 
 /**
- * The engine's event kinds. A kind is never renamed once released, so this
- * table only grows; a kind it lacks (a newer engine's) shows as its raw name
- * under its level's icon.
+ * The engine's event kinds, and the VPN service's `network.change`. A kind
+ * is never renamed once released, so this table only grows; a kind it lacks
+ * (a newer engine's) shows as its raw name under its level's icon.
  */
 object LogbookKinds {
     /** Every kind, in the filter menu's order: the engine, its config and sources, then dialer-proxy chains and the network. */
@@ -47,6 +48,7 @@ object LogbookKinds {
         "dialer-proxy.switch" to LogbookKind(R.string.logbook_kind_dialer_proxy_switch, Icons.Filled.SwapHoriz),
         "dialer-proxy.check" to LogbookKind(R.string.logbook_kind_dialer_proxy_check, Icons.Filled.NetworkCheck),
         "network.interface" to LogbookKind(R.string.logbook_kind_network_interface, Icons.Filled.SettingsEthernet),
+        "network.change" to LogbookKind(R.string.logbook_kind_network_change, Icons.Filled.Wifi),
         "listener.start" to LogbookKind(R.string.logbook_kind_listener_start, Icons.Filled.Lan),
         "logbook.cleared" to LogbookKind(R.string.logbook_kind_logbook_cleared, Icons.Filled.DeleteSweep),
         "logbook.reset" to LogbookKind(R.string.logbook_kind_logbook_reset, Icons.Filled.RestartAlt),

@@ -319,6 +319,7 @@
     <string name="logbook_kind_geodata_update">Обновление геоданных</string>
     <string name="logbook_kind_listener_start">Запуск слушателя</string>
     <string name="logbook_kind_network_interface">Исходящий интерфейс</string>
+    <string name="logbook_kind_network_change">Смена сети</string>
     <string name="logbook_kind_dialer_proxy_switch">Смена промежуточного прокси</string>
     <string name="logbook_kind_dialer_proxy_check">Проверка через промежуточный прокси</string>
     <string name="logbook_search">Поиск событий…</string>

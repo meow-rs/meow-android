@@ -304,6 +304,7 @@
     <string name="logbook_kind_geodata_update">地理数据更新</string>
     <string name="logbook_kind_listener_start">入站监听启动</string>
     <string name="logbook_kind_network_interface">出站网络接口</string>
+    <string name="logbook_kind_network_change">网络切换</string>
     <string name="logbook_kind_dialer_proxy_switch">前置代理切换</string>
     <string name="logbook_kind_dialer_proxy_check">前置代理检查</string>
     <string name="logbook_search">搜索事件…</string>

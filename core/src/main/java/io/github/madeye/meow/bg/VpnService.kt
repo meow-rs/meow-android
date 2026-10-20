@@ -76,6 +76,7 @@ class VpnService : BaseVpnService(), BaseService.Interface {
     private var metered = false
     @Volatile
     private var underlyingNetwork: Network? = null
+    private var networkChanges: NetworkChangeRecorder? = null
 
     override fun onBind(intent: Intent) = when (intent.action) {
         SERVICE_INTERFACE -> super<BaseVpnService>.onBind(intent)
@@ -85,6 +86,8 @@ class VpnService : BaseVpnService(), BaseService.Interface {
     override fun onRevoke() = stopRunner()
 
     override fun killProcesses(scope: CoroutineScope) {
+        networkChanges?.stop()
+        networkChanges = null
         super.killProcesses(scope)
         active = false
         scope.launch { DefaultNetworkListener.stop(this) }
@@ -231,6 +234,10 @@ class VpnService : BaseVpnService(), BaseService.Interface {
         }
         underlying?.let { setUnderlyingNetworks(arrayOf(it)) }
         Timber.d("VpnService: setUnderlyingNetworks=$underlying")
+        // Records in the logbook whether the network declared here outlives a
+        // network switch, and what the apps on the VPN are told meanwhile.
+        networkChanges?.stop()
+        networkChanges = NetworkChangeRecorder(this).also { it.start(underlying) }
         data.meowInstance!!.startTun2Socks(this, conn.fd)
     }
 

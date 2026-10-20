@@ -341,6 +341,7 @@
     <string name="logbook_kind_geodata_update">تحديث البيانات الجغرافية</string>
     <string name="logbook_kind_listener_start">بدء المستمع</string>
     <string name="logbook_kind_network_interface">واجهة الصادر</string>
+    <string name="logbook_kind_network_change">تغيّر الشبكة</string>
     <string name="logbook_kind_dialer_proxy_switch">تبديل البروكسي الوسيط</string>
     <string name="logbook_kind_dialer_proxy_check">فحص البروكسي الوسيط</string>
     <string name="logbook_search">البحث في الأحداث…</string>

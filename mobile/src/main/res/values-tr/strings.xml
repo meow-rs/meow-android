@@ -309,6 +309,7 @@
     <string name="logbook_kind_geodata_update">Coğrafi veri güncellemesi</string>
     <string name="logbook_kind_listener_start">Dinleyici başlatma</string>
     <string name="logbook_kind_network_interface">Giden arayüz</string>
+    <string name="logbook_kind_network_change">Ağ değişikliği</string>
     <string name="logbook_kind_dialer_proxy_switch">Ön proxy geçişi</string>
     <string name="logbook_kind_dialer_proxy_check">Ön proxy denetimi</string>
     <string name="logbook_search">Olay ara…</string>
