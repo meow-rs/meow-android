@@ -19,9 +19,10 @@ data class MemberDelay(val name: String, val delayMs: Int)
  * Latency-tests a group one member at a time, so each result can be shown the
  * moment it lands.
  *
- * `GET /group/{name}/delay` would do it in one call, but that call is
- * all-or-nothing: the whole batch shares one timeout, and a single member
- * timing out turns the response into a bare 504. Probing each member through
+ * `GET /group/{name}/delay` would do it in one call, but that call answers
+ * only once the whole batch is done, under one timeout shared by the batch,
+ * and leaves out every member that failed or was still probing at the
+ * deadline (a bare 504 when none passed). Probing each member through
  * `GET /proxies/{name}/delay` leaves the same trace on the engine side (both
  * endpoints record through `health::probe_and_record`, so a later `/proxies`
  * still shows every result) while reporting each one as it completes. A

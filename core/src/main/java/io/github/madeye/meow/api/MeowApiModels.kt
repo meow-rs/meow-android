@@ -194,8 +194,10 @@ internal data class RulesResponse(val rules: List<Rule> = emptyList())
 
 /**
  * One `rule-providers:` entry, as `GET /providers/rules` reports it.
- * [behavior], [format] and [vehicleType] are the config's own keywords
- * (`domain`/`ipcidr`/`classical`, `yaml`/`text`/`mrs`, `HTTP`/`File`/`Inline`);
+ * [behavior] and [vehicleType] are the config's own keywords
+ * (`domain`/`ipcidr`/`classical`, `HTTP`/`File`/`Inline`); [format] is the
+ * format the payload parsed as, under mihomo's names (`YamlRule`/`TextRule`/
+ * `MrsRule`), so an `.mrs` file reports `MrsRule` whatever the config says.
  * [type] is always `Rule`. [updatedAt] is an RFC 3339 UTC instant, or empty
  * when the engine has no time for the provider, e.g. an inline one.
  */

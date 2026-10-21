@@ -561,9 +561,9 @@ class MeowApiTest {
         enqueue(
             """
             {"providers": {
-              "zeta": {"name": "zeta", "type": "Rule", "behavior": "domain", "format": "mrs", "ruleCount": 120,
+              "zeta": {"name": "zeta", "type": "Rule", "behavior": "domain", "format": "MrsRule", "ruleCount": 120,
                        "updatedAt": "2026-10-05T01:02:03Z", "vehicleType": "HTTP"},
-              "Ads":  {"name": "", "type": "Rule", "behavior": "classical", "format": "yaml", "ruleCount": 3,
+              "Ads":  {"name": "", "type": "Rule", "behavior": "classical", "format": "YamlRule", "ruleCount": 3,
                        "updatedAt": "", "vehicleType": "Inline"},
               "beta": {"behavior": "ipcidr", "vehicleType": "File", "somethingNew": 1}
             }}
@@ -579,7 +579,7 @@ class MeowApiTest {
                 name = "zeta",
                 type = "Rule",
                 behavior = "domain",
-                format = "mrs",
+                format = "MrsRule",
                 ruleCount = 120,
                 updatedAt = "2026-10-05T01:02:03Z",
                 vehicleType = "HTTP",
