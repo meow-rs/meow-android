@@ -259,7 +259,9 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
         }
         // Dropped when this task ends, which stop() waits for, so the fd
         // leaves epoll before Kotlin closes it.
-        let tun = match AsyncFd::with_interest(fd, Interest::READABLE) {
+        // SAFETY: for that reason `fd` stays open, and the same TUN, for the
+        // AsyncFd's whole life.
+        let tun = match unsafe { AsyncFd::register_with_interest(fd, Interest::READABLE) } {
             Ok(tun) => tun,
             Err(e) => {
                 logging::bridge_log(&format!("tun2socks: cannot poll the TUN fd: {}", e));
