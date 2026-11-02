@@ -24,6 +24,7 @@ import okhttp3.HttpUrl
 interface ProxyProbeTransport {
     /**
      * Runs one probe and returns its JSON answer, blocking until it ends.
+     * An empty [proxy] is the engine's routing rather than one proxy.
      * Throws [IOException] when `:vpn` cannot be reached.
      */
     fun probe(id: Long, proxy: String, kind: String, arg: String): String
@@ -82,7 +83,8 @@ data class ProbeHttpResponse(val status: Int, val body: String)
  * Diagnostics through one named proxy of the running engine, for the proxy
  * detail page. Each call dials that proxy directly — rules and group
  * selections play no part — and measures inside `:vpn`, so the numbers are
- * the proxy's own rather than the tunnel's.
+ * the proxy's own rather than the tunnel's. [routedNatType] is the one
+ * exception, for Home.
  *
  * Cancelling a call ends its probe in `:vpn` as well, rather than leaving it
  * to run out its budget there.
@@ -117,6 +119,13 @@ class ProxyProber(private val transport: ProxyProbeTransport) {
             sourceHidden = answer.string("note") == "source-hidden",
         )
     }
+
+    /**
+     * The NAT that UDP to the internet meets now: the test goes wherever the
+     * engine's mode, rules and group selections send an app's UDP to its
+     * STUN server, so the answer follows a node switch.
+     */
+    suspend fun routedNatType(): NatType = natType(proxy = "")
 
     suspend fun download(proxy: String): Throughput = run(proxy, "download").throughput()
 

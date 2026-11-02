@@ -12,8 +12,9 @@ interface IMeowService {
     void unregisterCallback(in IMeowServiceCallback cb);
 
     // One proxy-detail probe through the named proxy of the running engine
-    // (see the FFI crate's src/probe). Blocks until the probe ends and
-    // returns its JSON answer; cancelProxyProbe(id) ends it early.
+    // (see the FFI crate's src/probe), or with an empty name through the
+    // engine's routing. Blocks until the probe ends and returns its JSON
+    // answer; cancelProxyProbe(id) ends it early.
     String probeProxy(long id, String proxy, String kind, String arg);
     oneway void cancelProxyProbe(long id);
 

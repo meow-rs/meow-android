@@ -71,6 +71,7 @@ fun HomeScreen(
     onToggle: (Boolean) -> Unit,
     onSelectRouteMode: (RouteMode) -> Unit,
     exitIp: ExitIpUiState,
+    exitNat: NatUiState,
     onRefreshExitIp: () -> Unit,
     onOpenSubscriptions: () -> Unit,
     onRules: () -> Unit,
@@ -123,7 +124,7 @@ fun HomeScreen(
         }
 
         if (exitIp != ExitIpUiState.Hidden) {
-            item { ExitIpCard(state = exitIp, onRefresh = onRefreshExitIp) }
+            item { ExitIpCard(state = exitIp, nat = exitNat, onRefresh = onRefreshExitIp) }
         }
 
         item {

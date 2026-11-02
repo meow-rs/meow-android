@@ -2,6 +2,10 @@ package io.github.madeye.meow.ui.screens.home
 
 import io.github.madeye.meow.bg.BaseService.State
 import io.github.madeye.meow.net.ExitIp
+import io.github.madeye.meow.net.NatBehavior
+import io.github.madeye.meow.net.NatType
+import io.github.madeye.meow.net.ProxyProbeException
+import io.github.madeye.meow.ui.screens.proxies.ProbeFailure
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +40,19 @@ class ExitIpViewModelTest {
     /** What the n-th (1-based) lookup does; by default answers 198.51.100.n. */
     private var answer: suspend (Int) -> ExitIp = { n -> exit("198.51.100.$n") }
 
+    private var natTests = 0
+    private var natCancelled = 0
+
+    /** What the n-th (1-based) NAT test does; by default finds a full cone. */
+    private var natAnswer: suspend (Int) -> NatType = { fullCone }
+    private val fullCone = NatType(
+        mapping = NatBehavior.EndpointIndependent,
+        filtering = NatBehavior.EndpointIndependent,
+        mappedAddress = "198.51.100.1:41000",
+        server = "stun.example",
+        sourceHidden = false,
+    )
+
     @Before
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
@@ -56,6 +73,15 @@ class ExitIpViewModelTest {
                     answer(n)
                 } catch (e: CancellationException) {
                     cancelled++
+                    throw e
+                }
+            },
+            natType = {
+                val n = ++natTests
+                try {
+                    natAnswer(n)
+                } catch (e: CancellationException) {
+                    natCancelled++
                     throw e
                 }
             },
@@ -242,6 +268,82 @@ class ExitIpViewModelTest {
         settle()
 
         assertEquals(1, lookups)
+        assertEquals("198.51.100.1", (vm.uiState.value as ExitIpUiState.Found).exitIp.ip)
+    }
+
+    @Test
+    fun `connected, the NAT type is tested beside the exit IP`() = runTest {
+        vpn.value = State.Connected
+        val vm = viewModel()
+        assertEquals(NatUiState.Checking, vm.natState.value)
+
+        settle()
+
+        assertEquals(1, natTests)
+        assertEquals(NatUiState.Found(fullCone), vm.natState.value)
+    }
+
+    @Test
+    fun `the exit IP does not wait for a slow NAT test`() = runTest {
+        natAnswer = { awaitCancellation() }
+        vpn.value = State.Connected
+        val vm = viewModel()
+        settle()
+
+        assertEquals("198.51.100.1", (vm.uiState.value as ExitIpUiState.Found).exitIp.ip)
+        assertEquals(NatUiState.Checking, vm.natState.value)
+    }
+
+    @Test
+    fun `disconnected, there is no NAT test to run`() = runTest {
+        val vm = viewModel()
+        settle()
+
+        assertEquals(0, natTests)
+        assertEquals(NatUiState.Unavailable, vm.natState.value)
+    }
+
+    @Test
+    fun `a node switch re-tests the NAT type and ends the test in flight`() = runTest {
+        natAnswer = { n -> if (n == 1) awaitCancellation() else fullCone }
+        vpn.value = State.Connected
+        val vm = viewModel()
+        settle()
+
+        routeChanges.notifyChanged()
+        runCurrent()
+        assertEquals(1, natCancelled)
+        settle()
+
+        assertEquals(2, natTests)
+        assertEquals(NatUiState.Found(fullCone), vm.natState.value)
+    }
+
+    @Test
+    fun `disconnecting ends the NAT test and leaves nothing to show`() = runTest {
+        natAnswer = { awaitCancellation() }
+        vpn.value = State.Connected
+        val vm = viewModel()
+        settle()
+
+        vpn.value = State.Stopping
+        runCurrent()
+        assertEquals(1, natCancelled)
+        vpn.value = State.Stopped
+        settle()
+
+        assertEquals(1, natTests)
+        assertEquals(NatUiState.Unavailable, vm.natState.value)
+    }
+
+    @Test
+    fun `a NAT test that fails keeps its reason`() = runTest {
+        natAnswer = { throw ProxyProbeException("the proxy does not relay UDP", ProxyProbeException.UDP_UNSUPPORTED) }
+        vpn.value = State.Connected
+        val vm = viewModel()
+        settle()
+
+        assertEquals(NatUiState.Failed(ProbeFailure.UdpUnsupported), vm.natState.value)
         assertEquals("198.51.100.1", (vm.uiState.value as ExitIpUiState.Found).exitIp.ip)
     }
 }

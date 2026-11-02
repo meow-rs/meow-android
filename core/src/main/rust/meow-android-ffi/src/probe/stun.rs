@@ -25,6 +25,9 @@ const RFC5780_SERVERS: [(&str, u16); 3] = [
     ("stun.miwifi.com", 3478),
     ("stun.fitauto.ru", 3478),
 ];
+/// The flow a NAT probe with no proxy name is routed as: what the engine
+/// does with UDP to the first server is what the test then measures.
+pub(super) const ROUTED_SERVER: (&str, u16) = RFC5780_SERVERS[0];
 /// Plain servers on unrelated addresses: when no RFC 5780 server answers,
 /// they still tell whether the mapping depends on the destination.
 const PLAIN_SERVERS: [(&str, u16); 2] =

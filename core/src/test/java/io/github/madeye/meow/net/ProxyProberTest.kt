@@ -78,6 +78,15 @@ class ProxyProberTest {
     }
 
     @Test
+    fun `the routed NAT test names no proxy`() = runBlocking {
+        val (transport, prober) = prober { _, _ ->
+            """{"mapping":"endpoint-independent","filtering":"endpoint-independent","mapped":null,"server":"s","note":null}"""
+        }
+        assertEquals(NatBehavior.EndpointIndependent, prober.routedNatType().filtering)
+        assertEquals(listOf("" to "nat"), transport.calls.map { it.proxy to it.kind })
+    }
+
+    @Test
     fun `an unknown behavior reads as unknown`() {
         assertEquals(NatBehavior.Unknown, NatBehavior.fromWire("somewhere-in-between"))
         assertEquals(NatBehavior.Unknown, NatBehavior.fromWire(null))

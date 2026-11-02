@@ -364,6 +364,7 @@ private fun HomeRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val exitIp: ExitIpViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val exitIpState by exitIp.uiState.collectAsStateWithLifecycle()
+    val exitNatState by exitIp.natState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val askForNotifications = rememberNotificationPermissionRequest()
@@ -427,6 +428,7 @@ private fun HomeRoute(
             },
             onSelectRouteMode = viewModel::onSelectRouteMode,
             exitIp = exitIpState,
+            exitNat = exitNatState,
             onRefreshExitIp = exitIp::refresh,
             onOpenSubscriptions = onOpenSubscriptions,
             onRules = onRules,

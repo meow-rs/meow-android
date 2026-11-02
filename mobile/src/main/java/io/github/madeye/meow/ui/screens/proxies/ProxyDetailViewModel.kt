@@ -44,7 +44,22 @@ sealed interface ProbeResult {
     data class Bandwidth(val throughput: Throughput) : ProbeResult
 }
 
-enum class ProbeFailure { TimedOut, UdpUnsupported, Failed }
+enum class ProbeFailure {
+    TimedOut,
+    UdpUnsupported,
+    Failed,
+    ;
+
+    companion object {
+        fun of(e: IOException): ProbeFailure = when {
+            e is ProxyProbeException && e.code == ProxyProbeException.TIMEOUT -> TimedOut
+            e is ProxyProbeException && e.code == ProxyProbeException.UDP_UNSUPPORTED -> UdpUnsupported
+            // The engine's delay test answers a timeout with a bare 504.
+            e is MeowApiException.Http && e.code == 504 -> TimedOut
+            else -> Failed
+        }
+    }
+}
 
 @Immutable
 sealed interface ProbeState {
@@ -148,13 +163,9 @@ class ProxyDetailViewModel(
         ProxyProbe.Upload -> ProbeResult.Bandwidth(bandwidth.withLock { prober.upload(name) })
     }
 
-    private fun failure(e: IOException): ProbeState.Failed = when {
-        e is ProxyProbeException && e.code == ProxyProbeException.TIMEOUT -> ProbeState.Failed(ProbeFailure.TimedOut)
-        e is ProxyProbeException && e.code == ProxyProbeException.UDP_UNSUPPORTED ->
-            ProbeState.Failed(ProbeFailure.UdpUnsupported)
-        // The engine's delay test answers a timeout with a bare 504.
-        e is MeowApiException.Http && e.code == 504 -> ProbeState.Failed(ProbeFailure.TimedOut)
-        else -> ProbeState.Failed(ProbeFailure.Failed, e.message)
+    private fun failure(e: IOException): ProbeState.Failed = when (val reason = ProbeFailure.of(e)) {
+        ProbeFailure.Failed -> ProbeState.Failed(reason, e.message)
+        else -> ProbeState.Failed(reason)
     }
 
     private fun stopAll() {

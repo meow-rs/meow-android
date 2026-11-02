@@ -14,6 +14,10 @@
 //! (`ConnType::Tunnel`) so it does not count as use of a group. Every probe
 //! has its own time budget and can be ended early by the UI's id. Answers are
 //! JSON objects; a failure is `{"error": …, "code": …}`.
+//!
+//! With no proxy name a probe goes where the engine's routing sends its
+//! traffic instead, for Home's exit card: only `nat` can, routed as an app's
+//! UDP flow to the first STUN server would be ([`routed`]).
 
 mod http;
 mod stun;
@@ -23,6 +27,7 @@ use jni::objects::{JClass, JString};
 use jni::sys::{jlong, jstring};
 use jni::JNIEnv;
 use meow_common::{ConnType, Metadata, Network, ProxyAdapter};
+use meow_tunnel::{ResolvedTarget, Tunnel};
 use parking_lot::Mutex;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -112,6 +117,57 @@ async fn probe(proxy: &dyn ProxyAdapter, kind: &str, arg: &str) -> ProbeResult {
     }
 }
 
+/// Runs `kind` through the proxy named `proxy_name`, or with an empty name
+/// through whichever adapter the engine routes the probe's traffic to.
+async fn probe_through(tunnel: &Tunnel, proxy_name: &str, kind: &str, arg: &str) -> ProbeResult {
+    // The route table is held for the whole probe: a `dialer-proxy` chain
+    // resolves its front hop through the route generation it was built in.
+    if proxy_name.is_empty() {
+        let ResolvedTarget {
+            adapter,
+            route: _route,
+            ..
+        } = routed(tunnel, kind).await?;
+        return probe(adapter.as_ref(), kind, arg).await;
+    }
+    let routes = tunnel.route_snapshot();
+    let proxy = routes
+        .proxies
+        .get(proxy_name)
+        .ok_or_else(|| ProbeError::new("no-proxy", format!("no proxy named {proxy_name:?}")))?;
+    probe(proxy.as_ref(), kind, arg).await
+}
+
+/// The adapter the engine routes a probe of `kind` to, picked the way the
+/// tunnel picks one for a UDP flow from the TUN (`handle_udp`): mode, rules
+/// (IP rules on the resolved address), groups' current selections.
+async fn routed(tunnel: &Tunnel, kind: &str) -> Result<ResolvedTarget, ProbeError> {
+    let (host, port) = match kind {
+        "nat" => stun::ROUTED_SERVER,
+        other => {
+            return Err(ProbeError::new(
+                "bad-request",
+                format!("probe {other:?} needs a proxy name"),
+            ))
+        }
+    };
+    // As the TUN's flows are typed, for the rules: the probe's own dials
+    // still mark themselves as probes.
+    let mut metadata = Metadata {
+        network: Network::Udp,
+        conn_type: ConnType::Inner,
+        host: host.into(),
+        dst_port: port,
+        ..Default::default()
+    };
+    let inner = tunnel.inner();
+    inner.pre_resolve(&mut metadata).await;
+    inner
+        .resolve_proxy(&metadata)
+        .await
+        .ok_or_else(|| ProbeError::failed("the engine has no route for it"))
+}
+
 fn run(id: i64, proxy_name: &str, kind: &str, arg: &str) -> String {
     let token = inflight().start(id);
     let result = match crate::engine::tunnel() {
@@ -119,25 +175,14 @@ fn run(id: i64, proxy_name: &str, kind: &str, arg: &str) -> String {
             "engine-stopped",
             "the engine is not running",
         )),
-        Some(tunnel) => {
-            // Held for the whole probe: a `dialer-proxy` chain resolves its
-            // front hop through the route generation it was built in.
-            let routes = tunnel.route_snapshot();
-            match routes.proxies.get(proxy_name).cloned() {
-                None => Err(ProbeError::new(
-                    "no-proxy",
-                    format!("no proxy named {proxy_name:?}"),
-                )),
-                Some(proxy) => crate::get_runtime().block_on(async {
-                    tokio::select! {
-                        result = probe(proxy.as_ref(), kind, arg) => result,
-                        () = token.cancelled() => {
-                            Err(ProbeError::new("cancelled", "cancelled"))
-                        }
-                    }
-                }),
+        Some(tunnel) => crate::get_runtime().block_on(async {
+            tokio::select! {
+                result = probe_through(&tunnel, proxy_name, kind, arg) => result,
+                () = token.cancelled() => {
+                    Err(ProbeError::new("cancelled", "cancelled"))
+                }
             }
-        }
+        }),
     };
     inflight().finish(id);
     answer(result)
@@ -262,6 +307,43 @@ mod tests {
         let (a, b) = (inflight.start(1), inflight.start(2));
         inflight.cancel_all();
         assert!(a.is_cancelled() && b.is_cancelled());
+    }
+
+    /// A NAT probe with no proxy name is routed as UDP to its first STUN
+    /// server: the TCP rule for that host is passed over for the UDP one.
+    #[test]
+    fn a_nameless_nat_probe_goes_where_the_rules_send_udp_to_the_stun_server() {
+        let _serial = crate::test_support::SERIAL.lock();
+        let (host, _) = stun::ROUTED_SERVER;
+        let profile = format!(
+            "rules:\n  - AND,((NETWORK,TCP),(DOMAIN,{host})),DIRECT\n  \
+             - DOMAIN,{host},REJECT\n  - MATCH,DIRECT\n"
+        );
+        // `<dir>/meow`, as the app's `no_backup/meow`.
+        let dir = std::env::temp_dir().join(format!("meow-probe-route-{}", std::process::id()));
+        let home = dir.join("meow");
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::write(home.join("config.yaml"), profile).unwrap();
+        *crate::HOME_DIR.lock() = Some(home.to_str().unwrap().to_string());
+        let started = crate::start_engine(None, None, None, crate::engine::DnsUpstreams::Builtin);
+        let error = crate::get_error();
+        let routed = crate::engine::tunnel().map(|tunnel| {
+            let rt = crate::get_runtime();
+            let nat = rt
+                .block_on(routed(&tunnel, "nat"))
+                .map(|t| t.adapter.name().to_string());
+            let other = rt.block_on(routed(&tunnel, "download")).map(|_| ());
+            (nat, other)
+        });
+        crate::stop_engine();
+        *crate::HOME_DIR.lock() = None;
+        meow_common::logbook::uninstall();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(started, 0, "{error}");
+
+        let (nat, other) = routed.expect("an engine runs");
+        assert_eq!(nat.unwrap(), "REJECT");
+        assert_eq!(other.unwrap_err().code, "bad-request");
     }
 
     #[test]

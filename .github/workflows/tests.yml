@@ -14,7 +14,11 @@ jobs:
   # tasks, but :core still needs the NDK present to *configure*, so the install
   # step below is not optional.
   unit-test:
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, not ubuntu-latest: ubuntu-26.04 ships libclang 22, and the
+    # bindgen 0.69 that madeye/lwip's build script uses reads its records with
+    # no fields ("no field `mtu` on type `lwip::netif`"). Move on once
+    # lwip's bindgen is 0.72 or newer.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
@@ -53,7 +57,7 @@ jobs:
             mobile/build/reports/tests/
 
   android-instrumented-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     steps:

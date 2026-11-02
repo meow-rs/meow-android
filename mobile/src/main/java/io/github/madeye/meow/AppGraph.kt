@@ -97,7 +97,7 @@ object AppGraph {
     val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
     val logbookReader: LogbookReader by lazy { LogbookReader { MeowInstance.homeDir(appContext) } }
 
-    /** A proxy detail page's tests, run in `:vpn` over the activity's binding. */
+    /** Proxy detail tests and Home's NAT test, run in `:vpn` over the activity's binding. */
     val proxyProber: ProxyProber by lazy { ProxyProber(vpn) }
 
     /** Node and route-mode switches, for the exit-IP card; see [RouteChanges]. */
@@ -122,6 +122,7 @@ object AppGraph {
 
                 ExitIpViewModel::class.java -> ExitIpViewModel(
                     lookup = exitIpLookup::lookup,
+                    natType = proxyProber::routedNatType,
                     vpnState = vpn.state,
                     enabled = showExitIp.enabled,
                     routedViaVpn = appContext::defaultNetworkIsVpn,

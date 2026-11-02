@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.bg.BaseService
 import io.github.madeye.meow.net.ExitIp
+import io.github.madeye.meow.net.NatType
+import io.github.madeye.meow.ui.screens.proxies.ProbeFailure
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
@@ -38,8 +41,23 @@ sealed interface ExitIpUiState {
     data object Failed : ExitIpUiState
 }
 
+/** The card's other half: the NAT that UDP meets on its way out. */
+@Immutable
+sealed interface NatUiState {
+    /** Disconnected: the test runs inside the engine, so there is none. */
+    data object Unavailable : NatUiState
+
+    data object Checking : NatUiState
+
+    @Immutable
+    data class Found(val type: NatType) : NatUiState
+
+    data class Failed(val reason: ProbeFailure) : NatUiState
+}
+
 /**
- * Home's exit-IP card: which public address traffic currently leaves from.
+ * Home's exit-IP card: which public address traffic currently leaves from,
+ * and while connected the NAT type of the route UDP takes ([natType]).
  *
  * Kept apart from [HomeViewModel] because its triggers are its own: a check
  * runs when the tunnel comes up or goes down, after a node or route-mode
@@ -49,6 +67,8 @@ sealed interface ExitIpUiState {
  */
 class ExitIpViewModel(
     private val lookup: suspend () -> ExitIp,
+    /** Through the engine's routing, like an app's UDP; see `ProxyProber.routedNatType`. */
+    private val natType: suspend () -> NatType,
     vpnState: StateFlow<BaseService.State>,
     private val enabled: StateFlow<Boolean?>,
     /** Whether this app's own sockets currently go through the VPN. */
@@ -69,6 +89,7 @@ class ExitIpViewModel(
     private enum class Route { Direct, Tunnel }
 
     private val status = MutableStateFlow<ExitIpUiState>(ExitIpUiState.Checking)
+    private val nat = MutableStateFlow<NatUiState>(NatUiState.Checking)
 
     /** `null` mid-transition (connecting / stopping), when there is nothing stable to measure. */
     private var route: Route? = null
@@ -77,6 +98,9 @@ class ExitIpViewModel(
     val uiState: StateFlow<ExitIpUiState> = combine(enabled, status) { on, current ->
         if (on == true) current else ExitIpUiState.Hidden
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExitIpUiState.Hidden)
+
+    /** Shown only beside a [uiState] that is not hidden. */
+    val natState: StateFlow<NatUiState> = nat.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -91,6 +115,7 @@ class ExitIpViewModel(
                             // Whatever is in flight describes the route being torn down.
                             cancelCheck()
                             status.value = ExitIpUiState.Checking
+                            nat.value = NatUiState.Checking
                         }
                         else -> schedule(SETTLE_MS)
                     }
@@ -114,8 +139,12 @@ class ExitIpViewModel(
         check?.cancel()
         status.value = ExitIpUiState.Checking
         val via = route
+        nat.value = if (via == Route.Tunnel) NatUiState.Checking else NatUiState.Unavailable
         check = viewModelScope.launch {
             delay(delayMs)
+            // Beside the lookup, not after it: the NAT test takes seconds
+            // longer, and the address should not wait for it.
+            if (via == Route.Tunnel) launch { nat.value = checkNat() }
             status.value = try {
                 val exitIp = lookup()
                 ExitIpUiState.Found(exitIp, bypassesVpn = via == Route.Tunnel && !routedViaVpn())
@@ -124,6 +153,13 @@ class ExitIpViewModel(
                 ExitIpUiState.Failed
             }
         }
+    }
+
+    private suspend fun checkNat(): NatUiState = try {
+        NatUiState.Found(natType())
+    } catch (e: IOException) {
+        Timber.w(e, "NAT type test failed")
+        NatUiState.Failed(ProbeFailure.of(e))
     }
 
     private fun cancelCheck() {
