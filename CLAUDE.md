@@ -57,6 +57,12 @@ cd core/src/main/rust/meow-android-ffi && cargo fmt --check && cd -
 
 Run Android lint and the unit tests after Kotlin changes, clippy/rustfmt after Rust changes.
 
+## Releases
+
+GitHub releases are built and signed in CI (`.github/workflows/release.yml`): push a `v*` tag and the workflow attaches `meow-<tag>-universal.apk`, signed with the release key, to that tag's release, or creates the release as a draft from the version's `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`. Do not attach a locally signed APK yourself; the workflow replaces one of the same name. A dispatch of the workflow is a dry run (signed APK as an artifact, nothing published). `apk.yml` signs `main`'s arm64 APK with the same key, so it updates a release in place; PR builds keep a throwaway key. The Play AAB still goes out locally via fastlane.
+
+The release key (CN=meow-android, SHA-256 `21ebc43a…22eff`) lives in the `release` environment's `RELEASE_*` secrets, which only `main` and `v*` tags can read, and is used only by jobs that are handed an already built APK (`.github/scripts/sign-apk.sh`, which also rejects any other certificate). The repository-level `KEYSTORE_*` secrets are madeye's older key (releases up to v1.0.8, SHA-256 `5540c1f2…76b5`); nothing uses them. An APK under the new key cannot update an install of v1.0.8 or earlier, so the first such release has to tell users to uninstall and reinstall.
+
 ## Architecture
 
 Three-layer stack: **Compose UI → Kotlin VPN Service → Rust FFI**

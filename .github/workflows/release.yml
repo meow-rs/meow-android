@@ -1,0 +1,155 @@
+name: Release
+
+# The GitHub release's APK, signed with the release key. Push a `v*` tag and
+# this attaches `meow-<tag>-universal.apk` to that tag's release, replacing an
+# APK of that name already there, or creates the release as a draft (notes
+# from the version's fastlane changelog) when there is none yet. The Play AAB
+# still goes out from a developer machine via fastlane.
+#
+# A dispatch is a dry run: it builds and signs `ref` and keeps the APK as an
+# artifact, publishing nothing.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to build (dry run, no release)
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  build:
+    # ubuntu-24.04 for lwip's bindgen, as in apk.yml.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Decode google-services.json
+        if: env.GOOGLE_SERVICES_JSON != ''
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > mobile/google-services.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-ndk
+            core/src/main/rust/meow-android-ffi/target
+          key: cargo-${{ runner.os }}-universal-release-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-universal-release-
+
+      - name: Install Android NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;28.2.13676358" "ndk;27.0.12077973"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Install cargo-ndk
+        run: command -v cargo-ndk || cargo install cargo-ndk
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
+      # Every ABI in one APK (ABI splits are off); no KEYSTORE_PATH, so AGP
+      # leaves it unsigned.
+      - name: Build release APK (universal)
+        run: ./gradlew :mobile:assembleRelease -PCARGO_PROFILE=release
+
+      - name: Align, and pick the release notes
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$bt/zipalign" -f 4 mobile/build/outputs/apk/release/mobile-release-unsigned.apk "$RUNNER_TEMP/release/aligned.apk"
+          code=$(sed -n 's/^ *versionCode = \([0-9]*\).*/\1/p' buildSrc/src/main/kotlin/Helpers.kt)
+          notes="fastlane/metadata/android/en-US/changelogs/$code.txt"
+          if [ -f "$notes" ]; then
+            cp "$notes" "$RUNNER_TEMP/release/notes.md"
+          else
+            echo "::warning::no $notes; a new release gets placeholder notes"
+            echo "Release $GITHUB_REF_NAME" > "$RUNNER_TEMP/release/notes.md"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meow-universal-unsigned
+          path: ${{ runner.temp }}/release
+          retention-days: 1
+          compression-level: 0
+
+  # Signs and publishes in a job of its own: the key never shares a runner
+  # with the Gradle and cargo build scripts.
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: meow-universal-unsigned
+          path: ${{ runner.temp }}/release
+
+      - name: Sign with the release key
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          NAME: ${{ inputs.ref || github.ref_name }}
+        run: |
+          apk="meow-${NAME//\//-}-universal.apk"
+          .github/scripts/sign-apk.sh "$RUNNER_TEMP/release/aligned.apk" "$apk"
+          echo "APK=$apk" >> "$GITHUB_ENV"
+
+      - name: Keep the APK (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-universal-apk
+          path: ${{ env.APK }}
+          retention-days: 14
+          compression-level: 0
+
+      - name: Attach to the tag's release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "$APK" --draft --verify-tag --title "$TAG" \
+              --notes-file "$RUNNER_TEMP/release/notes.md" --repo "$GITHUB_REPOSITORY"
+          fi
