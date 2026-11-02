@@ -1,11 +1,11 @@
 name: APK
 
-# Installable test build for phones: the R8-minified release variant for
+# Installable build for phones: the R8-minified release variant for
 # arm64-v8a, so R8 keep-rule regressions surface before a release is cut.
-# It is NOT a release: releases are still built and signed locally (#60).
-# This APK is signed with a throwaway key generated per run, so its signature
-# differs from the published release and from every other run's. Installing it
-# means uninstalling any other Meow build first.
+# On `main` the `sign` job signs it with the release key, so it updates a
+# GitHub release in place and the other way round. Anywhere else (PRs, a
+# dispatch on a branch) it is signed with a throwaway key generated per run:
+# installing that one means uninstalling any other Meow build first.
 on:
   push:
     branches: [master, main]
@@ -66,17 +66,72 @@ jobs:
       - name: Build release APK (arm64-v8a)
         run: ./gradlew :mobile:assembleRelease -PTARGET_ABI=arm64 -PCARGO_PROFILE=release
 
+      - name: Align
+        run: |
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$bt/zipalign" -f 4 mobile/build/outputs/apk/release/mobile-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+
+      # Only `main` and `v*` tags can use the `release` environment's key.
       - name: Sign with a throwaway key
+        if: github.ref != 'refs/heads/main'
         run: |
           keytool -genkeypair -keystore "$RUNNER_TEMP/ci.keystore" -storepass android -keypass android \
             -alias ci -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=Meow CI test build"
           bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           apk="meow-${GITHUB_SHA::7}-arm64-v8a.apk"
-          "$bt/zipalign" -f 4 mobile/build/outputs/apk/release/mobile-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
           "$bt/apksigner" sign --ks "$RUNNER_TEMP/ci.keystore" --ks-pass pass:android --ks-key-alias ci \
             --out "$apk" "$RUNNER_TEMP/aligned.apk"
           "$bt/apksigner" verify "$apk"
           ls -l "$apk"
+          echo "APK=$apk" >> "$GITHUB_ENV"
+
+      - name: Upload the unsigned APK for signing
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-arm64-v8a-unsigned
+          path: ${{ runner.temp }}/aligned.apk
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload APK
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-arm64-v8a-apk
+          path: ${{ env.APK }}
+          retention-days: 14
+          # An APK is already a zip.
+          compression-level: 0
+
+  # Signs `main`'s APK with the release key, in a job of its own: the key
+  # never shares a runner with the Gradle and cargo build scripts.
+  sign:
+    needs: apk
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: meow-arm64-v8a-unsigned
+          path: ${{ runner.temp }}/unsigned
+
+      - name: Sign with the release key
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          apk="meow-${GITHUB_SHA::7}-arm64-v8a.apk"
+          .github/scripts/sign-apk.sh "$RUNNER_TEMP/unsigned/aligned.apk" "$apk"
           echo "APK=$apk" >> "$GITHUB_ENV"
 
       - name: Upload APK
