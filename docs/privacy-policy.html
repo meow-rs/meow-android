@@ -24,7 +24,7 @@
 <body>
 
 <h1>Meow - Privacy Policy</h1>
-<p class="updated">Last updated: October 16, 2026</p>
+<p class="updated">Last updated: November 3, 2026</p>
 
 <h2>Overview</h2>
 <p>Meow ("the App", Android package <code>io.github.madeye.meow</code>) is an open-source VPN client provided by Max Lv. We respect your privacy and are committed to protecting it. This policy explains what data the App handles and how.</p>
@@ -41,9 +41,10 @@
     <li>Subscription URLs, proxy credentials, configuration profiles, downloaded provider/rule data, and settings are stored in the App's private storage.</li>
     <li>The installed-app list is read on-device to let you select which apps use the VPN. Selected package names are stored locally, not uploaded as an app inventory. On Android 10 and later the App also asks Android which installed app opened each connection it carries, to show it with that connection; this stays on the device.</li>
     <li>Traffic statistics, active/recent connection details (which may include destination addresses, hostnames and the app that opened the connection), DNS lookup results, and engine diagnostic logs are displayed locally. The recent-connections list and displayed log buffer are bounded and held in memory; they are not a developer-hosted browsing history.</li>
+    <li>The Traffic page keeps a traffic ledger on the device: for each calendar day, how much data and how many connections went to each site (its registrable domain, or its IP address when there is no hostname), each app, each proxy and each network type (Wi-Fi, cellular, Ethernet). It covers the last 62 days, sits in storage that Android backup excludes, and is never uploaded. Delete it with Clear Traffic Details on the Traffic page. A profile can turn it off with <code>traffic-ledger: {enable: false}</code>, or leave out sites and apps with <code>hosts: false</code> and <code>apps: false</code>.</li>
     <li>Android backup is enabled. Depending on your device and system backup settings, Android may back up or transfer eligible app data. Manage these copies through your system backup settings.</li>
 </ul>
-<p>You can delete profiles in the App, clear recent connections, or clear app storage in Android settings. Clearing app storage or uninstalling removes the local app data, but does not delete exported files, system backups, or information already received by an external service. Files or QR codes you explicitly export/share are passed to the destination you choose.</p>
+<p>You can delete profiles in the App, clear recent connections, delete the traffic ledger, or clear app storage in Android settings. Clearing app storage or uninstalling removes the local app data, but does not delete exported files, system backups, or information already received by an external service. Files or QR codes you explicitly export/share are passed to the destination you choose.</p>
 
 <h2>Diagnostics and Distribution Channels</h2>
 <p>The Google Play build disables Firebase Analytics collection. GitHub release builds enable Firebase Analytics, which sends usage events (such as connect/disconnect, subscription actions, route-mode and proxy selection), including profile or proxy names on some events, and SDK-generated app/device and installation information to Google to understand feature use.</p>

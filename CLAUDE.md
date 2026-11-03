@@ -125,8 +125,15 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 ### State layer (`core/src/main/java/io/github/madeye/meow/{vpn,repo}/`)
 
 - **vpn/VpnStateRepository.kt**: AIDL callbacks → `StateFlow`. Bound per-Activity.
-- **vpn/DailyTrafficRecorder.kt**, **vpn/SpeedSampleStore.kt**: per-day totals and
-  the rolling speed window. Both process-scoped so tab switches don't reset them.
+- **vpn/DailyTrafficRecorder.kt**: per-day totals behind the Traffic page's data usage
+  cards, process-scoped so tab switches don't reset them.
+- **traffic/TrafficLedgerReader.kt**: the engine's traffic ledger (meow-rs ADR-0015,
+  `<home>/traffic/traffic.db`: every day's traffic by host, app, policy and network,
+  kept 62 days), read read-only and cleared from the UI process through
+  `nativeReadTraffic` / `nativeClearTraffic`, also while the VPN is down. `:vpn`
+  gives the engine the network label (`nativeSetTrafficInterface`, on every
+  default-network change) and the time zone (`nativeSetTimeZone`, before the engine
+  starts and on every network change); the profile's `traffic-ledger:` turns it off.
 - **repo/**: profiles/subscriptions, per-app proxy, traffic history, config validation.
 - **subscription/**: `SubscriptionService` downloads configs; `AutoUpdateSchedule` decides
   when a URL subscription is due. `SubscriptionUpdateWorker` (in `:mobile`) is one hourly,
@@ -163,8 +170,6 @@ engine's own controller API on loopback, which crosses into `:vpn`.
   no Material You dynamic color.
 - **components/**: `GlassCard` (the universal surface), `SectionHeader`, `NavRow`,
   `DelayBadge`, `MeowScaffold` (gradient background + transparent app bar).
-- **charts/**: hand-drawn `Canvas` charts — 30-day stacked bars with tap-to-select,
-  and the live dual-series speed chart.
 - **screens/**: one package per screen, each a stateless composable plus a ViewModel.
 - Strings live in `res/values/strings.xml` + `values-{zh-rCN,ru,fa,ar,vi,tr,my}` (and
   the same set in `:core` for the notification); `StringsParityTest` fails the build
@@ -187,11 +192,11 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 ```
 mobile → core (Compose lives only in :mobile; :core stays UI-free)
 core → rust (via rust-android-gradle cargo plugin)
-meow-android-ffi → meow-{tunnel,config,dns,api,common,transport,proxy} (git dep, tag-pinned, currently v0.28.0)
+meow-android-ffi → meow-{tunnel,config,dns,api,common,transport,proxy} (git dep; tag-pinned, but currently main rev 19af490, after v0.28.0)
                    → lwip (patched madeye/lwip rev), jni, android_logger, redb, mimalloc
 ```
 
-meow-rs crates are pinned by git **tag** in `Cargo.toml` — bumping the engine means changing the tag on every `meow-*` line. The full upstream protocol set is enabled explicitly (mirrors meow-app's `full` bundle): `ss`, `trojan`, `vless` (+`vless-vision`, +`vless-encryption`, REALITY), `vmess`, `snell`, `hysteria2`, `anytls`, `ech-tls-tunnel`, `mux`, `kcptun` (config/proxy) and `tls,ws,grpc,h2,httpupgrade,xhttp,reality` (transport; `tls` is vendored BoringSSL with ECH + uTLS fingerprinting built in). Supported proxy protocols: Shadowsocks (with built-in `simple-obfs` and `v2ray-plugin`), Trojan, VLESS, VMess, Snell, Hysteria2, AnyTLS, Direct.
+meow-rs crates are pinned by git **tag** in `Cargo.toml` — bumping the engine means changing the tag on every `meow-*` line. Between releases a change that needs unreleased engine work pins a main commit (`rev = "…"`) instead, and Settings shows the version plus the commit (`meow-rs v0.28.0+19af490`); the next release's tag replaces it. The full upstream protocol set is enabled explicitly (mirrors meow-app's `full` bundle): `ss`, `trojan`, `vless` (+`vless-vision`, +`vless-encryption`, REALITY), `vmess`, `snell`, `hysteria2`, `anytls`, `ech-tls-tunnel`, `mux`, `kcptun` (config/proxy) and `tls,ws,grpc,h2,httpupgrade,xhttp,reality` (transport; `tls` is vendored BoringSSL with ECH + uTLS fingerprinting built in). Supported proxy protocols: Shadowsocks (with built-in `simple-obfs` and `v2ray-plugin`), Trojan, VLESS, VMess, Snell, Hysteria2, AnyTLS, Direct.
 
 ## E2E Test Structure
 

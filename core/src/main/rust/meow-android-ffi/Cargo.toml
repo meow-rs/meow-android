@@ -18,6 +18,9 @@ needless_return = "allow"
 missing_const_for_thread_local = "allow"
 
 [dependencies]
+# Pinned to a meow-rs main commit, not a tag, while the traffic ledger
+# (meow-rs #875) is in no release yet; the next release's tag replaces it.
+#
 # Full upstream protocol set (mirrors meow-app's `full` bundle):
 # ss (+simple-obfs / v2ray-plugin, and the shadow-tls / restls / jls /
 # gost-plugin plugins, each its own feature since meow-rs v0.28.0), trojan,
@@ -31,13 +34,13 @@ missing_const_for_thread_local = "allow"
 # uTLS fingerprints built in; hysteria2's quiche links the same copy).
 # boring-sys vendors BoringSSL (~few MB per ABI, needs cmake + NDK C++ at
 # build time).
-meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0" }
-meow-config = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin"] }
-meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0" }
-meow-api = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0" }
-meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0", features = ["logbook"] }
-meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
-meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.28.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin", "public-suffix"] }
+meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13" }
+meow-config = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin"] }
+meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13" }
+meow-api = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13" }
+meow-common = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13", features = ["logbook", "traffic-ledger"] }
+meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
+meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", rev = "19af490f900afc24eafb8f38984b21d95d59be13", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin", "public-suffix"] }
 
 # Explicit pin (transitive through meow-tunnel; surfaced here because
 # engine startup builds DashMap<String, Arc<ProxyProvider>> for ApiServer::new
@@ -115,3 +118,4 @@ lwip = { git = "https://github.com/madeye/lwip", rev = "dab00c540cf0606fee14ddd9
 
 [dev-dependencies]
 async-trait = "0.1"
+smol_str = "0.3"

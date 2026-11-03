@@ -184,6 +184,23 @@ pub fn logbook_enabled(yaml: &str) -> bool {
     meow_config::raw::RawLogbook::enabled(logbook.as_ref())
 }
 
+/// The profile's `traffic-ledger:` — on, with hosts, unless it says
+/// otherwise; also when the YAML does not parse.
+pub fn traffic_ledger(yaml: &str) -> (bool, meow_common::traffic_ledger::Options) {
+    #[derive(serde::Deserialize)]
+    struct Profile {
+        #[serde(rename = "traffic-ledger")]
+        traffic_ledger: Option<meow_config::raw::RawTrafficLedger>,
+    }
+    let ledger = serde_yaml::from_str::<Profile>(yaml)
+        .ok()
+        .and_then(|profile| profile.traffic_ledger);
+    (
+        meow_config::raw::RawTrafficLedger::enabled(ledger.as_ref()),
+        meow_config::raw::RawTrafficLedger::options(ledger.as_ref()),
+    )
+}
+
 /// A loaded config, with what a live DNS switch (`live_dns`) rebuilds from.
 #[derive(Debug)]
 pub struct Loaded<T> {
@@ -419,6 +436,18 @@ rules:
         assert_eq!(api_secret(s(""), s("minted")), s("minted"));
         assert_eq!(api_secret(None, s("")), None);
         assert_eq!(api_secret(None, None), None);
+    }
+
+    #[test]
+    fn the_traffic_ledger_is_on_with_hosts_unless_the_profile_says_otherwise() {
+        assert_eq!(
+            traffic_ledger("rules: [MATCH,DIRECT]\n"),
+            (true, Default::default())
+        );
+        let (enable, options) = traffic_ledger("traffic-ledger:\n  hosts: false\n");
+        assert!(enable && !options.hosts);
+        assert!(!traffic_ledger("traffic-ledger: {enable: false}\n").0);
+        assert!(traffic_ledger("proxies: [\n").0, "an unparsable profile");
     }
 
     #[test]

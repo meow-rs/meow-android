@@ -168,14 +168,25 @@
     <string name="traffic_data_usage">流量统计</string>
     <string name="traffic_today">今日</string>
     <string name="traffic_this_month">本月</string>
-    <string name="traffic_daily_history">最近 30 天</string>
-    <string name="traffic_no_history">暂无流量记录</string>
-    <string name="traffic_tap_bar_hint">点击柱状图查看详情</string>
-    <string name="traffic_current_session">当前会话</string>
-    <string name="traffic_speed">速度</string>
+    <string name="traffic_last_month">上月</string>
+    <string name="traffic_by_host">主机</string>
+    <string name="traffic_by_app">应用</string>
+    <string name="traffic_by_policy">策略</string>
+    <string name="traffic_by_network">网络</string>
+    <string name="traffic_details_title">流量详情</string>
+    <string name="traffic_details_empty">此时段没有流量记录</string>
+    <string name="traffic_details_error">无法读取流量详情：%1$s</string>
+    <string name="traffic_details_footer">在本设备保存 62 天，约每分钟更新一次。</string>
+    <string name="traffic_details_clear">清除流量详情</string>
+    <string name="traffic_details_clear_confirm">删除最近 62 天按主机、应用、策略和网络记录的流量？每日总量会保留。</string>
+    <string name="traffic_details_unknown">未知</string>
+    <string name="traffic_details_other_ips">其他 IP 地址</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">以太网</string>
+    <plurals name="traffic_requests">
+        <item quantity="other">%1$d 次请求</item>
+    </plurals>
     <string name="traffic_total">合计：%1$s</string>
-    <string name="traffic_collecting">正在收集数据…</string>
-    <string name="traffic_connect_to_see">连接 VPN 查看流量</string>
     <string name="traffic_upload">上传</string>
     <string name="traffic_download">下载</string>
 

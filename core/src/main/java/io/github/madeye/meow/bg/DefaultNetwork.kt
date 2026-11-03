@@ -9,6 +9,7 @@ import android.net.NetworkRequest
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import io.github.madeye.meow.traffic.TrafficNetwork
 import timber.log.Timber
 
 /**
@@ -105,3 +106,11 @@ internal fun NetworkCapabilities.kindName(): String = transportNames().firstOrNu
 /** A network as logbook entries name it: `Wi-Fi 324`. */
 internal fun Network.describe(capabilities: NetworkCapabilities?): String =
     "${capabilities?.kindName() ?: "network"} $this"
+
+/** The network as the traffic ledger labels it ([TrafficNetwork]). */
+internal fun NetworkCapabilities.ledgerLabel(): String = when {
+    hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> TrafficNetwork.WIFI
+    hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> TrafficNetwork.CELLULAR
+    hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> TrafficNetwork.ETHERNET
+    else -> TrafficNetwork.OTHER
+}

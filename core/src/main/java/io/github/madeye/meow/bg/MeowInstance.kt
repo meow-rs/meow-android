@@ -10,6 +10,9 @@ import io.github.madeye.meow.database.ClashProfile
 import io.github.madeye.meow.preference.ApiSecretStore
 import io.github.madeye.meow.preference.BuiltinDnsStore
 import io.github.madeye.meow.preference.RouteModeStore
+import io.github.madeye.meow.traffic.TrafficNetwork
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -99,6 +102,9 @@ class MeowInstance(val profile: ClashProfile) {
         val builtinDns = BuiltinDnsStore.default.load()
         // A fresh secret per start, so no other app on the device can use the
         // API; a profile that sets `secret:` keeps its own instead.
+        // Before the start, so the traffic ledger counts days in the
+        // device's zone from its first flush.
+        pushTimeZone()
         val result = MeowCore.nativeStartEngine("127.0.0.1:9090", ApiSecretStore.mint(), routeMode, builtinDns)
         if (result != 0) {
             throw RuntimeException("Failed to start engine: ${MeowCore.nativeGetLastError()}")
@@ -112,6 +118,12 @@ class MeowInstance(val profile: ClashProfile) {
         val meter = NetworkTrafficMeter(startedAt = System.currentTimeMillis())
         var outbound: Network? = null
         networks = DefaultNetwork(context) { network, capabilities ->
+            // Every network change also re-reads the zone: one that moves
+            // the device to another is, more often than not, a trip.
+            pushTimeZone()
+            if (network != null) {
+                MeowCore.nativeSetTrafficInterface(capabilities?.ledgerLabel() ?: TrafficNetwork.OTHER)
+            }
             meter.onNetwork(
                 capabilities?.trafficKind(),
                 MeowCore.nativeGetUploadTraffic(),
@@ -137,6 +149,18 @@ class MeowInstance(val profile: ClashProfile) {
             Timber.e(e, "MeowInstance: could not share the API secret")
         }
         Timber.d("MeowInstance: engine started")
+    }
+
+    /** Tells the engine's traffic ledger which day it is where the device is. */
+    private fun pushTimeZone() {
+        val now = Instant.now()
+        val rules = ZoneId.systemDefault().rules
+        val next = rules.nextTransition(now)
+        MeowCore.nativeSetTimeZone(
+            rules.getOffset(now).totalSeconds,
+            next?.toEpochSecond() ?: 0L,
+            next?.offsetAfter?.totalSeconds ?: 0,
+        )
     }
 
     /** Whether the started engine's profile lets the VPN carry IPv6. */

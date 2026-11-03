@@ -68,8 +68,9 @@ Network
     them): create a copy to edit one
   - Proxy Groups: proxy group & node selection, per-group latency tests
   - Utility: live Connections and DNS-cache views powered by the REST API,
-    Traffic (real-time speed chart, session upload/download stats, daily
-    history), Statistics (as on Surge: session start and uptime, traffic by
+    Traffic (data usage today and this month, then traffic by host, app,
+    proxy and network for today, this month or last month, kept on the
+    device), Statistics (as on Surge: session start and uptime, traffic by
     Wi-Fi / Ethernet and cellular, and by proxy) and Logs, grouped as on the
     iOS app
   - Settings: Version, network config, per-app VPN proxy/bypass,

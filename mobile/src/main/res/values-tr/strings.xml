@@ -172,14 +172,26 @@
     <string name="traffic_data_usage">Veri kullanımı</string>
     <string name="traffic_today">Bugün</string>
     <string name="traffic_this_month">Bu ay</string>
-    <string name="traffic_daily_history">Son 30 gün</string>
-    <string name="traffic_no_history">Henüz trafik geçmişi yok</string>
-    <string name="traffic_tap_bar_hint">Ayrıntılar için bir çubuğa dokunun</string>
-    <string name="traffic_current_session">Mevcut oturum</string>
-    <string name="traffic_speed">Hız</string>
+    <string name="traffic_last_month">Geçen ay</string>
+    <string name="traffic_by_host">Ana makine</string>
+    <string name="traffic_by_app">Uygulama</string>
+    <string name="traffic_by_policy">Politika</string>
+    <string name="traffic_by_network">Ağ</string>
+    <string name="traffic_details_title">Trafik ayrıntıları</string>
+    <string name="traffic_details_empty">Bu dönem için kaydedilmiş trafik yok</string>
+    <string name="traffic_details_error">Trafik ayrıntıları okunamadı: %1$s</string>
+    <string name="traffic_details_footer">Bu cihazda 62 gün saklanır, yaklaşık dakikada bir güncellenir.</string>
+    <string name="traffic_details_clear">Trafik ayrıntılarını temizle</string>
+    <string name="traffic_details_clear_confirm">Son 62 günün ana makineye, uygulamaya, politikaya ve ağa göre trafiği silinsin mi? Günlük toplamlar korunur.</string>
+    <string name="traffic_details_unknown">Bilinmiyor</string>
+    <string name="traffic_details_other_ips">Diğer IP adresleri</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">Ethernet</string>
+    <plurals name="traffic_requests">
+        <item quantity="one">%1$d istek</item>
+        <item quantity="other">%1$d istek</item>
+    </plurals>
     <string name="traffic_total">Toplam: %1$s</string>
-    <string name="traffic_collecting">Veri toplanıyor…</string>
-    <string name="traffic_connect_to_see">Trafiği görmek için VPN bağlantısını kurun</string>
     <string name="traffic_upload">Yükleme</string>
     <string name="traffic_download">İndirme</string>
 

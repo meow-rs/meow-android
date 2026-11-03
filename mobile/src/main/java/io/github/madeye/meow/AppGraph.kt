@@ -23,6 +23,8 @@ import io.github.madeye.meow.repo.InstalledAppsRepository
 import io.github.madeye.meow.repo.PerAppRepository
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.repo.TrafficHistoryRepository
+import io.github.madeye.meow.traffic.TrafficGroup
+import io.github.madeye.meow.traffic.TrafficLedgerReader
 import io.github.madeye.meow.ui.screens.connections.AppLabels
 import io.github.madeye.meow.ui.screens.connections.ConnectionDetailViewModel
 import io.github.madeye.meow.ui.screens.connections.ConnectionsViewModel
@@ -46,11 +48,13 @@ import io.github.madeye.meow.ui.screens.statistics.StatisticsViewModel
 import io.github.madeye.meow.ui.screens.subscribe.RuleSetUpdater
 import io.github.madeye.meow.ui.screens.subscribe.SubscribeViewModel
 import io.github.madeye.meow.ui.screens.traffic.TrafficViewModel
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsViewModel
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficFilter
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficPeriod
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorViewModel
 import io.github.madeye.meow.ui.util.AppVersions
 import io.github.madeye.meow.update.GitHubReleases
 import io.github.madeye.meow.vpn.ConfigReloader
-import io.github.madeye.meow.vpn.SpeedSampleStore
 import io.github.madeye.meow.vpn.VpnStateRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +75,6 @@ object AppGraph {
 
     val api: MeowApi by lazy { MeowApi(secret = ApiSecretStore.default::load) }
     val vpn: VpnStateRepository by lazy { VpnStateRepository() }
-    val speedSamples: SpeedSampleStore by lazy { SpeedSampleStore(vpn, scope) }
 
     /** Survives leaving the Connections screen; see [RecentConnectionsStore]. */
     val recentConnections: RecentConnectionsStore by lazy { RecentConnectionsStore() }
@@ -96,6 +99,7 @@ object AppGraph {
     val exitIpLookup: ExitIpLookup by lazy { ExitIpLookup() }
     val ipGeoLookup: IpGeoLookup by lazy { IpGeoLookup { MeowInstance.homeDir(appContext) } }
     val logbookReader: LogbookReader by lazy { LogbookReader { MeowInstance.homeDir(appContext) } }
+    val trafficLedger: TrafficLedgerReader by lazy { TrafficLedgerReader { MeowInstance.homeDir(appContext) } }
 
     /** Proxy detail tests and Home's NAT test, run in `:vpn` over the activity's binding. */
     val proxyProber: ProxyProber by lazy { ProxyProber(vpn) }
@@ -108,10 +112,24 @@ object AppGraph {
 
     fun init(context: Context) {
         appContext = context.applicationContext
-        // Touching this here starts the speed-sample collector, so the chart has
-        // history even if the user never opens the Traffic screen before connecting.
-        speedSamples
     }
+
+    /**
+     * The traffic ledger as [route] narrows it: the Traffic page's
+     * (unnarrowed) or a row's. Built per page, not by [viewModelFactory],
+     * as the Traffic page's route carries no ledger arguments.
+     */
+    fun trafficDetails(route: Dest.TrafficDetails): TrafficDetailsViewModel = TrafficDetailsViewModel(
+        filter = TrafficFilter(host = route.host, app = route.app, policy = route.policy, network = route.network),
+        period = TrafficPeriod.entries.firstOrNull { it.name == route.period } ?: TrafficPeriod.Today,
+        by = TrafficGroup.entries.firstOrNull { it.name == route.by } ?: TrafficGroup.Host,
+        read = { from, to, by, filter ->
+            trafficLedger.read(from, to, by, filter.host, filter.app, filter.policy, filter.network)
+        },
+        clearLedger = trafficLedger::clear,
+        appLabels = appLabels.labels,
+        requestAppLabels = appLabels::request,
+    )
 
     val viewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -156,7 +174,7 @@ object AppGraph {
                 )
 
                 TrafficViewModel::class.java ->
-                    TrafficViewModel(vpn, trafficHistory, speedSamples)
+                    TrafficViewModel(vpn, trafficHistory)
 
                 SettingsViewModel::class.java -> SettingsViewModel(
                     appVersions,

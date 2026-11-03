@@ -32,6 +32,22 @@ sealed interface Dest {
 
     @Serializable data object Traffic : Dest
 
+    /**
+     * The traffic ledger for [period] grouped [by] (`TrafficPeriod` and
+     * `TrafficGroup` names), narrowed to the [host], [app], [policy] and
+     * [network] picked on the pages before; [opened] the grouping of the row this
+     * page was opened from, which names it.
+     */
+    @Serializable data class TrafficDetails(
+        val period: String = "Today",
+        val by: String = "Host",
+        val host: String? = null,
+        val app: String? = null,
+        val policy: String? = null,
+        val network: String? = null,
+        val opened: String? = null,
+    ) : Dest
+
     @Serializable data object PerAppProxy : Dest
 
     @Serializable data class YamlEditor(val profileId: Long) : Dest

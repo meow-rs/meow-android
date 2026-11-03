@@ -8,8 +8,8 @@
   enforces both for every RTL locale.
 
   %d renders Arabic-Indic digits under this locale, so digits written into a
-  string literally (traffic_daily_history) are Arabic-Indic too. Plurals carry
-  all six CLDR quantities (zero, one, two, few, many, other).
+  string literally must be Arabic-Indic too. Plurals carry all six CLDR
+  quantities (zero, one, two, few, many, other).
 -->
 <resources>
     <string name="app_name">Meow</string>
@@ -200,14 +200,30 @@
     <string name="traffic_data_usage">استخدام البيانات</string>
     <string name="traffic_today">اليوم</string>
     <string name="traffic_this_month">هذا الشهر</string>
-    <string name="traffic_daily_history">آخر ٣٠ يومًا</string>
-    <string name="traffic_no_history">لا يوجد سجل لحركة البيانات بعد</string>
-    <string name="traffic_tap_bar_hint">انقر على عمود لعرض التفاصيل</string>
-    <string name="traffic_current_session">الجلسة الحالية</string>
-    <string name="traffic_speed">السرعة</string>
+    <string name="traffic_last_month">الشهر الماضي</string>
+    <string name="traffic_by_host">المضيف</string>
+    <string name="traffic_by_app">التطبيق</string>
+    <string name="traffic_by_policy">السياسة</string>
+    <string name="traffic_by_network">الشبكة</string>
+    <string name="traffic_details_title">تفاصيل حركة البيانات</string>
+    <string name="traffic_details_empty">لا توجد حركة بيانات مسجلة لهذه الفترة</string>
+    <string name="traffic_details_error">تعذّرت قراءة تفاصيل حركة البيانات: \u2068%1$s\u2069</string>
+    <string name="traffic_details_footer">تُحفظ على هذا الجهاز لمدة ٦٢ يومًا، وتُحدَّث مرة كل دقيقة تقريبًا.</string>
+    <string name="traffic_details_clear">مسح تفاصيل حركة البيانات</string>
+    <string name="traffic_details_clear_confirm">حذف حركة البيانات حسب المضيف والتطبيق والسياسة والشبكة لآخر ٦٢ يومًا؟ ستبقى الإجماليات اليومية.</string>
+    <string name="traffic_details_unknown">غير معروف</string>
+    <string name="traffic_details_other_ips">عناوين IP أخرى</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">إيثرنت</string>
+    <plurals name="traffic_requests">
+        <item quantity="zero">لا توجد طلبات</item>
+        <item quantity="one">طلب واحد</item>
+        <item quantity="two">طلبان</item>
+        <item quantity="few">%1$d طلبات</item>
+        <item quantity="many">%1$d طلبًا</item>
+        <item quantity="other">%1$d طلب</item>
+    </plurals>
     <string name="traffic_total">الإجمالي: \u2068%1$s\u2069</string>
-    <string name="traffic_collecting">جارٍ جمع البيانات…</string>
-    <string name="traffic_connect_to_see">اتصل بشبكة VPN لعرض حركة البيانات</string>
     <string name="traffic_upload">رفع</string>
     <string name="traffic_download">تنزيل</string>
 
