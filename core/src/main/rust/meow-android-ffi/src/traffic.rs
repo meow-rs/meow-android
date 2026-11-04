@@ -83,8 +83,9 @@ fn read_report(
 }
 
 /// Delete everything in the ledger under the engine home `home`. A running
-/// engine writes what it counted since its last flush (at most a minute)
-/// later. False when the database could not be cleared.
+/// engine notices at its next write (at most a minute later) and drops
+/// what it counted until then instead of writing it over the clear. False
+/// when the database could not be cleared.
 #[no_mangle]
 pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeClearTraffic(
     mut env: JNIEnv,
@@ -182,9 +183,24 @@ mod tests {
         let dir = home.path().join(traffic_ledger::DIR_NAME);
         traffic_ledger::install(&dir, Default::default()).unwrap();
         traffic_ledger::set_interface("Wi-Fi");
-        let policy: Arc<str> = Arc::from("HK 01");
         let app = SmolStr::new("org.example.browser");
-        traffic_ledger::add(&SmolStr::new("www.example.com"), &app, &policy, 10, 20, 1);
+        let host = SmolStr::new("www.example.com");
+        traffic_ledger::add(
+            &host,
+            &app,
+            &traffic_ledger::Route::from("HK 01"),
+            10,
+            20,
+            1,
+        );
+        // A flow out through JP 02 whose hop to its server HK 01 carried
+        // (a `dialer-proxy`): HK 01's policy row counts it too, the totals
+        // once.
+        let chained = traffic_ledger::Route {
+            policy: Arc::from("JP 02"),
+            via: Some(Arc::from("HK 01")),
+        };
+        traffic_ledger::add(&host, &app, &chained, 1, 2, 1);
         traffic_ledger::flush();
         let today = traffic_ledger::today();
         let json = read_report(
@@ -196,7 +212,25 @@ mod tests {
         );
         let report: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(report["rows"][0]["name"], "example.com");
-        assert_eq!(report["download"], 20);
+        assert_eq!(report["download"], 22);
+        let json = read_report(home.path(), today, today, "policy", Default::default());
+        let report: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let rows: Vec<_> = report["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                (
+                    row["name"].as_str().unwrap(),
+                    row["download"].as_u64().unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(rows, [("HK 01", 22), ("JP 02", 2)]);
+        assert_eq!(
+            (&report["download"], &report["requests"]),
+            (&22.into(), &2.into())
+        );
         let json = read_report(
             home.path(),
             today,

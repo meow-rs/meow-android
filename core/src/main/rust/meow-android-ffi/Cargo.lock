@@ -1898,7 +1898,7 @@ dependencies = [
 [[package]]
 name = "meow-anytls"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1921,7 +1921,7 @@ dependencies = [
 [[package]]
 name = "meow-api"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "anyhow",
  "axum",
@@ -1955,7 +1955,7 @@ dependencies = [
 [[package]]
 name = "meow-common"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1981,7 +1981,7 @@ dependencies = [
 [[package]]
 name = "meow-config"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2013,7 +2013,7 @@ dependencies = [
 [[package]]
 name = "meow-dns"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "async-trait",
  "dashmap",
@@ -2040,7 +2040,7 @@ dependencies = [
 [[package]]
 name = "meow-proxy"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "aes 0.8.4",
  "argon2",
@@ -2086,7 +2086,7 @@ dependencies = [
 [[package]]
 name = "meow-rules"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "ipnet",
  "maxminddb",
@@ -2102,7 +2102,7 @@ dependencies = [
 [[package]]
 name = "meow-transport"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "aes 0.9.3",
  "aes-gcm 0.10.3",
@@ -2148,12 +2148,12 @@ dependencies = [
 [[package]]
 name = "meow-trie"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 
 [[package]]
 name = "meow-tunnel"
 version = "0.28.0"
-source = "git+https://github.com/meow-rs/meow-rs.git?rev=19af490f900afc24eafb8f38984b21d95d59be13#19af490f900afc24eafb8f38984b21d95d59be13"
+source = "git+https://github.com/meow-rs/meow-rs.git?rev=d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4#d8a2ce793446f9fa5b96ea1ec7ac0a3ede2110d4"
 dependencies = [
  "async-trait",
  "dashmap",
