@@ -20,7 +20,7 @@ fn main() {
 /// (every meow-* crate carries the release's version), so the version
 /// Settings shows follows the pin instead of a hand-edited string. A pin to
 /// a commit (`rev = "…"`) between releases reads as the version plus the
-/// commit's first seven digits: `0.28.0+d8a2ce7`.
+/// commit's first seven digits: `0.28.0+cfe355a`.
 fn meow_rs_version(lock: &Path) -> String {
     let lock = fs::read_to_string(lock).expect("reading Cargo.lock");
     let pkg = lock

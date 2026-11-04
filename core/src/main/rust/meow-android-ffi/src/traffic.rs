@@ -246,4 +246,15 @@ mod tests {
         traffic_ledger::uninstall();
         traffic_ledger::set_interface("");
     }
+
+    /// The Other IP addresses page names the engine's cap from a Kotlin
+    /// copy; an engine bump that moves it fails here until the copy follows.
+    #[test]
+    fn the_ip_cap_matches_traffic_row() {
+        assert_eq!(
+            traffic_ledger::MAX_IP_HOSTS,
+            8192,
+            "update TrafficRow.MAX_IP_HOSTS"
+        );
+    }
 }

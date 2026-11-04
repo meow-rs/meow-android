@@ -40,9 +40,10 @@ data class TrafficRow(
 
         /**
          * The IP addresses a day keeps apart before the rest fold into
-         * [OTHER_IPS], as `meow_common::traffic_ledger::MAX_IP_HOSTS`.
+         * [OTHER_IPS], as `meow_common::traffic_ledger::MAX_IP_HOSTS`; the
+         * FFI test `the_ip_cap_matches_traffic_row` keeps the two equal.
          */
-        const val MAX_IP_HOSTS = 1024
+        const val MAX_IP_HOSTS = 8192
     }
 }
 
