@@ -213,6 +213,7 @@
     <string name="traffic_details_clear_confirm">حذف حركة البيانات حسب المضيف والتطبيق والسياسة والشبكة لآخر ٦٢ يومًا؟ ستبقى الإجماليات اليومية.</string>
     <string name="traffic_details_unknown">غير معروف</string>
     <string name="traffic_details_other_ips">عناوين IP أخرى</string>
+    <string name="traffic_details_other_ips_note">يُسجَّل كل يوم ما يصل إلى %1$d عنوان IP كلٌّ على حدة. وتُحتسب هنا حركة البيانات إلى عناوين IP الأخرى في ذلك اليوم.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">إيثرنت</string>
     <plurals name="traffic_requests">

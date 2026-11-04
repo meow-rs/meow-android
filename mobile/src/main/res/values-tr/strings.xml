@@ -185,6 +185,7 @@
     <string name="traffic_details_clear_confirm">Son 62 günün ana makineye, uygulamaya, politikaya ve ağa göre trafiği silinsin mi? Günlük toplamlar korunur.</string>
     <string name="traffic_details_unknown">Bilinmiyor</string>
     <string name="traffic_details_other_ips">Diğer IP adresleri</string>
+    <string name="traffic_details_other_ips_note">Her gün en fazla %1$d IP adresi ayrı tutulur. O gün diğer IP adreslerine giden trafik burada sayılır.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">Ethernet</string>
     <plurals name="traffic_requests">

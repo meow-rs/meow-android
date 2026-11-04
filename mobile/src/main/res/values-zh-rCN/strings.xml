@@ -181,6 +181,7 @@
     <string name="traffic_details_clear_confirm">删除最近 62 天按主机、应用、策略和网络记录的流量？每日总量会保留。</string>
     <string name="traffic_details_unknown">未知</string>
     <string name="traffic_details_other_ips">其他 IP 地址</string>
+    <string name="traffic_details_other_ips_note">每天最多单独记录 %1$d 个 IP 地址，当天超出后其他 IP 地址的流量都计入这里。</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">以太网</string>
     <plurals name="traffic_requests">

@@ -186,6 +186,7 @@
     <string name="traffic_details_clear_confirm">လွန်ခဲ့သော ၆၂ ရက်အတွင်း Host၊ အက်ပ်၊ မူဝါဒ နှင့် ကွန်ရက် အလိုက် ဒေတာ အသွားအလာကို ဖျက်မလား။ နေ့စဉ် စုစုပေါင်းများကို ဆက်ထားမည်။</string>
     <string name="traffic_details_unknown">မသိရ</string>
     <string name="traffic_details_other_ips">အခြား IP လိပ်စာများ</string>
+    <string name="traffic_details_other_ips_note">နေ့တိုင်း IP လိပ်စာ %1$d ခုအထိ သီးခြားမှတ်တမ်းတင်သည်။ ထိုနေ့တွင် အခြား IP လိပ်စာများသို့ ဒေတာအသွားအလာကို ဤနေရာတွင် ရေတွက်သည်။</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">Ethernet</string>
     <plurals name="traffic_requests">

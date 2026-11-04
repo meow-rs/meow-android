@@ -193,6 +193,7 @@
     <string name="traffic_details_clear_confirm">Удалить трафик по хостам, приложениям, политикам и сетям за последние 62 дня? Суточные итоги сохранятся.</string>
     <string name="traffic_details_unknown">Неизвестно</string>
     <string name="traffic_details_other_ips">Другие IP-адреса</string>
+    <string name="traffic_details_other_ips_note">Каждый день отдельно учитывается до %1$d IP-адресов. Трафик к остальным IP-адресам за этот день учитывается здесь.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">Ethernet</string>
     <plurals name="traffic_requests">

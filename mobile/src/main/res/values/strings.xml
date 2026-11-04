@@ -196,6 +196,7 @@
     <string name="traffic_details_clear_confirm">Delete the traffic by host, app, policy and network of the last 62 days? The daily totals are kept.</string>
     <string name="traffic_details_unknown">Unknown</string>
     <string name="traffic_details_other_ips">Other IP addresses</string>
+    <string name="traffic_details_other_ips_note">Each day keeps up to %1$d IP addresses apart. Traffic to further IP addresses that day is counted here.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">Ethernet</string>
     <plurals name="traffic_requests">

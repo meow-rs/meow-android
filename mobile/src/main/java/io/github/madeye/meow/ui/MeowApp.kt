@@ -758,7 +758,8 @@ private fun TrafficDetailsRoute(
     val viewModel = viewModel { AppGraph.trafficDetails(route) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val filter = viewModel.filter
-    val title = TrafficGroup.entries.firstOrNull { it.name == route.opened }
+    val opened = TrafficGroup.entries.firstOrNull { it.name == route.opened }
+    val title = opened
         ?.let { group -> filter.valueOf(group)?.let { name -> trafficRowName(group, name, state.appLabels) } }
         ?: stringResource(R.string.traffic_details_title)
 
@@ -770,6 +771,8 @@ private fun TrafficDetailsRoute(
             onPeriodChange = viewModel::onPeriodChange,
             onGroupChange = viewModel::onGroupChange,
             onOpen = { group, row -> narrowed(filter, state.period, group, row)?.let(onOpen) },
+            filter = filter,
+            opened = opened,
         )
     }
 }

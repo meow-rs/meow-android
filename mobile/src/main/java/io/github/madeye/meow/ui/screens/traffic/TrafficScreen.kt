@@ -2,9 +2,11 @@ package io.github.madeye.meow.ui.screens.traffic
 
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -18,8 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.repo.TrafficTotals
@@ -63,18 +68,22 @@ fun TrafficScreen(
         item(key = "usage") {
             SectionHeader(stringResource(R.string.traffic_data_usage))
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // The cards stand as tall as the taller one.
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 UsageCard(
                     label = stringResource(R.string.traffic_today),
                     totals = state.today,
                     onClick = { onPeriodChange(TrafficPeriod.Today) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 UsageCard(
                     label = stringResource(R.string.traffic_this_month),
                     totals = state.thisMonth,
                     onClick = { onPeriodChange(TrafficPeriod.ThisMonth) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
             Spacer(Modifier.height(16.dp))
@@ -97,32 +106,26 @@ private fun UsageCard(label: String, totals: TrafficTotals, onClick: () -> Unit,
         Text(
             text = Formatters.bytes(totals.total),
             style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
+            maxLines = 1,
         )
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Filled.ArrowUpward,
-                contentDescription = null,
-                tint = MaterialTheme.meow.upload,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = Formatters.bytes(totals.tx),
-                style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                color = MaterialTheme.meow.mutedText,
-            )
-            Spacer(Modifier.size(8.dp))
-            Icon(
-                Icons.Filled.ArrowDownward,
-                contentDescription = null,
-                tint = MaterialTheme.meow.download,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = Formatters.bytes(totals.rx),
-                style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                color = MaterialTheme.meow.mutedText,
-            )
-        }
+        // A line each, downloads first as on the rows below, so a value
+        // never breaks between its number and its unit.
+        Direction(Icons.Filled.ArrowDownward, MaterialTheme.meow.download, totals.rx)
+        Direction(Icons.Filled.ArrowUpward, MaterialTheme.meow.upload, totals.tx)
+    }
+}
+
+@Composable
+private fun Direction(icon: ImageVector, tint: Color, bytes: Long) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
+        Text(
+            text = Formatters.bytes(bytes),
+            style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
+            color = MaterialTheme.meow.mutedText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

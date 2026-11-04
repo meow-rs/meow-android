@@ -181,6 +181,7 @@
     <string name="traffic_details_clear_confirm">Xóa lưu lượng theo máy chủ, ứng dụng, chính sách và mạng của 62 ngày qua? Tổng theo ngày vẫn được giữ.</string>
     <string name="traffic_details_unknown">Không rõ</string>
     <string name="traffic_details_other_ips">Địa chỉ IP khác</string>
+    <string name="traffic_details_other_ips_note">Mỗi ngày ghi riêng tối đa %1$d địa chỉ IP. Lưu lượng đến các địa chỉ IP khác trong ngày đó được tính vào đây.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">Ethernet</string>
     <plurals name="traffic_requests">

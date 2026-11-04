@@ -193,6 +193,7 @@
     <string name="traffic_details_clear_confirm">ترافیک ۶۲ روز گذشته بر اساس میزبان، برنامه، سیاست و شبکه حذف شود؟ مجموع‌های روزانه حفظ می‌شوند.</string>
     <string name="traffic_details_unknown">نامشخص</string>
     <string name="traffic_details_other_ips">سایر نشانی‌های IP</string>
+    <string name="traffic_details_other_ips_note">هر روز حداکثر %1$d نشانی IP جداگانه ثبت می‌شود. ترافیک نشانی‌های IP بیشتر در همان روز اینجا شمرده می‌شود.</string>
     <string name="traffic_network_wifi">Wi-Fi</string>
     <string name="traffic_network_ethernet">اترنت</string>
     <plurals name="traffic_requests">

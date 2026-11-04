@@ -37,6 +37,12 @@ data class TrafficRow(
 
     companion object {
         const val OTHER_IPS = "*"
+
+        /**
+         * The IP addresses a day keeps apart before the rest fold into
+         * [OTHER_IPS], as `meow_common::traffic_ledger::MAX_IP_HOSTS`.
+         */
+        const val MAX_IP_HOSTS = 1024
     }
 }
 

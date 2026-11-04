@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -54,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import io.github.madeye.meow.R
@@ -67,9 +70,11 @@ import io.github.madeye.meow.ui.util.Formatters
 import java.util.Locale
 
 /**
- * The traffic ledger narrowed to a row picked on the Traffic page, or on
- * a page like this one: how much each host, app, policy or network under
- * it carried. A row narrows it further.
+ * The traffic ledger narrowed by [filter] to a row picked on the Traffic
+ * page, or on a page like this one: how much each host, app, policy or
+ * network under it carried. A row narrows it further. Opened from an app's
+ * row ([opened]), the page heads with the app's icon, name and package;
+ * narrowed to the bare addresses past a day's cap, it says what they are.
  */
 @Composable
 fun TrafficDetailsScreen(
@@ -80,6 +85,8 @@ fun TrafficDetailsScreen(
     onGroupChange: (TrafficGroup) -> Unit,
     onOpen: (TrafficGroup, TrafficRow) -> Unit,
     modifier: Modifier = Modifier,
+    filter: TrafficFilter = TrafficFilter(),
+    opened: TrafficGroup? = null,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("traffic_details"),
@@ -90,7 +97,50 @@ fun TrafficDetailsScreen(
             bottom = contentPadding.calculateBottomPadding() + 16.dp,
         ),
     ) {
+        val app = filter.app
+        if (opened == TrafficGroup.App && !app.isNullOrEmpty()) {
+            item(key = "ledger_app") {
+                AppHeader(app, state.appLabels[app], appIcon)
+            }
+        }
+        if (filter.host == TrafficRow.OTHER_IPS) {
+            item(key = "ledger_other_ips") {
+                Text(
+                    text = stringResource(R.string.traffic_details_other_ips_note, TrafficRow.MAX_IP_HOSTS),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.meow.mutedText,
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 12.dp),
+                )
+            }
+        }
         trafficDetails(state, appIcon, onPeriodChange, onGroupChange, onOpen)
+    }
+}
+
+/** The app a page is about: its icon, its name once known, and its package, which can be copied. */
+@Composable
+private fun AppHeader(packageName: String, label: String?, appIcon: suspend (packageName: String) -> Drawable?) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AppIcon(packageName, label ?: packageName, appIcon, size = 48.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label ?: packageName,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            SelectionContainer {
+                Text(
+                    text = packageName,
+                    style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
+                    color = MaterialTheme.meow.mutedText,
+                )
+            }
+        }
     }
 }
 
@@ -251,28 +301,35 @@ private fun <T> Choices(
     }
 }
 
-/** The period's sums, one line over its rows. */
+/**
+ * The period's sums, one line over its rows; the request count goes under
+ * them when it does not fit beside them.
+ */
 @Composable
 private fun Summary(report: TrafficReport?) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 12.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = Formatters.bytes(report?.total ?: 0),
-            style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(Modifier.size(12.dp))
-        Direction(Icons.Filled.ArrowDownward, MaterialTheme.meow.download, report?.download ?: 0)
-        Spacer(Modifier.size(8.dp))
-        Direction(Icons.Filled.ArrowUpward, MaterialTheme.meow.upload, report?.upload ?: 0)
-        Spacer(Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = Formatters.bytes(report?.total ?: 0),
+                style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Spacer(Modifier.size(12.dp))
+            Direction(Icons.Filled.ArrowDownward, MaterialTheme.meow.download, report?.download ?: 0)
+            Spacer(Modifier.size(8.dp))
+            Direction(Icons.Filled.ArrowUpward, MaterialTheme.meow.upload, report?.upload ?: 0)
+        }
         val requests = report?.requests ?: 0
         Text(
             text = pluralStringResource(R.plurals.traffic_requests, requests.toQuantity(), requests),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.meow.mutedText,
+            maxLines = 1,
         )
     }
 }
@@ -284,6 +341,7 @@ private fun Direction(icon: ImageVector, tint: Color, bytes: Long) {
         text = Formatters.bytes(bytes),
         style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
         color = MaterialTheme.meow.mutedText,
+        maxLines = 1,
     )
 }
 
@@ -320,30 +378,47 @@ private fun LedgerRow(
             } else {
                 Avatar(name)
             }
+            // The name shares its line with the total only, and the
+            // requests theirs with the directions, so a name keeps the
+            // width the directions would take. On a narrow screen or with
+            // large text a name takes a second line, and the directions go
+            // under the requests rather than cutting them short.
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = pluralStringResource(R.plurals.traffic_requests, row.requests.toQuantity(), row.requests),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.mutedText,
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = Formatters.bytes(row.total),
-                    style = MaterialTheme.typography.bodyMedium.merge(MeowTextStyles.monoDigits),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = "↓ ${Formatters.bytes(row.download)}  ↑ ${Formatters.bytes(row.upload)}",
-                    style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                    color = colors.mutedText,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        text = Formatters.bytes(row.total),
+                        style = MaterialTheme.typography.bodyMedium.merge(MeowTextStyles.monoDigits),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                    )
+                }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    // Requests left, sums right; the sums take a line of their own when both do not fit.
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = pluralStringResource(R.plurals.traffic_requests, row.requests.toQuantity(), row.requests),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.mutedText,
+                        maxLines = 1,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    Text(
+                        text = "↓ ${Formatters.bytes(row.download)}  ↑ ${Formatters.bytes(row.upload)}",
+                        style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
+                        color = colors.mutedText,
+                        maxLines = 1,
+                    )
+                }
             }
             if (onClick != null) {
                 Icon(
@@ -359,7 +434,12 @@ private fun LedgerRow(
 
 /** The app's icon; its [label]'s [Avatar] while it loads, or when the app is gone. */
 @Composable
-private fun AppIcon(packageName: String, label: String, appIcon: suspend (packageName: String) -> Drawable?) {
+private fun AppIcon(
+    packageName: String,
+    label: String,
+    appIcon: suspend (packageName: String) -> Drawable?,
+    size: Dp = 32.dp,
+) {
     val icon by produceState<ImageBitmap?>(null, packageName) {
         value = appIcon(packageName)?.let { drawable ->
             runCatching { drawable.toBitmap(ICON_PX, ICON_PX).asImageBitmap() }.getOrNull()
@@ -367,9 +447,9 @@ private fun AppIcon(packageName: String, label: String, appIcon: suspend (packag
     }
     val bitmap = icon
     if (bitmap != null) {
-        Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.size(32.dp))
+        Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.size(size))
     } else {
-        Avatar(label)
+        Avatar(label, size)
     }
 }
 
@@ -377,13 +457,13 @@ private const val ICON_PX = 96
 
 /** A letter on a tinted disc, the tint picked by the name so a row keeps its colour. */
 @Composable
-private fun Avatar(name: String) {
+private fun Avatar(name: String, size: Dp = 32.dp) {
     val colors = MaterialTheme.meow
     val palette = listOf(colors.accent, colors.ginger, colors.connected, colors.warning, colors.danger)
     val tint = palette[Math.floorMod(name.hashCode(), palette.size)]
     val letter = name.firstOrNull { it.isLetterOrDigit() }?.toString()?.uppercase(Locale.getDefault()) ?: "?"
     Box(
-        modifier = Modifier.size(32.dp).background(tint.copy(alpha = 0.15f), CircleShape),
+        modifier = Modifier.size(size).background(tint.copy(alpha = 0.15f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(text = letter, style = MaterialTheme.typography.labelLarge, color = tint)
