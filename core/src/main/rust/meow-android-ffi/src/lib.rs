@@ -363,6 +363,10 @@ async fn start_engine_async(
     tunnel.set_dialer_registry(config.provider_dialer_registry.clone());
     tunnel.set_mode(config.general.mode);
     tunnel.set_connection_notes(config.general.connection_notes);
+    // The profile's `tcp-idle-timeout` (off unless set): ends relays silent
+    // in both directions, which TUN netstack flows need since keepalive
+    // never reaches them.
+    tunnel.set_tcp_idle_timeout(config.general.tcp_idle_timeout);
     tunnel.update_routing(config.proxies, config.rules, config.dialer_registry);
     // The UDP NAT sweeper: evicts sessions idle in both directions (the
     // tun2socks reply readers touch the same clock on every reply).
