@@ -18,15 +18,26 @@ fn main() {
 
 /// The meow-rs release the engine is built from, as Cargo.lock resolved it
 /// (every meow-* crate carries the release's version), so the version
-/// Settings shows follows the pin instead of a hand-edited string.
+/// Settings shows follows the pin instead of a hand-edited string. A pin to
+/// a commit (`rev = "…"`) between releases reads as the version plus the
+/// commit's first seven digits: `0.28.0+cfe355a`.
 fn meow_rs_version(lock: &Path) -> String {
     let lock = fs::read_to_string(lock).expect("reading Cargo.lock");
-    lock.split("[[package]]")
+    let pkg = lock
+        .split("[[package]]")
         .find(|pkg| pkg.contains("\nname = \"meow-tunnel\"\n"))
-        .and_then(|pkg| {
-            pkg.lines()
-                .find_map(|line| line.strip_prefix("version = \"")?.strip_suffix('"'))
+        .expect("meow-tunnel in Cargo.lock");
+    let field = |name: &str| {
+        pkg.lines().find_map(|line| {
+            line.strip_prefix(name)?
+                .strip_prefix(" = \"")?
+                .strip_suffix('"')
         })
-        .expect("meow-tunnel's version in Cargo.lock")
-        .to_string()
+    };
+    let version = field("version").expect("meow-tunnel's version in Cargo.lock");
+    let rev = field("source").and_then(|source| source.split_once("?rev=")?.1.get(..7));
+    match rev {
+        Some(rev) => format!("{version}+{rev}"),
+        None => version.to_string(),
+    }
 }

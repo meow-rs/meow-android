@@ -168,14 +168,26 @@
     <string name="traffic_data_usage">Mức sử dụng dữ liệu</string>
     <string name="traffic_today">Hôm nay</string>
     <string name="traffic_this_month">Tháng này</string>
-    <string name="traffic_daily_history">30 ngày qua</string>
-    <string name="traffic_no_history">Chưa có lịch sử lưu lượng</string>
-    <string name="traffic_tap_bar_hint">Nhấn vào một cột để xem chi tiết</string>
-    <string name="traffic_current_session">Phiên hiện tại</string>
-    <string name="traffic_speed">Tốc độ</string>
+    <string name="traffic_last_month">Tháng trước</string>
+    <string name="traffic_by_host">Máy chủ</string>
+    <string name="traffic_by_app">Ứng dụng</string>
+    <string name="traffic_by_policy">Chính sách</string>
+    <string name="traffic_by_network">Mạng</string>
+    <string name="traffic_details_title">Chi tiết lưu lượng</string>
+    <string name="traffic_details_empty">Không có lưu lượng nào được ghi trong khoảng này</string>
+    <string name="traffic_details_error">Không đọc được chi tiết lưu lượng: %1$s</string>
+    <string name="traffic_details_footer">Lưu trên thiết bị này 62 ngày, cập nhật khoảng mỗi phút một lần.</string>
+    <string name="traffic_details_clear">Xóa chi tiết lưu lượng</string>
+    <string name="traffic_details_clear_confirm">Xóa lưu lượng theo máy chủ, ứng dụng, chính sách và mạng của 62 ngày qua? Tổng theo ngày vẫn được giữ.</string>
+    <string name="traffic_details_unknown">Không rõ</string>
+    <string name="traffic_details_other_ips">Địa chỉ IP khác</string>
+    <string name="traffic_details_other_ips_note">Mỗi ngày ghi riêng tối đa %1$d địa chỉ IP. Lưu lượng đến các địa chỉ IP khác trong ngày đó được tính vào đây.</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">Ethernet</string>
+    <plurals name="traffic_requests">
+        <item quantity="other">%1$d yêu cầu</item>
+    </plurals>
     <string name="traffic_total">Tổng: %1$s</string>
-    <string name="traffic_collecting">Đang thu thập dữ liệu…</string>
-    <string name="traffic_connect_to_see">Kết nối VPN để xem lưu lượng</string>
     <string name="traffic_upload">Tải lên</string>
     <string name="traffic_download">Tải xuống</string>
 

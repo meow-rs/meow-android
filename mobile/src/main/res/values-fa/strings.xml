@@ -180,14 +180,27 @@
     <string name="traffic_data_usage">مصرف داده</string>
     <string name="traffic_today">امروز</string>
     <string name="traffic_this_month">این ماه</string>
-    <string name="traffic_daily_history">۳۰ روز گذشته</string>
-    <string name="traffic_no_history">هنوز سابقهٔ ترافیکی وجود ندارد</string>
-    <string name="traffic_tap_bar_hint">برای دیدن جزئیات، روی یک ستون ضربه بزنید</string>
-    <string name="traffic_current_session">نشست فعلی</string>
-    <string name="traffic_speed">سرعت</string>
+    <string name="traffic_last_month">ماه گذشته</string>
+    <string name="traffic_by_host">میزبان</string>
+    <string name="traffic_by_app">برنامه</string>
+    <string name="traffic_by_policy">سیاست</string>
+    <string name="traffic_by_network">شبکه</string>
+    <string name="traffic_details_title">جزئیات ترافیک</string>
+    <string name="traffic_details_empty">ترافیکی برای این بازه ثبت نشده است</string>
+    <string name="traffic_details_error">خواندن جزئیات ترافیک ممکن نشد: \u2068%1$s\u2069</string>
+    <string name="traffic_details_footer">۶۲ روز روی این دستگاه نگه داشته می‌شود و تقریباً هر دقیقه به‌روز می‌شود.</string>
+    <string name="traffic_details_clear">پاک کردن جزئیات ترافیک</string>
+    <string name="traffic_details_clear_confirm">ترافیک ۶۲ روز گذشته بر اساس میزبان، برنامه، سیاست و شبکه حذف شود؟ مجموع‌های روزانه حفظ می‌شوند.</string>
+    <string name="traffic_details_unknown">نامشخص</string>
+    <string name="traffic_details_other_ips">سایر نشانی‌های IP</string>
+    <string name="traffic_details_other_ips_note">هر روز حداکثر %1$d نشانی IP جداگانه ثبت می‌شود. ترافیک نشانی‌های IP بیشتر در همان روز اینجا شمرده می‌شود.</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">اترنت</string>
+    <plurals name="traffic_requests">
+        <item quantity="one">%1$d درخواست</item>
+        <item quantity="other">%1$d درخواست</item>
+    </plurals>
     <string name="traffic_total">مجموع: \u2068%1$s\u2069</string>
-    <string name="traffic_collecting">در حال جمع‌آوری داده…</string>
-    <string name="traffic_connect_to_see">برای دیدن ترافیک، VPN را وصل کنید</string>
     <string name="traffic_upload">آپلود</string>
     <string name="traffic_download">دانلود</string>
 

@@ -25,6 +25,7 @@ mod probe;
 mod protect;
 #[cfg(test)]
 mod test_support;
+mod traffic;
 mod tun2socks;
 
 use dashmap::DashMap;
@@ -283,6 +284,8 @@ async fn start_engine_async(
             // provider that fails to fetch — are recorded.
             let profile = std::fs::read_to_string(path).unwrap_or_default();
             meow_common::logbook::apply(engine::logbook_enabled(&profile));
+            let (ledger, ledger_options) = engine::traffic_ledger(&profile);
+            meow_common::traffic_ledger::apply(ledger, ledger_options);
             let stripped_path = engine::sibling_stripped_path(path);
             (
                 engine::load_stripped_config(path, dns).await?,
@@ -292,6 +295,7 @@ async fn start_engine_async(
         _ => {
             logging::bridge_log("start_engine_async: using minimal config");
             meow_common::logbook::apply(true);
+            meow_common::traffic_ledger::apply(true, Default::default());
             let stripped = engine::strip_and_inject(MINIMAL_CONFIG, engine::DnsUpstreams::Builtin)?;
             let loaded = engine::Loaded {
                 config: meow_config::load_config_from_str(&stripped).await?,
@@ -607,6 +611,9 @@ fn stop_engine() {
     // would otherwise install its resolver after this.
     *DNS_RESOLVER.write() = None;
     if let Some(state) = engine.take() {
+        // What the connections carried since the last minute's flush, while
+        // the tunnel still holds them.
+        meow_common::traffic_ledger::flush();
         // Ends the tun2socks UDP reply readers now rather than at their next
         // idle check.
         state.tunnel.close_all_udp_sessions();
@@ -761,7 +768,7 @@ pub extern "system" fn Java_io_github_madeye_meow_core_MeowCore_nativeTunIpv6(
 }
 
 /// What Settings shows as the engine version; `build.rs` reads the release
-/// from Cargo.lock.
+/// (or the release plus the commit, for a pin to one) from Cargo.lock.
 const ENGINE_VERSION: &str = concat!("meow-rs v", env!("MEOW_RS_VERSION"));
 
 #[no_mangle]
@@ -780,10 +787,14 @@ mod tests {
 
     #[test]
     fn the_engine_version_is_the_pinned_release() {
-        let tag = ENGINE_VERSION.strip_prefix("meow-rs ").unwrap();
+        let version = ENGINE_VERSION.strip_prefix("meow-rs ").unwrap();
+        let pin = match version.split_once('+') {
+            Some((_, rev)) => format!("rev = \"{rev}"),
+            None => format!("tag = \"{version}\""),
+        };
         assert!(
-            include_str!("../Cargo.toml").contains(&format!("tag = \"{tag}\"")),
-            "{ENGINE_VERSION} is not the tag Cargo.toml pins",
+            include_str!("../Cargo.toml").contains(&pin),
+            "{ENGINE_VERSION} is not what Cargo.toml pins",
         );
     }
 }

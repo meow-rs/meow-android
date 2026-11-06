@@ -54,10 +54,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import io.github.madeye.meow.AppGraph
 import io.github.madeye.meow.BuildConfig
 import io.github.madeye.meow.R
 import io.github.madeye.meow.bg.BaseService
+import io.github.madeye.meow.traffic.TrafficGroup
+import io.github.madeye.meow.traffic.TrafficRow
 import io.github.madeye.meow.ui.components.MeowScaffold
 import io.github.madeye.meow.ui.nav.Dest
 import io.github.madeye.meow.ui.nav.TABS
@@ -104,6 +107,11 @@ import io.github.madeye.meow.ui.screens.subscribe.SubscriptionScanActivity
 import io.github.madeye.meow.ui.screens.subscribe.SubscriptionsScreen
 import io.github.madeye.meow.ui.screens.subscribe.copyName
 import io.github.madeye.meow.ui.screens.subscribe.messageRes
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsActions
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsScreen
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficFilter
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficPeriod
+import io.github.madeye.meow.ui.screens.trafficdetails.trafficRowName
 import io.github.madeye.meow.ui.screens.utility.UtilityScreen
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorActions
 import io.github.madeye.meow.ui.screens.yaml.YamlEditorScreen
@@ -271,7 +279,16 @@ private fun MeowNavHost(
                 onBack = navController::popBackStack,
             )
         }
-        composable<Dest.Traffic> { TrafficRoute(onBack = navController::popBackStack) }
+        composable<Dest.Traffic> {
+            TrafficRoute(onOpen = { route -> navController.navigate(route) }, onBack = navController::popBackStack)
+        }
+        composable<Dest.TrafficDetails> { entry ->
+            TrafficDetailsRoute(
+                route = entry.toRoute<Dest.TrafficDetails>(),
+                onOpen = { route -> navController.navigate(route) },
+                onBack = navController::popBackStack,
+            )
+        }
         composable<Dest.Connections> {
             ConnectionsRoute(
                 onOpen = { id -> navController.navigate(Dest.ConnectionDetail(id)) },
@@ -701,22 +718,87 @@ private fun UtilityRoute(
     }
 }
 
+/**
+ * Data usage, then the traffic ledger. The ledger is cleared from here
+ * only: it is one store, and a narrowed page offering it would read as
+ * clearing just that row.
+ */
 @Composable
-private fun TrafficRoute(onBack: () -> Unit) {
+private fun TrafficRoute(onOpen: (Dest.TrafficDetails) -> Unit, onBack: () -> Unit) {
     val viewModel: io.github.madeye.meow.ui.screens.traffic.TrafficViewModel =
         viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val details = viewModel { AppGraph.trafficDetails(Dest.TrafficDetails()) }
+    val detailsState by details.uiState.collectAsStateWithLifecycle()
 
     MeowScaffold(
         title = stringResource(R.string.traffic_title),
         navigationIcon = { BackButton(onBack) },
+        actions = { TrafficDetailsActions(onClear = details::clear) },
     ) { padding ->
         io.github.madeye.meow.ui.screens.traffic.TrafficScreen(
             state = state,
+            details = detailsState,
+            appIcon = AppGraph.installedApps::icon,
             contentPadding = padding,
-            onSelectDay = viewModel::onSelectDay,
+            onPeriodChange = details::onPeriodChange,
+            onGroupChange = details::onGroupChange,
+            onOpen = { group, row -> narrowed(details.filter, detailsState.period, group, row)?.let(onOpen) },
         )
     }
+}
+
+/** The traffic ledger narrowed to the rows picked on the pages before, named after the last. */
+@Composable
+private fun TrafficDetailsRoute(
+    route: Dest.TrafficDetails,
+    onOpen: (Dest.TrafficDetails) -> Unit,
+    onBack: () -> Unit,
+) {
+    val viewModel = viewModel { AppGraph.trafficDetails(route) }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val filter = viewModel.filter
+    val opened = TrafficGroup.entries.firstOrNull { it.name == route.opened }
+    val title = opened
+        ?.let { group -> filter.valueOf(group)?.let { name -> trafficRowName(group, name, state.appLabels) } }
+        ?: stringResource(R.string.traffic_details_title)
+
+    MeowScaffold(title = title, navigationIcon = { BackButton(onBack) }) { padding ->
+        TrafficDetailsScreen(
+            state = state,
+            appIcon = AppGraph.installedApps::icon,
+            contentPadding = padding,
+            onPeriodChange = viewModel::onPeriodChange,
+            onGroupChange = viewModel::onGroupChange,
+            onOpen = { group, row -> narrowed(filter, state.period, group, row)?.let(onOpen) },
+            filter = filter,
+            opened = opened,
+        )
+    }
+}
+
+/**
+ * The page a ledger [row] of [group] opens: [filter] narrowed to it, in
+ * the same [period], grouped by the first grouping left; null when none
+ * is left.
+ */
+private fun narrowed(
+    filter: TrafficFilter,
+    period: TrafficPeriod,
+    group: TrafficGroup,
+    row: TrafficRow,
+): Dest.TrafficDetails? {
+    val narrowed = filter.with(group, row.name)
+    val next = narrowed.groups.firstOrNull() ?: return null
+    return Dest.TrafficDetails(
+        period = period.name,
+        by = next.name,
+        host = narrowed.host,
+        app = narrowed.app,
+        policy = narrowed.policy,
+        network = narrowed.network,
+        opened = group.name,
+    )
 }
 
 @Composable

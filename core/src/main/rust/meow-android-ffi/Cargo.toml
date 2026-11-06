@@ -35,7 +35,7 @@ meow-tunnel = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0" 
 meow-config = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin"] }
 meow-dns = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0" }
 meow-api = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0" }
-meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0", features = ["logbook"] }
+meow-common = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0", features = ["logbook", "traffic-ledger"] }
 meow-transport = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0", features = ["tls", "ws", "grpc", "h2", "httpupgrade", "xhttp", "reality"] }
 meow-proxy = { git = "https://github.com/meow-rs/meow-rs.git", tag = "v0.29.0", features = ["ss", "trojan", "vless", "vless-vision", "vless-encryption", "vmess", "snell", "hysteria2", "anytls", "ech-tls-tunnel", "mux", "kcptun", "shadow-tls", "restls", "jls", "gost-plugin", "public-suffix"] }
 
@@ -115,3 +115,4 @@ lwip = { git = "https://github.com/madeye/lwip", rev = "dab00c540cf0606fee14ddd9
 
 [dev-dependencies]
 async-trait = "0.1"
+smol_str = "0.3"

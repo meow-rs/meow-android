@@ -1,7 +1,6 @@
 package io.github.madeye.meow.database
 
 import androidx.room.*
-import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "daily_traffic")
 data class DailyTraffic(
@@ -17,10 +16,6 @@ interface DailyTrafficDao {
 
     @Query("SELECT * FROM daily_traffic WHERE date >= :since ORDER BY date ASC")
     fun getSince(since: String): List<DailyTraffic>
-
-    /** Observable variant driving the Traffic screen's charts. */
-    @Query("SELECT * FROM daily_traffic WHERE date >= :since ORDER BY date ASC")
-    fun observeSince(since: String): Flow<List<DailyTraffic>>
 
     @Query("SELECT * FROM daily_traffic WHERE date = :date")
     fun getByDate(date: String): DailyTraffic?

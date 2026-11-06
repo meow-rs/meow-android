@@ -81,6 +81,45 @@ object MeowCore {
     ): String?
 
     /**
+     * The engine's traffic ledger in [dir] (the engine home) for the local
+     * days [from] to [to] (`LocalDate.toEpochDay()`, both included), grouped
+     * [by] `host`, `app`, `policy` or `interface`, largest first, keeping
+     * the rows whose [host], [app], [policy] and [iface] match, empty for
+     * any:
+     * `{"from": "2026-11-01", "to": "2026-11-30", "upload": n, "download": n,
+     * "requests": n, "rows": [{"name": "…", "upload": n, …}]}`, or
+     * `{"error": "…"}`. Read-only and offline: needs no running engine. Null
+     * only when the JVM could not take the answer.
+     */
+    external fun nativeReadTraffic(
+        dir: String,
+        from: Int,
+        to: Int,
+        by: String,
+        host: String,
+        app: String,
+        policy: String,
+        iface: String,
+    ): String?
+
+    /** Deletes everything in the traffic ledger in [dir] (the engine home); false when it could not. */
+    external fun nativeClearTraffic(dir: String): Boolean
+
+    /**
+     * The network the engine's traffic goes out on, as the traffic ledger
+     * labels it (`Wi-Fi`, `Cellular`, `Ethernet`, `Other`). Kept until the
+     * next call, across engine restarts in this process.
+     */
+    external fun nativeSetTrafficInterface(label: String)
+
+    /**
+     * The device's time zone for the traffic ledger's days: the UTC offset
+     * now, in seconds, and its next change — at the Unix second [nextAt]
+     * (0 for none) to [nextOffset].
+     */
+    external fun nativeSetTimeZone(offset: Int, nextAt: Long, nextOffset: Int)
+
+    /**
      * Records a `network.change` entry in the engine's logbook: [message]
      * is one English sentence, [fields] a JSON object of its details, and
      * [warning] picks the level over info. Dropped while no engine has

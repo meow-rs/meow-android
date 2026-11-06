@@ -173,14 +173,26 @@
     <string name="traffic_data_usage">ဒေတာ အသုံးပြုမှု</string>
     <string name="traffic_today">ယနေ့</string>
     <string name="traffic_this_month">ဤလ</string>
-    <string name="traffic_daily_history">ပြီးခဲ့သော ရက် ၃၀</string>
-    <string name="traffic_no_history">ဒေတာ အသွားအလာ မှတ်တမ်း မရှိသေးပါ</string>
-    <string name="traffic_tap_bar_hint">အသေးစိတ် ကြည့်ရန် တိုင်တစ်ခုကို တို့ပါ</string>
-    <string name="traffic_current_session">လက်ရှိ ဆက်ရှင်</string>
-    <string name="traffic_speed">အမြန်နှုန်း</string>
+    <string name="traffic_last_month">ပြီးခဲ့သောလ</string>
+    <string name="traffic_by_host">Host</string>
+    <string name="traffic_by_app">အက်ပ်</string>
+    <string name="traffic_by_policy">မူဝါဒ</string>
+    <string name="traffic_by_network">ကွန်ရက်</string>
+    <string name="traffic_details_title">ဒေတာ အသွားအလာ အသေးစိတ်</string>
+    <string name="traffic_details_empty">ဤကာလအတွက် မှတ်တမ်းတင်ထားသော ဒေတာ အသွားအလာ မရှိပါ</string>
+    <string name="traffic_details_error">ဒေတာ အသွားအလာ အသေးစိတ်ကို ဖတ်၍ မရပါ: %1$s</string>
+    <string name="traffic_details_footer">ဤစက်ပေါ်တွင် ၆၂ ရက် သိမ်းထားပြီး တစ်မိနစ်ခန့်တိုင်း အပ်ဒိတ်လုပ်သည်။</string>
+    <string name="traffic_details_clear">ဒေတာ အသွားအလာ အသေးစိတ်ကို ရှင်းရန်</string>
+    <string name="traffic_details_clear_confirm">လွန်ခဲ့သော ၆၂ ရက်အတွင်း Host၊ အက်ပ်၊ မူဝါဒ နှင့် ကွန်ရက် အလိုက် ဒေတာ အသွားအလာကို ဖျက်မလား။ နေ့စဉ် စုစုပေါင်းများကို ဆက်ထားမည်။</string>
+    <string name="traffic_details_unknown">မသိရ</string>
+    <string name="traffic_details_other_ips">အခြား IP လိပ်စာများ</string>
+    <string name="traffic_details_other_ips_note">နေ့တိုင်း IP လိပ်စာ %1$d ခုအထိ သီးခြားမှတ်တမ်းတင်သည်။ ထိုနေ့တွင် အခြား IP လိပ်စာများသို့ ဒေတာအသွားအလာကို ဤနေရာတွင် ရေတွက်သည်။</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">Ethernet</string>
+    <plurals name="traffic_requests">
+        <item quantity="other">တောင်းဆိုမှု %1$d ခု</item>
+    </plurals>
     <string name="traffic_total">စုစုပေါင်း: %1$s</string>
-    <string name="traffic_collecting">ဒေတာ စုဆောင်းနေသည်…</string>
-    <string name="traffic_connect_to_see">ဒေတာ အသွားအလာ ကြည့်ရန် VPN ချိတ်ဆက်ပါ</string>
     <string name="traffic_upload">အပ်လုဒ်</string>
     <string name="traffic_download">ဒေါင်းလုဒ်</string>
 

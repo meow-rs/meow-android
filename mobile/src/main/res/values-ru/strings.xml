@@ -180,14 +180,29 @@
     <string name="traffic_data_usage">Расход трафика</string>
     <string name="traffic_today">Сегодня</string>
     <string name="traffic_this_month">В этом месяце</string>
-    <string name="traffic_daily_history">Последние 30 дней</string>
-    <string name="traffic_no_history">Истории трафика пока нет</string>
-    <string name="traffic_tap_bar_hint">Нажмите на столбец, чтобы увидеть подробности</string>
-    <string name="traffic_current_session">Текущий сеанс</string>
-    <string name="traffic_speed">Скорость</string>
+    <string name="traffic_last_month">Прошлый месяц</string>
+    <string name="traffic_by_host">Хост</string>
+    <string name="traffic_by_app">Приложение</string>
+    <string name="traffic_by_policy">Политика</string>
+    <string name="traffic_by_network">Сеть</string>
+    <string name="traffic_details_title">Подробности трафика</string>
+    <string name="traffic_details_empty">За этот период трафик не записан</string>
+    <string name="traffic_details_error">Не удалось прочитать подробности трафика: %1$s</string>
+    <string name="traffic_details_footer">Хранится на устройстве 62 дня, обновляется примерно раз в минуту.</string>
+    <string name="traffic_details_clear">Очистить подробности трафика</string>
+    <string name="traffic_details_clear_confirm">Удалить трафик по хостам, приложениям, политикам и сетям за последние 62 дня? Суточные итоги сохранятся.</string>
+    <string name="traffic_details_unknown">Неизвестно</string>
+    <string name="traffic_details_other_ips">Другие IP-адреса</string>
+    <string name="traffic_details_other_ips_note">Каждый день отдельно учитывается до %1$d IP-адресов. Трафик к остальным IP-адресам за этот день учитывается здесь.</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">Ethernet</string>
+    <plurals name="traffic_requests">
+        <item quantity="one">%1$d запрос</item>
+        <item quantity="few">%1$d запроса</item>
+        <item quantity="many">%1$d запросов</item>
+        <item quantity="other">%1$d запроса</item>
+    </plurals>
     <string name="traffic_total">Всего: %1$s</string>
-    <string name="traffic_collecting">Сбор данных…</string>
-    <string name="traffic_connect_to_see">Подключите VPN, чтобы видеть трафик</string>
     <string name="traffic_upload">Отправка</string>
     <string name="traffic_download">Загрузка</string>
 

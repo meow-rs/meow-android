@@ -183,14 +183,27 @@
     <string name="traffic_data_usage">Data Usage</string>
     <string name="traffic_today">Today</string>
     <string name="traffic_this_month">This Month</string>
-    <string name="traffic_daily_history">Last 30 Days</string>
-    <string name="traffic_no_history">No traffic history yet</string>
-    <string name="traffic_tap_bar_hint">Tap a bar to see details</string>
-    <string name="traffic_current_session">Current Session</string>
-    <string name="traffic_speed">Speed</string>
+    <string name="traffic_last_month">Last Month</string>
+    <string name="traffic_by_host">Host</string>
+    <string name="traffic_by_app">App</string>
+    <string name="traffic_by_policy">Policy</string>
+    <string name="traffic_by_network">Network</string>
+    <string name="traffic_details_title">Traffic Details</string>
+    <string name="traffic_details_empty">No traffic recorded for this period</string>
+    <string name="traffic_details_error">Could not read the traffic details: %1$s</string>
+    <string name="traffic_details_footer">Kept on this device for 62 days, updated about once a minute.</string>
+    <string name="traffic_details_clear">Clear Traffic Details</string>
+    <string name="traffic_details_clear_confirm">Delete the traffic by host, app, policy and network of the last 62 days? The daily totals are kept.</string>
+    <string name="traffic_details_unknown">Unknown</string>
+    <string name="traffic_details_other_ips">Other IP addresses</string>
+    <string name="traffic_details_other_ips_note">Each day keeps up to %1$d IP addresses apart. Traffic to further IP addresses that day is counted here.</string>
+    <string name="traffic_network_wifi">Wi-Fi</string>
+    <string name="traffic_network_ethernet">Ethernet</string>
+    <plurals name="traffic_requests">
+        <item quantity="one">%1$d request</item>
+        <item quantity="other">%1$d requests</item>
+    </plurals>
     <string name="traffic_total">Total: %1$s</string>
-    <string name="traffic_collecting">Collecting data…</string>
-    <string name="traffic_connect_to_see">Connect the VPN to see traffic</string>
     <string name="traffic_upload">Upload</string>
     <string name="traffic_download">Download</string>
 

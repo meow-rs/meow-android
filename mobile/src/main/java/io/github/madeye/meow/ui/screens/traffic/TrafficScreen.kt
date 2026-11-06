@@ -1,17 +1,16 @@
 package io.github.madeye.meow.ui.screens.traffic
 
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -23,102 +22,81 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.repo.TrafficTotals
-import io.github.madeye.meow.ui.charts.DailyTrafficChart
-import io.github.madeye.meow.ui.charts.SpeedChart
+import io.github.madeye.meow.traffic.TrafficGroup
+import io.github.madeye.meow.traffic.TrafficRow
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.components.SectionHeader
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsUiState
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficPeriod
+import io.github.madeye.meow.ui.screens.trafficdetails.trafficDetails
 import io.github.madeye.meow.ui.theme.MeowTextStyles
 import io.github.madeye.meow.ui.theme.meow
 import io.github.madeye.meow.ui.util.Formatters
 import java.util.Locale
 
+/**
+ * Data usage today and this month, then the engine's traffic ledger for a
+ * period by host, app, policy or network, where a row opens the ledger
+ * narrowed to it. A usage card picks its period below.
+ */
 @Composable
 fun TrafficScreen(
     state: TrafficUiState,
+    details: TrafficDetailsUiState,
     contentPadding: PaddingValues,
-    onSelectDay: (Int?) -> Unit,
+    onPeriodChange: (TrafficPeriod) -> Unit,
+    onGroupChange: (TrafficGroup) -> Unit,
+    onOpen: (TrafficGroup, TrafficRow) -> Unit,
     modifier: Modifier = Modifier,
+    appIcon: suspend (packageName: String) -> Drawable? = { null },
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(
-                top = contentPadding.calculateTopPadding(),
-                bottom = contentPadding.calculateBottomPadding() + 16.dp,
-            )
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    LazyColumn(
+        modifier = modifier.fillMaxSize().testTag("traffic"),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = contentPadding.calculateTopPadding(),
+            bottom = contentPadding.calculateBottomPadding() + 16.dp,
+        ),
     ) {
-        SectionHeader(stringResource(R.string.traffic_data_usage))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            UsageCard(
-                label = stringResource(R.string.traffic_today),
-                totals = state.today,
-                modifier = Modifier.weight(1f),
-            )
-            UsageCard(
-                label = stringResource(R.string.traffic_this_month),
-                totals = state.thisMonth,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-        SectionHeader(stringResource(R.string.traffic_daily_history))
-        GlassCard {
-            if (state.history.all { it.tx == 0L && it.rx == 0L }) {
-                EmptyChart(stringResource(R.string.traffic_no_history))
-            } else {
-                DailyTrafficChart(
-                    days = state.history,
-                    selectedIndex = state.selectedDay,
-                    onSelect = onSelectDay,
+        item(key = "usage") {
+            SectionHeader(stringResource(R.string.traffic_data_usage))
+            Spacer(Modifier.height(12.dp))
+            // The cards stand as tall as the taller one.
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                UsageCard(
+                    label = stringResource(R.string.traffic_today),
+                    totals = state.today,
+                    onClick = { onPeriodChange(TrafficPeriod.Today) },
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                )
+                UsageCard(
+                    label = stringResource(R.string.traffic_this_month),
+                    totals = state.thisMonth,
+                    onClick = { onPeriodChange(TrafficPeriod.ThisMonth) },
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
+            Spacer(Modifier.height(16.dp))
+            SectionHeader(stringResource(R.string.traffic_details_title))
+            Spacer(Modifier.height(12.dp))
         }
-
-        Spacer(Modifier.height(4.dp))
-        SectionHeader(stringResource(R.string.traffic_current_session))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SessionCard(
-                label = stringResource(R.string.traffic_upload),
-                icon = Icons.Filled.ArrowUpward,
-                total = state.traffic.txTotal,
-                rate = state.traffic.txRate,
-                tint = MaterialTheme.meow.upload,
-                modifier = Modifier.weight(1f),
-            )
-            SessionCard(
-                label = stringResource(R.string.traffic_download),
-                icon = Icons.Filled.ArrowDownward,
-                total = state.traffic.rxTotal,
-                rate = state.traffic.rxRate,
-                tint = MaterialTheme.meow.download,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-        SectionHeader(stringResource(R.string.traffic_speed))
-        GlassCard {
-            when {
-                !state.connected -> EmptyChart(stringResource(R.string.traffic_connect_to_see))
-                state.samples.size < 2 -> EmptyChart(stringResource(R.string.traffic_collecting))
-                else -> SpeedChart(samples = state.samples)
-            }
-        }
+        trafficDetails(details, appIcon, onPeriodChange, onGroupChange, onOpen)
     }
 }
 
 @Composable
-private fun UsageCard(label: String, totals: TrafficTotals, modifier: Modifier = Modifier) {
-    GlassCard(modifier = modifier) {
+private fun UsageCard(label: String, totals: TrafficTotals, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    GlassCard(modifier = modifier, onClick = onClick) {
         Text(
             text = label.uppercase(Locale.getDefault()),
             style = MaterialTheme.typography.labelSmall,
@@ -128,79 +106,26 @@ private fun UsageCard(label: String, totals: TrafficTotals, modifier: Modifier =
         Text(
             text = Formatters.bytes(totals.total),
             style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
+            maxLines = 1,
         )
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Filled.ArrowUpward,
-                contentDescription = null,
-                tint = MaterialTheme.meow.upload,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = Formatters.bytes(totals.tx),
-                style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                color = MaterialTheme.meow.mutedText,
-            )
-            Spacer(Modifier.size(8.dp))
-            Icon(
-                Icons.Filled.ArrowDownward,
-                contentDescription = null,
-                tint = MaterialTheme.meow.download,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = Formatters.bytes(totals.rx),
-                style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-                color = MaterialTheme.meow.mutedText,
-            )
-        }
+        // A line each, downloads first as on the rows below, so a value
+        // never breaks between its number and its unit.
+        Direction(Icons.Filled.ArrowDownward, MaterialTheme.meow.download, totals.rx)
+        Direction(Icons.Filled.ArrowUpward, MaterialTheme.meow.upload, totals.tx)
     }
 }
 
 @Composable
-private fun SessionCard(
-    label: String,
-    icon: ImageVector,
-    total: Long,
-    rate: Long,
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
-    GlassCard(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text(
-                text = label.uppercase(Locale.getDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.meow.mutedText,
-            )
-        }
-        Spacer(Modifier.height(6.dp))
+private fun Direction(icon: ImageVector, tint: Color, bytes: Long) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
         Text(
-            text = Formatters.bytes(total),
-            style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
-        )
-        Text(
-            text = Formatters.rate(rate),
+            text = Formatters.bytes(bytes),
             style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
             color = MaterialTheme.meow.mutedText,
-        )
-    }
-}
-
-@Composable
-private fun EmptyChart(message: String) {
-    Box(
-        modifier = Modifier.fillMaxWidth().height(140.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.meow.mutedText,
-            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
