@@ -72,6 +72,19 @@ class MeowApiTest {
     // -------------------------------------------------------------------------
 
     @Test
+    fun `selection loads the engine secret off the calling thread`() = kotlinx.coroutines.runBlocking {
+        val caller = Thread.currentThread()
+        server.enqueue(MockResponse().setResponseCode(204))
+        val client = MeowApi(server.url("/"), secret = {
+            check(Thread.currentThread() !== caller) { "credential lookup blocked the caller" }
+            "test-engine"
+        })
+
+        client.selectProxy("G", "A")
+        assertEquals("Bearer test-engine", server.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
     fun `queued selection keeps original engine secret after restart`() = kotlinx.coroutines.runBlocking {
         val release = java.util.concurrent.CountDownLatch(1)
         val first = java.util.concurrent.CountDownLatch(1)

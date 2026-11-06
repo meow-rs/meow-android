@@ -499,20 +499,20 @@ class MeowApi(
         operation: String,
         okCodes: Set<Int> = setOf(200),
         client: OkHttpClient = this.client,
-    ): String {
-        // Bind queued requests to the engine that accepted the UI operation.
-        // A restart must not give an old request the replacement engine's secret.
-        val authenticated = request.newBuilder().tag(AuthSnapshot::class.java, AuthSnapshot(secret())).build()
-        return withContext(Dispatchers.IO) {
-            val response = try {
-                client.newCall(authenticated).await()
-            } catch (e: IOException) {
-                throw MeowApiException.Unreachable(e)
-            }
-            response.use {
-                if (it.code !in okCodes) throw MeowApiException.Http(operation, it.code)
-                it.body?.string().orEmpty()
-            }
+    ): String = withContext(Dispatchers.IO) {
+        // Loading the current engine's secret can read disk. Snapshot it here
+        // before enqueue so OkHttp cannot pick up another engine's token.
+        val authenticated = request.newBuilder()
+            .tag(AuthSnapshot::class.java, AuthSnapshot(secret()))
+            .build()
+        val response = try {
+            client.newCall(authenticated).await()
+        } catch (e: IOException) {
+            throw MeowApiException.Unreachable(e)
+        }
+        response.use {
+            if (it.code !in okCodes) throw MeowApiException.Http(operation, it.code)
+            it.body?.string().orEmpty()
         }
     }
 
