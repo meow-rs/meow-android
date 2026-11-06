@@ -1,6 +1,7 @@
 package io.github.madeye.meow.api
 
 import io.github.madeye.meow.aidl.ByteTotals
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.mockwebserver.Dispatcher
@@ -69,6 +70,39 @@ class MeowApiTest {
     // -------------------------------------------------------------------------
     // /proxies — the heterogeneous map, discriminated by `type` value
     // -------------------------------------------------------------------------
+
+    @Test
+    fun `queued selection keeps original engine secret after restart`() = kotlinx.coroutines.runBlocking {
+        val release = java.util.concurrent.CountDownLatch(1)
+        val first = java.util.concurrent.CountDownLatch(1)
+        val tokens = java.util.concurrent.CopyOnWriteArrayList<String?>()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                tokens += request.getHeader("Authorization")
+                if (tokens.size == 1) {
+                    first.countDown()
+                    release.await(4, java.util.concurrent.TimeUnit.SECONDS)
+                }
+                return MockResponse().setResponseCode(204)
+            }
+        }
+        val dispatcher = okhttp3.Dispatcher().apply { maxRequests = 1; maxRequestsPerHost = 1 }
+        val token = java.util.concurrent.atomic.AtomicReference("old-engine")
+        val client = MeowApi(server.url("/"), okhttp3.OkHttpClient.Builder().dispatcher(dispatcher).build(), secret = token::get)
+        val one = async(kotlinx.coroutines.Dispatchers.Default) { client.selectProxy("G", "A") }
+        assertTrue(first.await(2, java.util.concurrent.TimeUnit.SECONDS))
+        val two = async(kotlinx.coroutines.Dispatchers.Default) { client.selectProxy("H", "B") }
+        try {
+            kotlinx.coroutines.withTimeout(2000) {
+                while (dispatcher.queuedCallsCount() != 1) kotlinx.coroutines.delay(5)
+            }
+            token.set("replacement-engine")
+        } finally {
+            release.countDown()
+        }
+        one.await(); two.await()
+        assertEquals(listOf("Bearer old-engine", "Bearer old-engine"), tokens.toList())
+    }
 
     @Test
     fun `proxies splits groups from leaf nodes`() = runTest {

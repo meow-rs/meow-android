@@ -54,14 +54,18 @@ class MeowApi(
     private val baseUrl: HttpUrl = DEFAULT_BASE_URL.toHttpUrl(),
     baseClient: OkHttpClient = defaultClient(),
     private val json: Json = MeowJson,
-    secret: () -> String? = { null },
+    private val secret: () -> String? = { null },
 ) {
     /** [baseClient] plus the secret; every call goes through this one. */
     private val client: OkHttpClient = baseClient.newBuilder().addInterceptor(BearerAuth(secret)).build()
 
+    private data class AuthSnapshot(val token: String?)
+
     private class BearerAuth(private val secret: () -> String?) : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
-            val token = secret()?.takeIf { it.isNotEmpty() } ?: return chain.proceed(chain.request())
+            val snapshot = chain.request().tag(AuthSnapshot::class.java)
+            val token = (if (snapshot != null) snapshot.token else secret())
+                ?.takeIf { it.isNotEmpty() } ?: return chain.proceed(chain.request())
             val request = chain.request().newBuilder().header("Authorization", "Bearer $token").build()
             return chain.proceed(request)
         }
@@ -495,15 +499,20 @@ class MeowApi(
         operation: String,
         okCodes: Set<Int> = setOf(200),
         client: OkHttpClient = this.client,
-    ): String = withContext(Dispatchers.IO) {
-        val response = try {
-            client.newCall(request).await()
-        } catch (e: IOException) {
-            throw MeowApiException.Unreachable(e)
-        }
-        response.use {
-            if (it.code !in okCodes) throw MeowApiException.Http(operation, it.code)
-            it.body?.string().orEmpty()
+    ): String {
+        // Bind queued requests to the engine that accepted the UI operation.
+        // A restart must not give an old request the replacement engine's secret.
+        val authenticated = request.newBuilder().tag(AuthSnapshot::class.java, AuthSnapshot(secret())).build()
+        return withContext(Dispatchers.IO) {
+            val response = try {
+                client.newCall(authenticated).await()
+            } catch (e: IOException) {
+                throw MeowApiException.Unreachable(e)
+            }
+            response.use {
+                if (it.code !in okCodes) throw MeowApiException.Http(operation, it.code)
+                it.body?.string().orEmpty()
+            }
         }
     }
 
