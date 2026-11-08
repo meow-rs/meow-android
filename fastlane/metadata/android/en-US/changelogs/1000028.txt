@@ -1,0 +1,6 @@
+- Traffic: today, this month and last month by host, app, policy and network, kept on the device.
+- New Statistics and Paw Print (engine event record) pages under Utility.
+- Connections: the app behind each flow, plus detail pages for connections and nodes (exit IP, NAT, speed tests).
+- DNS follows the profile, with a Built-in DNS switch.
+- Theme picker; export and import the per-app list.
+- meow-rs v0.29.0 engine and many stability fixes.
