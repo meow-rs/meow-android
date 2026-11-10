@@ -86,9 +86,9 @@ pub fn start(fd: i32, _dns_port: u16) -> Result<(), String> {
 
     logging::bridge_log(&format!("tun2socks starting: fd={}", fd));
 
-    unsafe {
-        let flags = libc::fcntl(fd, libc::F_GETFL);
-        libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
+    if let Err(error) = set_nonblocking(fd) {
+        TUN2SOCKS_ACTIVE.store(false, Ordering::SeqCst);
+        return Err(error.to_string());
     }
 
     let rt = crate::get_runtime();
@@ -102,6 +102,16 @@ pub fn start(fd: i32, _dns_port: u16) -> Result<(), String> {
     });
     *TUN2SOCKS_TASK.lock() = Some(handle);
 
+    Ok(())
+}
+
+// Establish the reader/writer precondition before publishing a session. Keep
+// all existing status flags and report either fcntl failure to the JNI caller.
+fn set_nonblocking(fd: RawFd) -> io::Result<()> {
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
     Ok(())
 }
 
@@ -711,6 +721,57 @@ fn ipv4_header_checksum(h: &[u8]) -> u16 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn nonblocking_setup_preserves_existing_flags() {
+        use std::os::fd::AsRawFd;
+        let (socket, _peer) = std::os::unix::net::UnixStream::pair().unwrap();
+        let fd = socket.as_raw_fd();
+        let before = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+        assert!(before >= 0);
+        set_nonblocking(fd).unwrap();
+        let after = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+        assert_eq!(after, before | libc::O_NONBLOCK);
+        set_nonblocking(fd).unwrap();
+        assert_eq!(unsafe { libc::fcntl(fd, libc::F_GETFL) }, after);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn setfl_failure_does_not_publish_or_leave_active_session() {
+        use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+        let _serial = SERIAL.lock();
+        let path = std::ffi::CString::new("/dev/null").unwrap();
+        let raw = unsafe { libc::open(path.as_ptr(), libc::O_PATH | libc::O_CLOEXEC) };
+        assert!(raw >= 0);
+        let fd = unsafe { OwnedFd::from_raw_fd(raw) };
+        assert!(unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GETFL) } >= 0);
+        let result = start(fd.as_raw_fd(), 1053);
+        let published = TUN2SOCKS_TASK.lock().is_some();
+        if result.is_ok() {
+            stop();
+        }
+        assert!(result.is_err(), "F_SETFL failure must reach the caller");
+        assert!(!published);
+        assert!(!TUN2SOCKS_ACTIVE.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn invalid_tun_fd_is_reported_before_session_publication() {
+        let _serial = SERIAL.lock();
+        let result = start(-1, 1053);
+        let published = TUN2SOCKS_TASK.lock().is_some();
+        // Clean up the old implementation before asserting its failure.
+        if result.is_ok() {
+            stop();
+        }
+        assert!(
+            result.is_err(),
+            "invalid fd must not report startup success"
+        );
+        assert!(!published, "failed setup must not publish a session");
+        assert!(!TUN2SOCKS_ACTIVE.load(Ordering::SeqCst));
+    }
+
     use super::*;
     use crate::test_support::{dns_query, from_the_profile_nameserver, txt_nameserver, SERIAL};
     use std::time::Instant;
