@@ -74,6 +74,7 @@ import io.github.madeye.meow.ui.screens.dns.DnsViewModel
 import io.github.madeye.meow.ui.screens.home.ExitIpViewModel
 import io.github.madeye.meow.ui.screens.home.HomeScreen
 import io.github.madeye.meow.ui.screens.home.HomeViewModel
+import io.github.madeye.meow.ui.screens.home.TOP_TRAFFIC_GROUPS
 import io.github.madeye.meow.ui.screens.logbook.LogbookActions
 import io.github.madeye.meow.ui.screens.logbook.LogbookScreen
 import io.github.madeye.meow.ui.screens.logbook.LogbookViewModel
@@ -218,6 +219,7 @@ private fun MeowNavHost(
                     navController.navigate(Dest.Subscriptions) { launchSingleTop = true }
                 },
                 onRules = { navController.navigate(Dest.Rules()) },
+                onOpenTraffic = { route -> navController.navigate(route) },
                 bottomBar = { BottomBar(navController, onTab) },
             )
         }
@@ -229,7 +231,7 @@ private fun MeowNavHost(
         }
         composable<Dest.Utility> {
             UtilityRoute(
-                onTraffic = { navController.navigate(Dest.Traffic) },
+                onTraffic = { navController.navigate(Dest.Traffic()) },
                 onConnections = { navController.navigate(Dest.Connections) },
                 onLogs = { navController.navigate(Dest.Logs) },
                 onDns = { navController.navigate(Dest.Dns) },
@@ -279,8 +281,12 @@ private fun MeowNavHost(
                 onBack = navController::popBackStack,
             )
         }
-        composable<Dest.Traffic> {
-            TrafficRoute(onOpen = { route -> navController.navigate(route) }, onBack = navController::popBackStack)
+        composable<Dest.Traffic> { entry ->
+            TrafficRoute(
+                route = entry.toRoute<Dest.Traffic>(),
+                onOpen = { route -> navController.navigate(route) },
+                onBack = navController::popBackStack,
+            )
         }
         composable<Dest.TrafficDetails> { entry ->
             TrafficDetailsRoute(
@@ -375,10 +381,21 @@ private fun HomeRoute(
     autoConnect: Boolean,
     onOpenSubscriptions: () -> Unit,
     onRules: () -> Unit,
+    onOpenTraffic: (Dest) -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // Today's ledger for the top traffic card, apps first. Home is shown
+    // the most, and the engine writes about once a minute, so it reads half
+    // as often as the Traffic page.
+    val topTraffic = viewModel(key = "home_top_traffic") {
+        AppGraph.trafficDetails(
+            Dest.TrafficDetails(by = TOP_TRAFFIC_GROUPS.first().name),
+            pollIntervalMs = TOP_TRAFFIC_POLL_MS,
+        )
+    }
+    val topTrafficState by topTraffic.uiState.collectAsStateWithLifecycle()
     val exitIp: ExitIpViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val exitIpState by exitIp.uiState.collectAsStateWithLifecycle()
     val exitNatState by exitIp.natState.collectAsStateWithLifecycle()
@@ -449,12 +466,22 @@ private fun HomeRoute(
             onRefreshExitIp = exitIp::refresh,
             onOpenSubscriptions = onOpenSubscriptions,
             onRules = onRules,
+            topTraffic = topTrafficState,
+            appIcon = AppGraph.installedApps::icon,
+            onTopTrafficGroup = topTraffic::onGroupChange,
+            onOpenTraffic = { group -> onOpenTraffic(Dest.Traffic(by = group.name)) },
+            onOpenTrafficRow = { group, row ->
+                narrowed(topTraffic.filter, topTrafficState.period, group, row)?.let(onOpenTraffic)
+            },
         )
     }
     // ProfileReloadNotice's snackbars: a background update can restart the
     // VPN while Home is showing.
     SnackbarHost(snackbarHost)
 }
+
+/** How often Home's top traffic card reads the ledger again while shown. */
+private const val TOP_TRAFFIC_POLL_MS = 30_000L
 
 /** False when the system refused the start; the switch stays off by itself. */
 private fun startVpnService(context: android.content.Context): Boolean =
@@ -724,11 +751,11 @@ private fun UtilityRoute(
  * clearing just that row.
  */
 @Composable
-private fun TrafficRoute(onOpen: (Dest.TrafficDetails) -> Unit, onBack: () -> Unit) {
+private fun TrafficRoute(route: Dest.Traffic, onOpen: (Dest.TrafficDetails) -> Unit, onBack: () -> Unit) {
     val viewModel: io.github.madeye.meow.ui.screens.traffic.TrafficViewModel =
         viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val details = viewModel { AppGraph.trafficDetails(Dest.TrafficDetails()) }
+    val details = viewModel { AppGraph.trafficDetails(Dest.TrafficDetails(by = route.by ?: TrafficGroup.Host.name)) }
     val detailsState by details.uiState.collectAsStateWithLifecycle()
 
     MeowScaffold(

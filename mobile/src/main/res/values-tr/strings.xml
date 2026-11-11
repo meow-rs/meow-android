@@ -31,8 +31,7 @@
     <string name="home_reconnecting_profile">Güncellenen profille yeniden bağlanılıyor…</string>
     <string name="home_profile_rejected">Güncellenen profilde hatalar var — mevcut bağlantı korunuyor</string>
     <string name="home_start_refused">Android, VPN hizmetinin başlatılmasını reddetti. Uygulamanın arka plan kısıtlamalarını kontrol edin veya cihazı yeniden başlatın.</string>
-    <string name="home_upload">Yükleme</string>
-    <string name="home_download">İndirme</string>
+    <string name="home_top_traffic">En Çok Trafik</string>
     <string name="home_vpn_toggle">VPN bağlantısını aç veya kapat</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -192,7 +191,18 @@
         <item quantity="one">%1$d istek</item>
         <item quantity="other">%1$d istek</item>
     </plurals>
-    <string name="traffic_total">Toplam: %1$s</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="one">%1$s uygulama</item>
+        <item quantity="other">%1$s uygulama</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="one">%1$s ana makine</item>
+        <item quantity="other">%1$s ana makine</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="one">%1$s politika</item>
+        <item quantity="other">%1$s politika</item>
+    </plurals>
     <string name="traffic_upload">Yükleme</string>
     <string name="traffic_download">İndirme</string>
 

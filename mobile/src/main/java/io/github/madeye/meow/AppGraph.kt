@@ -115,11 +115,15 @@ object AppGraph {
     }
 
     /**
-     * The traffic ledger as [route] narrows it: the Traffic page's
-     * (unnarrowed) or a row's. Built per page, not by [viewModelFactory],
-     * as the Traffic page's route carries no ledger arguments.
+     * The traffic ledger as [route] narrows it: the Traffic page's or Home's
+     * card's (unnarrowed) or a row's, read again every [pollIntervalMs].
+     * Built per page, not by [viewModelFactory], as the Traffic page's route
+     * carries no ledger arguments.
      */
-    fun trafficDetails(route: Dest.TrafficDetails): TrafficDetailsViewModel = TrafficDetailsViewModel(
+    fun trafficDetails(
+        route: Dest.TrafficDetails,
+        pollIntervalMs: Long = TrafficDetailsViewModel.POLL_INTERVAL_MS,
+    ): TrafficDetailsViewModel = TrafficDetailsViewModel(
         filter = TrafficFilter(host = route.host, app = route.app, policy = route.policy, network = route.network),
         period = TrafficPeriod.entries.firstOrNull { it.name == route.period } ?: TrafficPeriod.Today,
         by = TrafficGroup.entries.firstOrNull { it.name == route.by } ?: TrafficGroup.Host,
@@ -129,6 +133,7 @@ object AppGraph {
         clearLedger = trafficLedger::clear,
         appLabels = appLabels.labels,
         requestAppLabels = appLabels::request,
+        pollIntervalMs = pollIntervalMs,
     )
 
     val viewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {

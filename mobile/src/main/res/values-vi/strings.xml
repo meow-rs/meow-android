@@ -31,8 +31,7 @@
     <string name="home_reconnecting_profile">Đang kết nối lại bằng cấu hình đã cập nhật…</string>
     <string name="home_profile_rejected">Cấu hình đã cập nhật có lỗi — vẫn giữ kết nối hiện tại</string>
     <string name="home_start_refused">Android đã từ chối khởi động dịch vụ VPN. Hãy kiểm tra các hạn chế chạy nền của ứng dụng hoặc khởi động lại thiết bị.</string>
-    <string name="home_upload">Tải lên</string>
-    <string name="home_download">Tải xuống</string>
+    <string name="home_top_traffic">Lưu lượng nhiều nhất</string>
     <string name="home_vpn_toggle">Bật/tắt VPN</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -187,7 +186,15 @@
     <plurals name="traffic_requests">
         <item quantity="other">%1$d yêu cầu</item>
     </plurals>
-    <string name="traffic_total">Tổng: %1$s</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="other">%1$s ứng dụng</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="other">%1$s máy chủ</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="other">%1$s chính sách</item>
+    </plurals>
     <string name="traffic_upload">Tải lên</string>
     <string name="traffic_download">Tải xuống</string>
 

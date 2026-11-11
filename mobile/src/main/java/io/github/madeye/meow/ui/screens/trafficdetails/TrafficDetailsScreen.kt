@@ -39,6 +39,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -48,8 +49,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -57,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import io.github.madeye.meow.R
@@ -390,6 +394,7 @@ private fun LedgerRow(
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        textAlign = rowNameAlign(),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.size(8.dp))
@@ -434,11 +439,12 @@ private fun LedgerRow(
 
 /** The app's icon; its [label]'s [Avatar] while it loads, or when the app is gone. */
 @Composable
-private fun AppIcon(
+internal fun AppIcon(
     packageName: String,
     label: String,
     appIcon: suspend (packageName: String) -> Drawable?,
     size: Dp = 32.dp,
+    shape: Shape = CircleShape,
 ) {
     val icon by produceState<ImageBitmap?>(null, packageName) {
         value = appIcon(packageName)?.let { drawable ->
@@ -449,26 +455,43 @@ private fun AppIcon(
     if (bitmap != null) {
         Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.size(size))
     } else {
-        Avatar(label, size)
+        Avatar(label, size, shape)
     }
 }
 
 private const val ICON_PX = 96
 
-/** A letter on a tinted disc, the tint picked by the name so a row keeps its colour. */
+/** A letter on a tinted disc, or [shape], the tint picked by the name so a row keeps its colour. */
 @Composable
-private fun Avatar(name: String, size: Dp = 32.dp) {
-    val colors = MaterialTheme.meow
-    val palette = listOf(colors.accent, colors.ginger, colors.connected, colors.warning, colors.danger)
-    val tint = palette[Math.floorMod(name.hashCode(), palette.size)]
+internal fun Avatar(name: String, size: Dp = 32.dp, shape: Shape = CircleShape) {
+    val tint = ledgerTint(name)
     val letter = name.firstOrNull { it.isLetterOrDigit() }?.toString()?.uppercase(Locale.getDefault()) ?: "?"
     Box(
-        modifier = Modifier.size(size).background(tint.copy(alpha = 0.15f), CircleShape),
+        modifier = Modifier.size(size).background(tint.copy(alpha = 0.15f), shape),
         contentAlignment = Alignment.Center,
     ) {
         Text(text = letter, style = MaterialTheme.typography.labelLarge, color = tint)
     }
 }
+
+/** The colour of the row named [name], the same on every page that lists it. */
+@Composable
+internal fun ledgerTint(name: String): Color {
+    val colors = MaterialTheme.meow
+    val palette = listOf(colors.accent, colors.ginger, colors.connected, colors.warning, colors.danger)
+    return palette[Math.floorMod(name.hashCode(), palette.size)]
+}
+
+/**
+ * Where a row's name sits: by its icon, at the layout's start. [TextAlign.Start]
+ * follows the text's own direction instead, so in an RTL layout a Latin
+ * domain or app name would cross to the total's side while a bare address,
+ * which has no direction of its own, stayed by the icon.
+ */
+@Composable
+@ReadOnlyComposable
+internal fun rowNameAlign(): TextAlign =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) TextAlign.Right else TextAlign.Left
 
 @Composable
 private fun Hint(message: String) {

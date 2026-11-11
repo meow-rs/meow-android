@@ -3,7 +3,6 @@ package io.github.madeye.meow.ui.screens.home
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.madeye.meow.aidl.TrafficStats
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.api.MeowApiException
@@ -35,7 +34,6 @@ data class HomeUiState(
     val hasProfile: Boolean = false,
     /** False until Room's first answer, so launch doesn't flash the no-profile prompt. */
     val profileLoaded: Boolean = false,
-    val traffic: TrafficStats = TrafficStats(),
     val routeMode: RouteMode = RouteMode.Rule,
 ) {
     val isConnected: Boolean get() = state == BaseService.State.Connected
@@ -74,16 +72,14 @@ class HomeViewModel(
 
     val uiState: StateFlow<HomeUiState> = combine(
         vpn.state,
-        vpn.traffic,
         profiles.observeSelected(),
         routeMode,
-    ) { state, traffic, profile, mode ->
+    ) { state, profile, mode ->
         HomeUiState(
             state = state,
             profileName = profile?.name.orEmpty(),
             hasProfile = profile != null,
             profileLoaded = true,
-            traffic = traffic,
             routeMode = mode,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())

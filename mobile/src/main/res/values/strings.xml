@@ -42,8 +42,7 @@
     <string name="home_reconnecting_profile">Reconnecting with the updated profile…</string>
     <string name="home_profile_rejected">Updated profile has errors — keeping the current connection</string>
     <string name="home_start_refused">Android refused to start the VPN service. Check the app\'s background restrictions or restart the device.</string>
-    <string name="home_upload">Upload</string>
-    <string name="home_download">Download</string>
+    <string name="home_top_traffic">Top Traffic</string>
     <string name="home_vpn_toggle">Toggle VPN</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -203,7 +202,18 @@
         <item quantity="one">%1$d request</item>
         <item quantity="other">%1$d requests</item>
     </plurals>
-    <string name="traffic_total">Total: %1$s</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="one">%1$s app</item>
+        <item quantity="other">%1$s apps</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="one">%1$s host</item>
+        <item quantity="other">%1$s hosts</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="one">%1$s policy</item>
+        <item quantity="other">%1$s policies</item>
+    </plurals>
     <string name="traffic_upload">Upload</string>
     <string name="traffic_download">Download</string>
 
