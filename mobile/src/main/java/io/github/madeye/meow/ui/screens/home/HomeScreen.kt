@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -54,8 +55,9 @@ import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsUiState
 import io.github.madeye.meow.ui.theme.meow
 
 /**
- * The Home tab: the VPN switch and what it is doing, then the way into the
- * rules it routes by — the first tab of meow-ios — and today's top traffic.
+ * The Home tab: the VPN switch with the mode it routes in, what it is doing,
+ * then the way into the rules it routes by — the first tab of meow-ios — and
+ * today's top traffic.
  * Subscriptions are a page of their own, opened from the app bar; proxy
  * groups have a tab.
  *
@@ -96,7 +98,7 @@ fun HomeScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { StatusCard(state = state, onToggle = onToggle) }
+        item { StatusCard(state = state, onToggle = onToggle, onSelectRouteMode = onSelectRouteMode) }
 
         // The switch stays disabled until a profile is selected, and the list
         // to pick one from is on the Subscriptions page, so point there.
@@ -106,15 +108,6 @@ fun HomeScreen(
 
         if (exitIp != ExitIpUiState.Hidden) {
             item { ExitIpCard(state = exitIp, nat = exitNat, onRefresh = onRefreshExitIp) }
-        }
-
-        item {
-            RouteModeCard(
-                mode = state.routeMode,
-                // Usable while disconnected too: the pick applies on the next connect.
-                enabled = !state.isBusy,
-                onSelect = onSelectRouteMode,
-            )
         }
 
         // Rules reads the engine's controller API, so it is only reachable
@@ -147,8 +140,17 @@ fun HomeScreen(
     }
 }
 
+/**
+ * The switch and the mode it routes in, one card: how the tunnel runs is
+ * part of turning it on, and the mode is picked before a connect as often
+ * as during one.
+ */
 @Composable
-private fun StatusCard(state: HomeUiState, onToggle: (Boolean) -> Unit) {
+private fun StatusCard(
+    state: HomeUiState,
+    onToggle: (Boolean) -> Unit,
+    onSelectRouteMode: (RouteMode) -> Unit,
+) {
     val colors = MaterialTheme.meow
     val label = stringResource(
         when (state.state) {
@@ -206,6 +208,13 @@ private fun StatusCard(state: HomeUiState, onToggle: (Boolean) -> Unit) {
                 )
             }
         }
+        HorizontalDivider(color = colors.border, modifier = Modifier.padding(vertical = 14.dp))
+        RouteModePicker(
+            mode = state.routeMode,
+            // Usable while disconnected too: the pick applies on the next connect.
+            enabled = !state.isBusy,
+            onSelect = onSelectRouteMode,
+        )
     }
 }
 
@@ -236,8 +245,8 @@ private fun NoProfileCard(onAdd: () -> Unit) {
 }
 
 @Composable
-private fun RouteModeCard(mode: RouteMode, enabled: Boolean, onSelect: (RouteMode) -> Unit) {
-    GlassCard {
+private fun RouteModePicker(mode: RouteMode, enabled: Boolean, onSelect: (RouteMode) -> Unit) {
+    Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Filled.Route,

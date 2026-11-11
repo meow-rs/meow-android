@@ -20,6 +20,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Language
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -44,7 +46,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.traffic.TrafficGroup
 import io.github.madeye.meow.traffic.TrafficRow
@@ -166,11 +170,17 @@ fun TopTrafficCard(
     }
 }
 
-/** A pill of the card's groupings, the selected one raised. */
+/**
+ * A pill of the card's groupings, the selected one raised. Under the title
+ * it can still be too wide (Russian at large text on a 360dp phone), so its
+ * segments then narrow in proportion and their labels shrink to fit, as the
+ * route mode's do, rather than the last one being cut off.
+ */
 @Composable
 private fun GroupPicker(selected: TrafficGroup, onSelect: (TrafficGroup) -> Unit) {
     val colors = MaterialTheme.meow
-    Row(
+    val labelStyle = MaterialTheme.typography.labelLarge
+    FittingRow(
         modifier = Modifier
             .background(colors.canvas, CircleShape)
             .border(1.dp, colors.border.copy(alpha = 0.6f), CircleShape)
@@ -191,10 +201,40 @@ private fun GroupPicker(selected: TrafficGroup, onSelect: (TrafficGroup) -> Unit
             ) {
                 Text(
                     text = stringResource(group.label),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = labelStyle,
                     color = if (isSelected) colors.ink else colors.mutedText,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = labelStyle.fontSize),
                 )
+            }
+        }
+    }
+}
+
+/**
+ * [content] side by side at its natural widths, or, when those do not fit,
+ * at widths cut down in proportion.
+ */
+@Composable
+private fun FittingRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val natural = measurables.map { it.maxIntrinsicWidth(constraints.maxHeight) }
+        val total = natural.sum()
+        val scale = if (constraints.hasBoundedWidth && total > constraints.maxWidth) {
+            constraints.maxWidth.toFloat() / total
+        } else {
+            1f
+        }
+        val placeables = measurables.mapIndexed { i, measurable ->
+            measurable.measure(Constraints(maxWidth = (natural[i] * scale).toInt(), maxHeight = constraints.maxHeight))
+        }
+        val height = placeables.maxOfOrNull { it.height } ?: 0
+        layout(placeables.sumOf { it.width }, height) {
+            var x = 0
+            placeables.forEach {
+                it.placeRelative(x, (height - it.height) / 2)
+                x += it.width
             }
         }
     }
