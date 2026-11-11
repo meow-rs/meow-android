@@ -30,7 +30,8 @@ sealed interface Dest {
 
     @Serializable data object Subscriptions : Dest
 
-    @Serializable data object Traffic : Dest
+    /** [by]: the `TrafficGroup` name the ledger opens grouped by; Host when null. */
+    @Serializable data class Traffic(val by: String? = null) : Dest
 
     /**
      * The traffic ledger for [period] grouped [by] (`TrafficPeriod` and

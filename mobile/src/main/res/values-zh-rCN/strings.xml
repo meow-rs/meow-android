@@ -31,8 +31,7 @@
     <string name="home_reconnecting_profile">正在使用更新后的配置重新连接…</string>
     <string name="home_profile_rejected">更新后的配置有误，继续使用当前连接</string>
     <string name="home_start_refused">系统拒绝启动 VPN 服务。请检查应用的后台限制，或重启设备。</string>
-    <string name="home_upload">上传</string>
-    <string name="home_download">下载</string>
+    <string name="home_top_traffic">流量排行</string>
     <string name="home_vpn_toggle">开关 VPN</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -187,7 +186,15 @@
     <plurals name="traffic_requests">
         <item quantity="other">%1$d 次请求</item>
     </plurals>
-    <string name="traffic_total">合计：%1$s</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="other">%1$s 个应用</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="other">%1$s 个主机</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="other">%1$s 个策略</item>
+    </plurals>
     <string name="traffic_upload">上传</string>
     <string name="traffic_download">下载</string>
 

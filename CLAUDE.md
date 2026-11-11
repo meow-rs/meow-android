@@ -146,8 +146,9 @@ engine's own controller API on loopback, which crosses into `:vpn`.
 ### Compose UI (`mobile/src/main/java/io/github/madeye/meow/ui/`)
 
 - **MeowApp.kt**: navigation-compose host. Four tabs as on meow-ios (Home — VPN
-  switch, route mode, exit IP —, Proxy Groups, Utility, Settings);
-  Subscriptions/Rules (from Home), the YAML editor (from Subscriptions; read-only
+  switch, route mode, exit IP, today's top traffic —, Proxy Groups, Utility, Settings);
+  Subscriptions/Rules/Traffic (from Home: the top-traffic card opens Traffic in
+  its grouping, App by default, a row the details narrowed to it), the YAML editor (from Subscriptions; read-only
   for a subscription, with a banner whose "Create a copy" opens the copy's editor in
   its place), Connections/DNS/Traffic/Statistics/Logs (from Utility) and Per-App Proxy (from
   Settings) are pushed routes. `SubscriptionsRoute` owns the subscription dialogs and

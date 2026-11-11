@@ -36,8 +36,7 @@
     <string name="home_reconnecting_profile">အပ်ဒိတ်ထားသော ပရိုဖိုင်ဖြင့် ပြန်ချိတ်ဆက်နေသည်…</string>
     <string name="home_profile_rejected">အပ်ဒိတ်ထားသော ပရိုဖိုင်တွင် အမှားရှိသည် — လက်ရှိ ချိတ်ဆက်မှုကို ဆက်သုံးနေသည်</string>
     <string name="home_start_refused">Android က VPN ဝန်ဆောင်မှုကို စတင်ခွင့်မပြုပါ။ အက်ပ်၏ နောက်ခံ ကန့်သတ်ချက်များကို စစ်ဆေးပါ သို့မဟုတ် စက်ကို ပြန်စတင်ပါ။</string>
-    <string name="home_upload">အပ်လုဒ်</string>
-    <string name="home_download">ဒေါင်းလုဒ်</string>
+    <string name="home_top_traffic">ဒေတာ အများဆုံး</string>
     <string name="home_vpn_toggle">VPN ဖွင့်/ပိတ်ရန်</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -192,7 +191,15 @@
     <plurals name="traffic_requests">
         <item quantity="other">တောင်းဆိုမှု %1$d ခု</item>
     </plurals>
-    <string name="traffic_total">စုစုပေါင်း: %1$s</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="other">အက်ပ် %1$s ခု</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="other">Host %1$s ခု</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="other">မူဝါဒ %1$s ခု</item>
+    </plurals>
     <string name="traffic_upload">အပ်လုဒ်</string>
     <string name="traffic_download">ဒေါင်းလုဒ်</string>
 

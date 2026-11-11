@@ -39,8 +39,7 @@
     <string name="home_reconnecting_profile">در حال اتصال دوباره با پروفایل به‌روزشده…</string>
     <string name="home_profile_rejected">پروفایل به‌روزشده خطا دارد؛ اتصال فعلی حفظ می‌شود</string>
     <string name="home_start_refused">اندروید اجازهٔ راه‌اندازی سرویس VPN را نداد. محدودیت‌های پس‌زمینهٔ برنامه را بررسی کنید یا دستگاه را دوباره راه‌اندازی کنید.</string>
-    <string name="home_upload">آپلود</string>
-    <string name="home_download">دانلود</string>
+    <string name="home_top_traffic">بیشترین ترافیک</string>
     <string name="home_vpn_toggle">روشن یا خاموش کردن VPN</string>
     <!-- Quick Settings tile: it mirrors the switch above and reuses the home_* status strings. -->
     <string name="tile_label">Meow VPN</string>
@@ -200,7 +199,18 @@
         <item quantity="one">%1$d درخواست</item>
         <item quantity="other">%1$d درخواست</item>
     </plurals>
-    <string name="traffic_total">مجموع: \u2068%1$s\u2069</string>
+    <plurals name="traffic_count_apps">
+        <item quantity="one">\u2068%1$s\u2069 برنامه</item>
+        <item quantity="other">\u2068%1$s\u2069 برنامه</item>
+    </plurals>
+    <plurals name="traffic_count_hosts">
+        <item quantity="one">\u2068%1$s\u2069 میزبان</item>
+        <item quantity="other">\u2068%1$s\u2069 میزبان</item>
+    </plurals>
+    <plurals name="traffic_count_policies">
+        <item quantity="one">\u2068%1$s\u2069 سیاست</item>
+        <item quantity="other">\u2068%1$s\u2069 سیاست</item>
+    </plurals>
     <string name="traffic_upload">آپلود</string>
     <string name="traffic_download">دانلود</string>
 

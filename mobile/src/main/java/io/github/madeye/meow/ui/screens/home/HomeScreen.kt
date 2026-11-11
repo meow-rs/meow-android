@@ -1,5 +1,6 @@
 package io.github.madeye.meow.ui.screens.home
 
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
@@ -37,8 +36,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -49,20 +46,22 @@ import androidx.compose.ui.unit.sp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
+import io.github.madeye.meow.traffic.TrafficGroup
+import io.github.madeye.meow.traffic.TrafficRow
 import io.github.madeye.meow.ui.components.GlassCard
 import io.github.madeye.meow.ui.components.NavRow
-import io.github.madeye.meow.ui.theme.MeowTextStyles
+import io.github.madeye.meow.ui.screens.trafficdetails.TrafficDetailsUiState
 import io.github.madeye.meow.ui.theme.meow
-import io.github.madeye.meow.ui.util.Formatters
-import java.util.Locale
 
 /**
  * The Home tab: the VPN switch and what it is doing, then the way into the
- * rules it routes by — the first tab of meow-ios. Subscriptions are a page of
- * their own, opened from the app bar; proxy groups have a tab.
+ * rules it routes by — the first tab of meow-ios — and today's top traffic.
+ * Subscriptions are a page of their own, opened from the app bar; proxy
+ * groups have a tab.
  *
  * @param onOpenSubscriptions opens the Subscriptions page, also from the
  *   prompt shown while no profile is selected.
+ * @param topTraffic today's traffic ledger, grouped as [TopTrafficCard] picks.
  */
 @Composable
 fun HomeScreen(
@@ -75,6 +74,11 @@ fun HomeScreen(
     onRefreshExitIp: () -> Unit,
     onOpenSubscriptions: () -> Unit,
     onRules: () -> Unit,
+    topTraffic: TrafficDetailsUiState,
+    appIcon: suspend (packageName: String) -> Drawable?,
+    onTopTrafficGroup: (TrafficGroup) -> Unit,
+    onOpenTraffic: (TrafficGroup) -> Unit,
+    onOpenTrafficRow: (TrafficGroup, TrafficRow) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val offlineHint = stringResource(R.string.settings_engine_offline)
@@ -100,29 +104,6 @@ fun HomeScreen(
             item { NoProfileCard(onAdd = onOpenSubscriptions) }
         }
 
-        if (state.isConnected) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TrafficTile(
-                        label = stringResource(R.string.home_upload),
-                        icon = Icons.Filled.ArrowUpward,
-                        rate = state.traffic.txRate,
-                        total = state.traffic.txTotal,
-                        tint = MaterialTheme.meow.upload,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TrafficTile(
-                        label = stringResource(R.string.home_download),
-                        icon = Icons.Filled.ArrowDownward,
-                        rate = state.traffic.rxRate,
-                        total = state.traffic.rxTotal,
-                        tint = MaterialTheme.meow.download,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
         if (exitIp != ExitIpUiState.Hidden) {
             item { ExitIpCard(state = exitIp, nat = exitNat, onRefresh = onRefreshExitIp) }
         }
@@ -146,6 +127,20 @@ fun HomeScreen(
                     onClick = onRules,
                     enabled = state.isConnected,
                     subtitle = offlineHint.takeUnless { state.isConnected },
+                )
+            }
+        }
+
+        // The ledger is read from its file, so the card stays while the VPN
+        // is down; it waits for the first read rather than flash empty.
+        if (topTraffic.report != null || topTraffic.error != null) {
+            item {
+                TopTrafficCard(
+                    state = topTraffic,
+                    appIcon = appIcon,
+                    onGroupChange = onTopTrafficGroup,
+                    onOpen = onOpenTraffic,
+                    onOpenRow = onOpenTrafficRow,
                 )
             }
         }
@@ -290,37 +285,5 @@ private fun RouteModeCard(mode: RouteMode, enabled: Boolean, onSelect: (RouteMod
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun TrafficTile(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    rate: Long,
-    total: Long,
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
-    GlassCard(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text(
-                text = label.uppercase(Locale.getDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.meow.mutedText,
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = Formatters.rate(rate),
-            style = MaterialTheme.typography.titleMedium.merge(MeowTextStyles.monoDigits),
-        )
-        Text(
-            text = stringResource(R.string.traffic_total, Formatters.bytes(total)),
-            style = MaterialTheme.typography.bodySmall.merge(MeowTextStyles.monoDigits),
-            color = MaterialTheme.meow.mutedText,
-        )
     }
 }
