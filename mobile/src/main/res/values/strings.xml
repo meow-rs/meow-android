@@ -229,6 +229,10 @@
     <string name="settings_builtin_dns_failed">Could not switch DNS: %1$s</string>
     <string name="settings_show_exit_ip">Show exit IP</string>
     <string name="settings_show_exit_ip_desc">Looks up your public IP on Home via ip.sb, ipwho.is or ipinfo.io</string>
+    <string name="settings_start_on_boot">Start on boot</string>
+    <string name="settings_start_on_boot_desc">Connects the VPN when the phone starts. Some phones also need auto-start allowed for Meow in system settings.</string>
+    <string name="boot_connect_title">Could not connect at startup</string>
+    <string name="boot_connect_text">Tap to connect</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_about">About</string>
     <string name="settings_source_code">Source Code</string>

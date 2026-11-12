@@ -9,6 +9,8 @@ import androidx.navigation.toRoute
 import io.github.madeye.meow.analytics.Analytics
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.bg.MeowInstance
+import io.github.madeye.meow.boot.StartOnBoot
+import io.github.madeye.meow.boot.StartOnBootPreference
 import io.github.madeye.meow.net.ExitIpLookup
 import io.github.madeye.meow.logbook.LogbookReader
 import io.github.madeye.meow.net.IpGeoLookup
@@ -110,6 +112,14 @@ object AppGraph {
     /** Settings picks it; each Activity applies it, see `applyThemeMode`. */
     val themeMode: ThemeModePreference by lazy { ThemeModePreference() }
 
+    /** Settings' "Start on boot"; see [StartOnBoot]. */
+    val startOnBoot: StartOnBootPreference by lazy {
+        StartOnBootPreference(
+            read = { StartOnBoot.isEnabled(appContext) },
+            write = { StartOnBoot.setEnabled(appContext, it) },
+        )
+    }
+
     fun init(context: Context) {
         appContext = context.applicationContext
     }
@@ -186,6 +196,7 @@ object AppGraph {
                     showExitIp,
                     builtinDns,
                     themeMode,
+                    startOnBoot,
                     // Null in the Play build, which may only update through
                     // Play. Built here, not in a lazy property: that delegate
                     // is created with AppGraph, so R8 would keep the client.

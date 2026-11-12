@@ -862,6 +862,7 @@ private fun SettingsRoute(
             onPerAppProxy = onPerAppProxy,
             onShowExitIpChange = viewModel::onShowExitIpChange,
             onBuiltinDnsChange = viewModel::onBuiltinDnsChange,
+            onStartOnBootChange = viewModel::onStartOnBootChange,
             onThemeModeChange = viewModel::onThemeModeChange,
             onPrivacyPolicy = {
                 if (!context.openUrl("https://meow-rs.github.io/meow-android/privacy-policy.html")) {

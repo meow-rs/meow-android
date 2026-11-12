@@ -234,6 +234,10 @@
     <string name="settings_builtin_dns_failed">Не удалось переключить DNS: %1$s</string>
     <string name="settings_show_exit_ip">Показывать внешний IP</string>
     <string name="settings_show_exit_ip_desc">Определяет ваш внешний IP на вкладке «Главная» через ip.sb, ipwho.is или ipinfo.io</string>
+    <string name="settings_start_on_boot">Запуск при включении</string>
+    <string name="settings_start_on_boot_desc">Подключает VPN при включении телефона. На некоторых телефонах нужно также разрешить автозапуск Meow в настройках системы.</string>
+    <string name="boot_connect_title">Не удалось подключиться при запуске</string>
+    <string name="boot_connect_text">Нажмите, чтобы подключиться</string>
     <string name="settings_privacy_policy">Политика конфиденциальности</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_source_code">Исходный код</string>

@@ -262,6 +262,10 @@
     <string name="settings_builtin_dns_failed">تعذّر تبديل DNS: \u2068%1$s\u2069</string>
     <string name="settings_show_exit_ip">عرض عنوان IP الخارجي</string>
     <string name="settings_show_exit_ip_desc">يستعلم عن عنوان IP العام لديك عبر ip.sb أو ipwho.is أو ipinfo.io ويعرضه في «الرئيسية»</string>
+    <string name="settings_start_on_boot">التشغيل عند بدء الجهاز</string>
+    <string name="settings_start_on_boot_desc">يتصل بشبكة VPN عند تشغيل الهاتف. تحتاج بعض الهواتف أيضًا إلى السماح لتطبيق Meow بالتشغيل التلقائي في إعدادات النظام.</string>
+    <string name="boot_connect_title">تعذّر الاتصال عند بدء التشغيل</string>
+    <string name="boot_connect_text">انقر للاتصال</string>
     <string name="settings_privacy_policy">سياسة الخصوصية</string>
     <string name="settings_about">حول</string>
     <string name="settings_source_code">الشفرة المصدرية</string>

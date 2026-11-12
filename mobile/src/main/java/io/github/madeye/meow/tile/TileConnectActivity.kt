@@ -9,14 +9,15 @@ import io.github.madeye.meow.R
 import timber.log.Timber
 
 /**
- * Finishes a tile tap that needs an Activity in front: the VPN consent
- * dialog, or a start the system would not take from the background. It is
- * translucent and draws nothing; it finishes once the service is asked to
- * start (or consent is declined).
+ * Finishes a start that needs an Activity in front: the VPN consent dialog,
+ * or a start the system would not take from the background. A tile tap
+ * lands here, and so does a tap on the notification a failed start on boot
+ * posts (`boot.BootReceiver`). It is translucent and draws nothing; it
+ * finishes once the service is asked to start (or consent is declined).
  *
- * Not exported, so only the tile's PendingIntent can launch it. An exported
- * way to switch the VPN on is exactly what MainActivity's debug-only
- * `auto_connect` avoids.
+ * Not exported, so only the app's own PendingIntents can launch it. An
+ * exported way to switch the VPN on is exactly what MainActivity's
+ * debug-only `auto_connect` avoids.
  */
 class TileConnectActivity : ComponentActivity() {
 

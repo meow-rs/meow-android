@@ -3,6 +3,7 @@ package io.github.madeye.meow.ui.screens.settings
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.madeye.meow.boot.StartOnBootPreference
 import io.github.madeye.meow.preference.BuiltinDnsPreference
 import io.github.madeye.meow.preference.ExitIpPreference
 import io.github.madeye.meow.preference.ThemeMode
@@ -29,6 +30,8 @@ data class SettingsUiState(
     val showExitIp: Boolean = false,
     /** Settings' "Built-in DNS" switch; a running VPN follows it. */
     val builtinDns: Boolean = true,
+    /** Settings' "Start on boot" switch: connect the VPN once the device boots. */
+    val startOnBoot: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** An update check is waiting on GitHub. */
     val checkingForUpdate: Boolean = false,
@@ -52,6 +55,7 @@ class SettingsViewModel(
     private val exitIp: ExitIpPreference,
     private val builtinDns: BuiltinDnsPreference,
     private val theme: ThemeModePreference,
+    private val startOnBoot: StartOnBootPreference,
     /**
      * The newest GitHub release. Null in the Play build, which may only
      * update through Play: the route opens the store listing instead.
@@ -67,9 +71,13 @@ class SettingsViewModel(
     private val _events = MutableSharedFlow<SettingsEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
 
-    /** The two switches, as (show exit IP, built-in DNS). */
-    private val switches = combine(exitIp.enabled, builtinDns.enabled) { showExitIp, builtin ->
-        (showExitIp == true) to (builtin != false)
+    /** The switches, as (show exit IP, built-in DNS, start on boot). */
+    private val switches = combine(
+        exitIp.enabled,
+        builtinDns.enabled,
+        startOnBoot.enabled,
+    ) { showExitIp, builtin, onBoot ->
+        Triple(showExitIp == true, builtin != false, onBoot)
     }
 
     val uiState: StateFlow<SettingsUiState> = combine(
@@ -78,12 +86,13 @@ class SettingsViewModel(
         checking,
         update,
         theme.mode,
-    ) { (app, engine), (showExitIp, builtin), isChecking, newer, mode ->
+    ) { (app, engine), (showExitIp, builtin, onBoot), isChecking, newer, mode ->
         SettingsUiState(
             appVersion = app,
             engineVersion = engine,
             showExitIp = showExitIp,
             builtinDns = builtin,
+            startOnBoot = onBoot,
             themeMode = mode,
             checkingForUpdate = isChecking,
             update = newer,
@@ -102,6 +111,8 @@ class SettingsViewModel(
     fun onBuiltinDnsChange(enabled: Boolean) = builtinDns.set(enabled)
 
     fun onThemeModeChange(mode: ThemeMode) = theme.set(mode)
+
+    fun onStartOnBootChange(enabled: Boolean) = startOnBoot.set(enabled)
 
     /** A tap on "Check for updates"; ignored while a check is already running. */
     fun checkForUpdates() {
