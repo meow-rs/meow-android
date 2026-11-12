@@ -73,8 +73,9 @@ Network
     device), Statistics (as on Surge: session start and uptime, traffic by
     Wi-Fi / Ethernet and cellular, and by proxy) and Logs, grouped as on the
     iOS app
-  - Settings: Version, network config, per-app VPN proxy/bypass,
-    connectivity diagnostics, about
+  - Settings: Version, network config, per-app VPN proxy/bypass, start on
+    boot (connects the VPN with the selected profile once the phone has
+    booted), connectivity diagnostics, about
 - **i18n**: English, Chinese (zh_CN), Russian, Persian, Arabic, Vietnamese,
   Turkish, Burmese (Persian and Arabic right-to-left); on Android 13+ the
   language can be set per app in system settings

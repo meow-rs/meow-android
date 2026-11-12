@@ -215,6 +215,10 @@
     <string name="settings_builtin_dns_failed">DNS ပြောင်း၍ မရပါ: %1$s</string>
     <string name="settings_show_exit_ip">ထွက်ပေါက် IP ပြရန်</string>
     <string name="settings_show_exit_ip_desc">သင့် Public IP ကို ip.sb၊ ipwho.is သို့မဟုတ် ipinfo.io မှတစ်ဆင့် ရှာဖွေပြီး ပင်မတွင် ပြသည်</string>
+    <string name="settings_start_on_boot">စက်ဖွင့်ချိန်တွင် စတင်ရန်</string>
+    <string name="settings_start_on_boot_desc">ဖုန်းဖွင့်သည့်အခါ VPN ကို ချိတ်ဆက်သည်။ အချို့ဖုန်းများတွင် စနစ်ဆက်တင်၌ Meow ကို အလိုအလျောက် စတင်ခွင့်ပြုရန်လည်း လိုအပ်သည်။</string>
+    <string name="boot_connect_title">စက်ဖွင့်ချိန်တွင် ချိတ်ဆက်၍ မရပါ</string>
+    <string name="boot_connect_text">ချိတ်ဆက်ရန် တို့ပါ</string>
     <string name="settings_privacy_policy">ကိုယ်ရေးအချက်အလက် မူဝါဒ</string>
     <string name="settings_about">အကြောင်း</string>
     <string name="settings_source_code">ရင်းမြစ်ကုဒ်</string>

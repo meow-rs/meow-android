@@ -86,16 +86,33 @@
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
         </service>
-        <!-- Finishes a tile start that needs an Activity (VPN consent, or a
-             refused background start). Not exported: only the tile's
-             PendingIntent may launch it. Own task, out of recents, so it
-             leaves nothing behind. -->
+        <!-- Finishes a tile or boot start that needs an Activity (VPN
+             consent, or a refused background start). Not exported: only the
+             app's own PendingIntents (the tile's, the boot notification's)
+             may launch it. Own task, out of recents, so it leaves nothing
+             behind. -->
         <activity
             android:name="io.github.madeye.meow.tile.TileConnectActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Settings' "Start on boot". Disabled here: the switch enables it
+             (StartOnBoot), so with the switch off a boot never wakes the app.
+             In :vpn, beside the service it starts, as the tile is. Not
+             exported: the system delivers BOOT_COMPLETED to it anyway, and no
+             other app can reach it. RECEIVE_BOOT_COMPLETED is in :core's
+             manifest. -->
+        <receiver
+            android:name="io.github.madeye.meow.boot.BootReceiver"
+            android:enabled="false"
+            android:exported="false"
+            android:process=":vpn">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

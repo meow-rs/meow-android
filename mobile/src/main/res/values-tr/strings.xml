@@ -218,6 +218,10 @@
     <string name="settings_builtin_dns_failed">DNS değiştirilemedi: %1$s</string>
     <string name="settings_show_exit_ip">Çıkış IP\'sini göster</string>
     <string name="settings_show_exit_ip_desc">Ana sayfada genel IP adresinizi ip.sb, ipwho.is veya ipinfo.io üzerinden sorgular</string>
+    <string name="settings_start_on_boot">Açılışta başlat</string>
+    <string name="settings_start_on_boot_desc">Telefon açıldığında VPN\'e bağlanır. Bazı telefonlarda ayrıca sistem ayarlarından Meow\'un otomatik başlatılmasına izin vermek gerekir.</string>
+    <string name="boot_connect_title">Açılışta bağlanılamadı</string>
+    <string name="boot_connect_text">Bağlanmak için dokunun</string>
     <string name="settings_privacy_policy">Gizlilik Politikası</string>
     <string name="settings_about">Hakkında</string>
     <string name="settings_source_code">Kaynak kodu</string>

@@ -210,6 +210,10 @@
     <string name="settings_builtin_dns_failed">Không thể chuyển DNS: %1$s</string>
     <string name="settings_show_exit_ip">Hiển thị IP đầu ra</string>
     <string name="settings_show_exit_ip_desc">Tra cứu IP công khai qua ip.sb, ipwho.is hoặc ipinfo.io và hiển thị ở Trang chủ</string>
+    <string name="settings_start_on_boot">Tự khởi động cùng máy</string>
+    <string name="settings_start_on_boot_desc">Kết nối VPN khi điện thoại khởi động. Một số điện thoại còn cần cho phép Meow tự khởi động trong cài đặt hệ thống.</string>
+    <string name="boot_connect_title">Không thể kết nối khi khởi động</string>
+    <string name="boot_connect_text">Nhấn để kết nối</string>
     <string name="settings_privacy_policy">Chính sách quyền riêng tư</string>
     <string name="settings_about">Giới thiệu</string>
     <string name="settings_source_code">Mã nguồn</string>

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
@@ -64,6 +65,7 @@ fun SettingsScreen(
     onPerAppProxy: () -> Unit,
     onShowExitIpChange: (Boolean) -> Unit,
     onBuiltinDnsChange: (Boolean) -> Unit,
+    onStartOnBootChange: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onCheckForUpdates: () -> Unit,
     onPrivacyPolicy: () -> Unit,
@@ -124,6 +126,17 @@ fun SettingsScreen(
         Spacer(Modifier.height(8.dp))
         SectionHeader(stringResource(R.string.settings_network))
         GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+            // The subtitle names the catch: phones whose system keeps apps
+            // from starting at boot need meow allowed there too.
+            SwitchRow(
+                icon = Icons.Filled.PowerSettingsNew,
+                title = stringResource(R.string.settings_start_on_boot),
+                subtitle = stringResource(R.string.settings_start_on_boot_desc),
+                checked = state.startOnBoot,
+                onCheckedChange = onStartOnBootChange,
+                modifier = Modifier.testTag("settings_start_on_boot"),
+            )
+            HorizontalDivider(color = MaterialTheme.meow.border)
             NavRow(
                 title = stringResource(R.string.perapp_title),
                 icon = Icons.Filled.Apps,
