@@ -87,7 +87,8 @@
 
     <!-- Proxy servers -->
     <string name="proxy_servers_title">Máy chủ proxy</string>
-    <string name="proxy_servers_empty">Không tìm thấy máy chủ proxy. Hãy kết nối VPN bằng hồ sơ có nhà cung cấp proxy.</string>
+    <string name="proxy_servers_inline_title">Proxy trong hồ sơ</string>
+    <string name="proxy_servers_empty">Không tìm thấy máy chủ proxy. Hãy kết nối hồ sơ có proxy nội tuyến hoặc nhà cung cấp proxy.</string>
     <string name="proxy_servers_no_nodes">Nhà cung cấp này không có nút nào.</string>
     <string name="proxy_servers_load_error">Không thể tải máy chủ proxy</string>
     <string name="proxy_servers_health_check">Kiểm tra mọi nút</string>

@@ -158,9 +158,10 @@ class MeowApi(
                     .filter { it.isNotEmpty() }
             }
         } catch (e: IOException) {
-            // IOException rather than MeowApiException: a body that breaks off
-            // mid-read throws a bare one. Logged because the only symptom,
-            // groups sorted by name, looks deliberate on screen.
+            // This also covers older engines that do not expose the cosmetic
+            // ordering endpoint: the proxy map is still useful and can be
+            // sorted by name. Logged because the only symptom, groups sorted
+            // by name, looks deliberate on screen.
             Timber.w(e, "loading proxy group order failed; sorting groups by name")
             emptyList()
         }

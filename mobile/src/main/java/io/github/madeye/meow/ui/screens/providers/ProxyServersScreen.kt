@@ -91,11 +91,11 @@ fun ProxyServersScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(state.providers, key = { it.name }) { provider ->
+            items(state.providers, key = { it.id }) { provider ->
                 ProviderCard(
                     provider = provider,
-                    onHealthCheck = { onHealthCheck(provider.name) },
-                    onTestNode = { node -> onTestNode(provider.name, node) },
+                    onHealthCheck = { onHealthCheck(provider.id) },
+                    onTestNode = { node -> onTestNode(provider.id, node) },
                 )
             }
         }
@@ -115,7 +115,14 @@ private fun ProviderCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = provider.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (provider.kind == ProxyServerKind.Inline) {
+                        stringResource(R.string.proxy_servers_inline_title)
+                    } else {
+                        provider.name
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 if (provider.vehicleType.isNotEmpty()) {
                     Text(
                         text = provider.vehicleType,
@@ -124,7 +131,9 @@ private fun ProviderCard(
                     )
                 }
             }
-            if (provider.checking) {
+            if (provider.kind == ProxyServerKind.Inline) {
+                Spacer(Modifier.size(20.dp))
+            } else if (provider.checking) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
                 IconButton(

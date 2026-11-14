@@ -118,38 +118,22 @@ info "ssserver running (PID $SSSERVER_PID)"
 info "Step 3: Starting subscription HTTP server on port $SUB_PORT ..."
 mkdir -p /tmp/test-sub
 
-# The macOS screenshot job serves one small proxy-provider document alongside
-# the profile. Keeping this fixture behind an opt-in flag leaves the normal
-# end-to-end test focused on subscriptions while making the provider screen
-# deterministic on the hosted runner.
-PROXY_PROVIDER_CONFIG=""
-PROXY_PROVIDER_GROUP=""
+# The macOS screenshot job adds a named inline node so the screenshot covers
+# profiles that use top-level `proxies:` without any `proxy-providers:` map.
+# Keeping it behind an opt-in flag leaves the normal end-to-end test focused on
+# subscriptions while making the Proxy Servers page deterministic.
+SCREENSHOT_INLINE_PROXY=""
 if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
-    cat > /tmp/test-sub/provider.yaml <<PROVIDEREOF
-proxies:
-  - name: Screenshot SS
+    SCREENSHOT_INLINE_PROXY=$(cat <<INLINEPROXY
+  - name: Screenshot Inline SS
     type: ss
     server: $SS_HOST_FROM_EMU
     port: $SS_PORT
     cipher: $SS_METHOD
     password: $SS_PASSWORD
-PROVIDEREOF
-    PROXY_PROVIDER_CONFIG=$(cat <<PROVIDERCFG
-proxy-providers:
-  screenshot:
-    type: http
-    url: http://$SS_HOST_FROM_EMU:$SUB_PORT/provider.yaml
-    path: ./proxy-providers/screenshot.yaml
-    health-check:
-      enable: false
-PROVIDERCFG
+INLINEPROXY
     )
-    PROXY_PROVIDER_GROUP=$(cat <<PROVIDERGROUP
-    use:
-      - screenshot
-PROVIDERGROUP
-    )
-    info "  Provider fixture enabled at /provider.yaml"
+    info "  Inline proxy fixture enabled"
 fi
 
 cat > /tmp/test-sub/config.yaml <<SUBEOF
@@ -169,13 +153,12 @@ proxies:
     port: $SS_PORT
     cipher: $SS_METHOD
     password: $SS_PASSWORD
-$PROXY_PROVIDER_CONFIG
+$SCREENSHOT_INLINE_PROXY
 proxy-groups:
   - name: Proxy
     type: select
     proxies:
       - test-ss
-$PROXY_PROVIDER_GROUP
 rules:
   - MATCH,test-ss
 SUBEOF
@@ -500,6 +483,10 @@ capture_proxy_servers() {
         local page_xml
         page_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
         if echo "$page_xml" | grep -q 'resource-id="proxy_servers_root"'; then
+            if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] &&
+               ! echo "$page_xml" | grep -q 'text="Screenshot Inline SS"'; then
+                fail "Proxy Servers page rendered without the inline proxy"
+            fi
             screenshot "06_proxy_servers"
             return 0
         fi

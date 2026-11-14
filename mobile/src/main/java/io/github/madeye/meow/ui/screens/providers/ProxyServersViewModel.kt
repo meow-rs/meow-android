@@ -5,16 +5,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.madeye.meow.api.MeowApi
 import io.github.madeye.meow.api.MeowApiException
+import io.github.madeye.meow.api.Proxy
+import io.github.madeye.meow.api.ProxiesResult
 import io.github.madeye.meow.api.ProxyProvider
 import io.github.madeye.meow.api.ProxyProviderNode
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
+
+private const val INLINE_PROXIES_ID = "inline-proxies"
+private val BUILTIN_PROXY_TYPES = setOf("Direct", "Reject", "RejectDrop", "Pass", "PassRule", "Compatible")
+
+enum class ProxyServerKind {
+    Provider,
+    Inline,
+}
 
 @Immutable
 data class ProxyServerNodeUi(
@@ -27,11 +38,14 @@ data class ProxyServerNodeUi(
 
 @Immutable
 data class ProxyServerProviderUi(
+    /** Stable identity used for callbacks and Compose keys. */
+    val id: String,
     val name: String,
     val vehicleType: String,
     val testUrl: String,
     val expectedStatus: String,
     val nodes: List<ProxyServerNodeUi>,
+    val kind: ProxyServerKind = ProxyServerKind.Provider,
     val checking: Boolean = false,
 )
 
@@ -42,7 +56,7 @@ data class ProxyServersUiState(
     val failed: Boolean = false,
 )
 
-/** Loads the engine's proxy-provider nodes for the Home auxiliary page. */
+/** Loads both configured provider nodes and inline `proxies:` nodes. */
 class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
 
     private val _state = MutableStateFlow(ProxyServersUiState())
@@ -56,53 +70,65 @@ class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
         if (_state.value.loading) return
         _state.update { it.copy(loading = true, failed = false) }
         viewModelScope.launch {
-            try {
+            val (inline, providers) = supervisorScope {
+                val inline = async { read("inline proxies") { api.proxies() } }
+                val providers = async { read("proxy providers") { api.proxyProviders() } }
+                inline.await() to providers.await()
+            }
+            if (inline == null && providers == null) {
+                _state.update { it.copy(loading = false, failed = true) }
+            } else {
                 _state.value = ProxyServersUiState(
-                    providers = api.proxyProviders().map(ProxyProvider::toUi),
+                    providers = proxyServerProviders(inline, providers.orEmpty()),
                     loading = false,
                 )
-            } catch (e: MeowApiException) {
-                Timber.w(e, "loading proxy providers failed")
-                _state.update { it.copy(loading = false, failed = true) }
             }
         }
     }
 
-    fun healthCheck(providerName: String) {
-        val provider = _state.value.providers.firstOrNull { it.name == providerName } ?: return
+    fun healthCheck(providerId: String) {
+        val provider = _state.value.providers.firstOrNull { it.id == providerId } ?: return
+        if (provider.kind != ProxyServerKind.Provider) return
         if (provider.checking) return
-        setProviderChecking(providerName, true)
+        setProviderChecking(providerId, true)
         viewModelScope.launch {
             try {
-                api.healthCheckProxyProvider(providerName)
-                val refreshed = api.proxyProviders().firstOrNull { it.name == providerName }
-                if (refreshed != null) replaceProvider(refreshed.toUi()) else setProviderChecking(providerName, false)
+                api.healthCheckProxyProvider(provider.name)
+                val refreshed = api.proxyProviders().firstOrNull { it.name == provider.name }
+                if (refreshed != null) replaceProvider(refreshed.toUi()) else setProviderChecking(providerId, false)
             } catch (e: MeowApiException) {
-                Timber.w(e, "proxy provider health check failed: %s", providerName)
-                setProviderChecking(providerName, false)
+                Timber.w(e, "proxy provider health check failed: %s", provider.name)
+                setProviderChecking(providerId, false)
             }
         }
     }
 
-    fun testNode(providerName: String, nodeName: String) {
-        val provider = _state.value.providers.firstOrNull { it.name == providerName } ?: return
+    fun testNode(providerId: String, nodeName: String) {
+        val provider = _state.value.providers.firstOrNull { it.id == providerId } ?: return
         val node = provider.nodes.firstOrNull { it.name == nodeName } ?: return
         if (node.testing) return
-        updateNode(providerName, nodeName) { it.copy(testing = true) }
+        updateNode(providerId, nodeName) { it.copy(testing = true) }
         viewModelScope.launch {
             try {
-                val delay = api.testProxyProviderDelay(
-                    provider = providerName,
-                    name = nodeName,
-                    url = provider.testUrl.ifBlank { MeowApi.DELAY_TEST_URL },
-                    expectedStatus = provider.expectedStatus,
-                )
-                updateNode(providerName, nodeName) {
+                val delay = if (provider.kind == ProxyServerKind.Inline) {
+                    api.testProxyDelay(
+                        name = nodeName,
+                        url = provider.testUrl.ifBlank { MeowApi.DELAY_TEST_URL },
+                    )
+                } else {
+                    api.testProxyProviderDelay(
+                        provider = provider.name,
+                        name = nodeName,
+                        url = provider.testUrl.ifBlank { MeowApi.DELAY_TEST_URL },
+                        expectedStatus = provider.expectedStatus,
+                    )
+                }
+                updateNode(providerId, nodeName) {
                     it.copy(delayMs = delay.takeIf { measured -> measured > 0 }, timedOut = delay <= 0, testing = false)
                 }
             } catch (e: MeowApiException) {
-                Timber.w(e, "proxy provider node test failed: %s/%s", providerName, nodeName)
-                updateNode(providerName, nodeName) { it.copy(testing = false, timedOut = true) }
+                Timber.w(e, "proxy node test failed: %s/%s", provider.name, nodeName)
+                updateNode(providerId, nodeName) { it.copy(testing = false, timedOut = true) }
             }
         }
     }
@@ -110,25 +136,25 @@ class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
     private fun setProviderChecking(name: String, checking: Boolean) {
         _state.update { state ->
             state.copy(providers = state.providers.map { provider ->
-                if (provider.name == name) provider.copy(checking = checking) else provider
+                if (provider.id == name) provider.copy(checking = checking) else provider
             })
         }
     }
 
     private fun replaceProvider(provider: ProxyServerProviderUi) {
         _state.update { state ->
-            state.copy(providers = state.providers.map { if (it.name == provider.name) provider else it })
+            state.copy(providers = state.providers.map { if (it.id == provider.id) provider else it })
         }
     }
 
     private fun updateNode(
-        providerName: String,
+        providerId: String,
         nodeName: String,
         transform: (ProxyServerNodeUi) -> ProxyServerNodeUi,
     ) {
         _state.update { state ->
             state.copy(providers = state.providers.map { provider ->
-                if (provider.name != providerName) provider else provider.copy(
+                if (provider.id != providerId) provider else provider.copy(
                     nodes = provider.nodes.map { node ->
                         if (node.name == nodeName) transform(node) else node
                     },
@@ -138,7 +164,47 @@ class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
     }
 }
 
+private suspend fun <T> read(label: String, block: suspend () -> T): T? = try {
+    block()
+} catch (e: CancellationException) {
+    throw e
+} catch (e: MeowApiException) {
+    Timber.w(e, "loading %s failed", label)
+    null
+}
+
+/** Converts both API views into the cards shown by the screen. */
+internal fun proxyServerProviders(
+    inline: ProxiesResult?,
+    providers: List<ProxyProvider>,
+): List<ProxyServerProviderUi> {
+    val providerCards = providers.map(ProxyProvider::toUi)
+    val inlineNodes = inline?.proxies.orEmpty()
+        .values
+        .filterNot { it.type in BUILTIN_PROXY_TYPES }
+        .sortedWith(compareBy<Proxy, String>(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.name })
+        .map { proxy ->
+            ProxyServerNodeUi(
+                name = proxy.name,
+                type = proxy.type,
+                delayMs = proxy.latestDelay.takeIf { it > 0 },
+                timedOut = proxy.history.isNotEmpty() && proxy.latestDelay <= 0,
+            )
+        }
+    if (inlineNodes.isEmpty()) return providerCards
+    return providerCards + ProxyServerProviderUi(
+        id = INLINE_PROXIES_ID,
+        name = INLINE_PROXIES_ID,
+        vehicleType = "",
+        testUrl = "",
+        expectedStatus = "",
+        nodes = inlineNodes,
+        kind = ProxyServerKind.Inline,
+    )
+}
+
 private fun ProxyProvider.toUi() = ProxyServerProviderUi(
+    id = name,
     name = name,
     vehicleType = vehicleType,
     testUrl = testUrl,

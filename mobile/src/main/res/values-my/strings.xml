@@ -92,7 +92,8 @@
 
     <!-- Proxy servers -->
     <string name="proxy_servers_title">ပရောက်စီဆာဗာများ</string>
-    <string name="proxy_servers_empty">ပရောက်စီဆာဗာ မတွေ့ပါ။ ပရောက်စီပံ့ပိုးသူများပါသော ပရိုဖိုင်ဖြင့် VPN ကို ချိတ်ဆက်ပါ။</string>
+    <string name="proxy_servers_inline_title">ပရိုဖိုင် ပရောက်စီများ</string>
+    <string name="proxy_servers_empty">ပရောက်စီဆာဗာ မတွေ့ပါ။ အတွင်းပါ ပရောက်စီများ သို့မဟုတ် ပရောက်စီပံ့ပိုးသူများပါသော ပရိုဖိုင်ဖြင့် VPN ကို ချိတ်ဆက်ပါ။</string>
     <string name="proxy_servers_no_nodes">ဤပံ့ပိုးသူတွင် node မရှိပါ။</string>
     <string name="proxy_servers_load_error">ပရောက်စီဆာဗာများ ဖွင့်မရပါ</string>
     <string name="proxy_servers_health_check">node အားလုံး စစ်ဆေးရန်</string>

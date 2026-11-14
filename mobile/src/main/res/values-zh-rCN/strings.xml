@@ -87,7 +87,8 @@
 
     <!-- Proxy servers -->
     <string name="proxy_servers_title">代理服务器</string>
-    <string name="proxy_servers_empty">未找到代理服务器。请连接使用了代理提供商的配置。</string>
+    <string name="proxy_servers_inline_title">配置中的代理</string>
+    <string name="proxy_servers_empty">未找到代理服务器。请连接包含内联代理或代理提供商的配置。</string>
     <string name="proxy_servers_no_nodes">此提供商没有节点。</string>
     <string name="proxy_servers_load_error">代理服务器加载失败</string>
     <string name="proxy_servers_health_check">检查所有节点</string>

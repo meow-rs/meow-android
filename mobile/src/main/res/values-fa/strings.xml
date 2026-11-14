@@ -95,7 +95,8 @@
 
     <!-- Proxy servers -->
     <string name="proxy_servers_title">سرورهای پروکسی</string>
-    <string name="proxy_servers_empty">‏هیچ سرور پروکسی یافت نشد. VPN را با پروفایلی که ارائه‌دهنده پروکسی دارد وصل کنید.</string>
+    <string name="proxy_servers_inline_title">پروکسی‌های نمایه</string>
+    <string name="proxy_servers_empty">‏هیچ سرور پروکسی یافت نشد. VPN را با نمایه‌ای دارای پروکسی‌های درون‌خطی یا ارائه‌دهنده‌های پروکسی وصل کنید.</string>
     <string name="proxy_servers_no_nodes">‏هیچ گرهی در این ارائه‌دهنده وجود ندارد.</string>
     <string name="proxy_servers_load_error">‏بارگیری سرورهای پروکسی انجام نشد</string>
     <string name="proxy_servers_health_check">‏بررسی همه گره‌ها</string>

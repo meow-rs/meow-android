@@ -99,7 +99,8 @@
 
     <!-- Proxy servers -->
     <string name="proxy_servers_title">خوادم البروكسي</string>
-    <string name="proxy_servers_empty">لم يتم العثور على خوادم بروكسي. صِل VPN بملف يعرّف موفري البروكسي.</string>
+    <string name="proxy_servers_inline_title">وكلاء الملف الشخصي</string>
+    <string name="proxy_servers_empty">لم يتم العثور على خوادم بروكسي. صِل VPN بملف يعرّف وكلاء مضمّنين أو موفري بروكسي.</string>
     <string name="proxy_servers_no_nodes">لا توجد عقد في موفر الخدمة هذا.</string>
     <string name="proxy_servers_load_error">تعذر تحميل خوادم البروكسي</string>
     <string name="proxy_servers_health_check">فحص كل العقد</string>
