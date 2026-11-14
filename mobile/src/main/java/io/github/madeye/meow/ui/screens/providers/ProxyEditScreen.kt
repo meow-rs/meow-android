@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,7 +54,7 @@ fun ProxyEditScreen(
         ) { CircularProgressIndicator() }
 
         else -> LazyColumn(
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier.fillMaxWidth().imePadding(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -62,6 +63,16 @@ fun ProxyEditScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                state.error?.let { error ->
+                    Text(
+                        text = error,
+                        color = MaterialTheme.meow.danger,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("proxy_edit_error"),
+                    )
+                }
+            }
             item {
                 ReadOnlyField(label = "Name", value = state.name, tag = "proxy_edit_name")
                 ReadOnlyField(label = "Proxy Type", value = state.type, tag = "proxy_edit_type")
@@ -72,15 +83,6 @@ fun ProxyEditScreen(
                     fields.forEach { field ->
                         ProxyField(field = field, onChange = onChange)
                     }
-                }
-            }
-            item {
-                state.error?.let { error ->
-                    Text(
-                        text = error,
-                        color = MaterialTheme.meow.danger,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                 }
             }
         }

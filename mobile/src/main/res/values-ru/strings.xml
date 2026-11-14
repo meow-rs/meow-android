@@ -399,4 +399,11 @@
         <item quantity="many">Выбрано: %1$d</item>
         <item quantity="other">Выбрано: %1$d</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">Поиск серверов…</string>
+    <string name="proxy_servers_clear_search">Очистить поиск серверов</string>
+    <string name="proxy_servers_no_matches">Подходящие прокси-серверы не найдены.</string>
+    <string name="proxy_servers_node_count">Узлов: %1$d</string>
+    <string name="proxy_edit_discard_changes">Отменить несохранённые изменения?</string>
 </resources>

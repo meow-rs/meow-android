@@ -374,4 +374,11 @@
     <plurals name="perapp_selected">
         <item quantity="other">%1$d ခု ရွေးထားသည်</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">ရှာဖွေရန်…</string>
+    <string name="proxy_servers_clear_search">ဆာဗာရှာဖွေမှုကို ရှင်းလင်းရန်</string>
+    <string name="proxy_servers_no_matches">ကိုက်ညီသော ပရောက်စီဆာဗာ မရှိပါ။</string>
+    <string name="proxy_servers_node_count">Node %1$d ခု</string>
+    <string name="proxy_edit_discard_changes">မသိမ်းရသေးသော ပြောင်းလဲမှုများကို ပယ်ဖျက်မလား?</string>
 </resources>

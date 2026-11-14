@@ -2,6 +2,7 @@ package io.github.madeye.meow.ui
 
 import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -1222,6 +1225,7 @@ private fun ProxyServersRoute(onBack: () -> Unit, onEditProfile: (Long, String) 
             state = state,
             contentPadding = padding,
             onRetry = viewModel::load,
+            onQueryChange = viewModel::setQuery,
             onHealthCheck = viewModel::healthCheck,
             onTestNode = viewModel::testNode,
             onEditProfile = onEditProfile,
@@ -1233,10 +1237,17 @@ private fun ProxyServersRoute(onBack: () -> Unit, onEditProfile: (Long, String) 
 private fun ProxyEditRoute(onBack: () -> Unit) {
     val viewModel: ProxyEditViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var confirmDiscard by remember { mutableStateOf(false) }
+
+    fun requestBack() {
+        if (state.dirty) confirmDiscard = true else onBack()
+    }
+
+    BackHandler(enabled = state.dirty) { confirmDiscard = true }
 
     MeowScaffold(
         title = state.name,
-        navigationIcon = { BackButton(onBack) },
+        navigationIcon = { BackButton(::requestBack) },
         actions = {
             IconButton(
                 onClick = { viewModel.save(onBack) },
@@ -1251,6 +1262,23 @@ private fun ProxyEditRoute(onBack: () -> Unit) {
             state = state,
             contentPadding = padding,
             onChange = viewModel::update,
+        )
+    }
+
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.proxy_edit_discard_changes)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDiscard = false; onBack() }) {
+                    Text(stringResource(R.string.common_discard))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDiscard = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
         )
     }
 }

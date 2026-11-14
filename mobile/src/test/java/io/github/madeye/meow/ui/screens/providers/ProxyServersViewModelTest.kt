@@ -346,4 +346,62 @@ class ProxyServersViewModelTest {
         assertEquals(listOf(ProxyServerKind.Provider, ProxyServerKind.Inline), cards.map { it.kind })
         assertTrue(cards.last().nodes.any { it.name == "inline" })
     }
+
+    @Test
+    fun `server search matches names and protocol while retaining provider grouping`() {
+        val cards = listOf(
+            ProxyServerProviderUi(
+                id = "airport",
+                name = "airport",
+                vehicleType = "HTTP",
+                testUrl = "",
+                expectedStatus = "",
+                nodes = listOf(
+                    ProxyServerNodeUi("Tokyo", "Vless", null, false),
+                    ProxyServerNodeUi("Singapore", "Hysteria2", null, false),
+                ),
+            ),
+            ProxyServerProviderUi(
+                id = "local",
+                name = "local",
+                vehicleType = "",
+                testUrl = "",
+                expectedStatus = "",
+                nodes = listOf(ProxyServerNodeUi("Direct", "Direct", null, false)),
+            ),
+        )
+
+        val filtered = filterProxyServerProviders(cards, "hysteria")
+
+        assertEquals(listOf("airport"), filtered.map { it.id })
+        assertEquals(listOf("Singapore"), filtered.single().nodes.map { it.name })
+    }
+
+    @Test
+    fun `http2 host list is rendered as an array when edited`() {
+        val yaml = """
+            proxies:
+              - name: H2
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                network: h2
+                h2-opts:
+                  host: [old.example]
+                  path: /
+        """.trimIndent()
+
+        val parsed = parseProxyEntry(yaml, "H2")!!
+        val host = parsed.fields.first { it.key == "h2-opts.host" }
+        assertEquals(ProxyEditFieldKind.List, host.kind)
+        val updated = replaceProxyEntry(
+            yaml,
+            "H2",
+            mapOf("h2-opts.host" to "one.example, two.example"),
+            mapOf("h2-opts.host" to host.kind),
+        )!!
+
+        assertTrue(updated.contains("host: [one.example, two.example]"))
+    }
 }

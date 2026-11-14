@@ -15,12 +15,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,11 +44,13 @@ fun ProxyServersScreen(
     state: ProxyServersUiState,
     contentPadding: PaddingValues,
     onRetry: () -> Unit,
+    onQueryChange: (String) -> Unit,
     onHealthCheck: (String) -> Unit,
     onTestNode: (String, String) -> Unit,
     onEditProfile: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val visibleProviders = filterProxyServerProviders(state.providers, state.query)
     when {
         state.loading && state.providers.isEmpty() -> Box(
             modifier = modifier.fillMaxSize().testTag("proxy_servers_root"),
@@ -84,6 +89,20 @@ fun ProxyServersScreen(
             }
         }
 
+        state.query.isNotBlank() && visibleProviders.isEmpty() -> Box(
+            modifier = modifier.fillMaxSize().padding(contentPadding).testTag("proxy_servers_root"),
+            contentAlignment = Alignment.Center,
+        ) {
+            GlassCard {
+                Text(
+                    text = stringResource(R.string.proxy_servers_no_matches),
+                    color = MaterialTheme.meow.mutedText,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         else -> LazyColumn(
             modifier = modifier.fillMaxWidth().testTag("proxy_servers_root"),
             contentPadding = PaddingValues(
@@ -94,7 +113,29 @@ fun ProxyServersScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(state.providers, key = { it.id }) { provider ->
+            item {
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.fillMaxWidth().testTag("proxy_servers_search"),
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.proxy_servers_search)) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = if (state.query.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(
+                                    Icons.Filled.Clear,
+                                    contentDescription = stringResource(R.string.proxy_servers_clear_search),
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                )
+            }
+            items(visibleProviders, key = { it.id }) { provider ->
                 ProviderCard(
                     provider = provider,
                     editableProfileId = state.editableProfileId,
@@ -137,6 +178,11 @@ private fun ProviderCard(
                         color = colors.mutedText,
                     )
                 }
+                Text(
+                    text = stringResource(R.string.proxy_servers_node_count, provider.nodes.size),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.mutedText,
+                )
             }
             if (provider.kind == ProxyServerKind.Inline) {
                 Spacer(Modifier.size(20.dp))

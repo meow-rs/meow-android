@@ -369,4 +369,11 @@
     <plurals name="perapp_selected">
         <item quantity="other">已选 %1$d 个</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">搜索服务器…</string>
+    <string name="proxy_servers_clear_search">清除服务器搜索</string>
+    <string name="proxy_servers_no_matches">没有匹配的代理服务器。</string>
+    <string name="proxy_servers_node_count">%1$d 个节点</string>
+    <string name="proxy_edit_discard_changes">放弃未保存的更改？</string>
 </resources>

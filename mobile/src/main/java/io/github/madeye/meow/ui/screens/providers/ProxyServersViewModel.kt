@@ -55,6 +55,8 @@ data class ProxyServersUiState(
     val providers: List<ProxyServerProviderUi> = emptyList(),
     /** The selected local profile can be edited from the inline proxy card. */
     val editableProfileId: Long? = null,
+    /** Case-insensitive search applied to node names and protocol types. */
+    val query: String = "",
     val loading: Boolean = false,
     val failed: Boolean = false,
 )
@@ -88,10 +90,15 @@ class ProxyServersViewModel(
                 _state.value = ProxyServersUiState(
                     providers = proxyServerProviders(inline, providers.orEmpty()),
                     editableProfileId = selectedProfile?.takeIf { it.url.isBlank() }?.id,
+                    query = _state.value.query,
                     loading = false,
                 )
             }
         }
+    }
+
+    fun setQuery(query: String) {
+        _state.update { it.copy(query = query) }
     }
 
     fun healthCheck(providerId: String) {
@@ -209,6 +216,22 @@ internal fun proxyServerProviders(
         nodes = inlineNodes,
         kind = ProxyServerKind.Inline,
     )
+}
+
+/** Keeps provider cards stable while filtering only their node rows. */
+internal fun filterProxyServerProviders(
+    providers: List<ProxyServerProviderUi>,
+    query: String,
+): List<ProxyServerProviderUi> {
+    val needle = query.trim()
+    if (needle.isEmpty()) return providers
+    return providers.mapNotNull { provider ->
+        val nodes = provider.nodes.filter { node ->
+            node.name.contains(needle, ignoreCase = true) ||
+                node.type.contains(needle, ignoreCase = true)
+        }
+        provider.takeIf { nodes.isNotEmpty() }?.copy(nodes = nodes)
+    }
 }
 
 private fun ProxyProvider.toUi() = ProxyServerProviderUi(
