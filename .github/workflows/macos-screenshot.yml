@@ -13,12 +13,15 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 90
     env:
-      # macos-latest is the Apple Silicon arm64 image. Keep the native Android
-      # ABI consistent across Cargo, the APK, and the emulator guest.
-      TARGET_ABI: arm64
-      EMULATOR_ARCH: arm64-v8a
-      RUST_ANDROID_TARGET: aarch64-linux-android
-      SS_TARGET: aarch64-apple-darwin
+      # macos-latest is Apple Silicon. The hosted image cannot expose a usable
+      # HVF vCPU to an arm64 Android guest: the emulator exits with
+      # `HVF_UNSUPPORTED` before adb can see it. Use an x86_64 guest with TCG
+      # software emulation for deterministic screenshots; the production APK
+      # remains a separate arm64 build.
+      TARGET_ABI: x86_64
+      EMULATOR_ARCH: x86_64
+      RUST_ANDROID_TARGET: x86_64-linux-android
+      SS_TARGET: x86_64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +77,8 @@ jobs:
         env:
           # Start a fresh adb daemon because this runner image can leave a
           # stale daemon behind before the action launches the emulator.
-          # macOS hosted runners may expose an ARM CPU without usable HVF;
-          # the emulator options below force the matching software backend.
+          # The x86_64 guest deliberately uses the portable software backend on
+          # macOS latest, where nested HVF is unavailable to the hosted runner.
           ANDROID_I_WANT_MY_TCG: yes
           SSSERVER: ssserver
           SCREENSHOT_PROXY_SERVERS: "true"
