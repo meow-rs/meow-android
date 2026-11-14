@@ -1,5 +1,6 @@
 package io.github.madeye.meow.ui.screens.providers
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -45,6 +49,7 @@ fun ProxyEditScreen(
     state: ProxyEditUiState,
     contentPadding: PaddingValues,
     onChange: (String, String) -> Unit,
+    onRemove: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -53,16 +58,20 @@ fun ProxyEditScreen(
             contentAlignment = Alignment.Center,
         ) { CircularProgressIndicator() }
 
-        else -> LazyColumn(
-            modifier = modifier.fillMaxWidth().imePadding(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = contentPadding.calculateTopPadding() + 12.dp,
-                bottom = contentPadding.calculateBottomPadding() + 24.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        else -> {
+            val collapsedSections = remember(state.name) {
+                mutableStateOf(setOf("Advanced"))
+            }
+            LazyColumn(
+                modifier = modifier.fillMaxWidth().imePadding(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = contentPadding.calculateTopPadding() + 12.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 24.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             item {
                 state.error?.let { error ->
                     Text(
@@ -78,19 +87,50 @@ fun ProxyEditScreen(
                 ReadOnlyField(label = "Proxy Type", value = state.type, tag = "proxy_edit_type")
             }
             items(state.fields.groupBy { it.section }.entries.toList(), key = { it.key }) { (section, fields) ->
+                val expanded = section !in collapsedSections.value
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(section, style = MaterialTheme.typography.titleSmall)
-                    fields.forEach { field ->
-                        ProxyField(field = field, onChange = onChange)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            collapsedSections.value = if (expanded) {
+                                collapsedSections.value + section
+                            } else {
+                                collapsedSections.value - section
+                            }
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(section, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (expanded) "Collapse $section" else "Expand $section",
+                        )
+                    }
+                    AnimatedVisibility(visible = expanded) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            fields.forEach { field ->
+                                ProxyField(
+                                    field = field,
+                                    enabled = !state.saving,
+                                    onChange = onChange,
+                                    onRemove = onRemove,
+                                )
+                            }
+                        }
                     }
                 }
+            }
             }
         }
     }
 }
 
 @Composable
-private fun ProxyField(field: ProxyEditField, onChange: (String, String) -> Unit) {
+private fun ProxyField(
+    field: ProxyEditField,
+    enabled: Boolean,
+    onChange: (String, String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
     when (field.kind) {
         ProxyEditFieldKind.Boolean -> Row(
             modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}"),
@@ -99,34 +139,71 @@ private fun ProxyField(field: ProxyEditField, onChange: (String, String) -> Unit
             Text(field.label, modifier = Modifier.weight(1f))
             Switch(
                 checked = field.value.equals("true", ignoreCase = true),
+                enabled = enabled,
                 onCheckedChange = { onChange(field.key, it.toString()) },
             )
+            if (enabled && field.present && !field.required) {
+                IconButton(onClick = { onRemove(field.key) }) {
+                    Icon(
+                        imageVector = Icons.Filled.DeleteOutline,
+                        contentDescription = "Remove ${field.label}",
+                    )
+                }
+            }
         }
-        ProxyEditFieldKind.Select -> SelectField(field = field, onChange = onChange)
-        else -> SensitiveTextField(field = field, onChange = onChange)
+        ProxyEditFieldKind.Select -> SelectField(
+            field = field,
+            enabled = enabled,
+            onChange = onChange,
+            onRemove = onRemove,
+        )
+        else -> SensitiveTextField(
+            field = field,
+            enabled = enabled,
+            onChange = onChange,
+            onRemove = onRemove,
+        )
     }
 }
 
 @Composable
-private fun SensitiveTextField(field: ProxyEditField, onChange: (String, String) -> Unit) {
+private fun SensitiveTextField(
+    field: ProxyEditField,
+    enabled: Boolean,
+    onChange: (String, String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
     var revealed by remember(field.key) { mutableStateOf(!field.sensitive) }
     OutlinedTextField(
         value = field.value,
+        enabled = enabled,
         onValueChange = { onChange(field.key, it) },
-        label = { Text(field.label) },
+        label = { Text(field.label + if (field.required) " *" else "") },
         singleLine = true,
         visualTransformation = if (field.sensitive && !revealed) {
             PasswordVisualTransformation()
         } else {
             VisualTransformation.None
         },
-        trailingIcon = if (field.sensitive) {
+        trailingIcon = if (field.sensitive || field.present) {
             {
-                IconButton(onClick = { revealed = !revealed }) {
-                    Icon(
-                        imageVector = if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (revealed) "Hide ${field.label}" else "Show ${field.label}",
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (field.sensitive) {
+                        IconButton(enabled = enabled, onClick = { revealed = !revealed }) {
+                            Icon(
+                                imageVector = if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (revealed) "Hide ${field.label}" else "Show ${field.label}",
+                            )
+                        }
+                    }
+                    if (enabled && field.present && !field.required) {
+                        IconButton(onClick = { onRemove(field.key) }) {
+                            Icon(
+                                imageVector = Icons.Filled.DeleteOutline,
+                                contentDescription = "Remove ${field.label}",
+                            )
+                        }
+                    }
                 }
             }
         } else {
@@ -137,30 +214,51 @@ private fun SensitiveTextField(field: ProxyEditField, onChange: (String, String)
             field.sensitive -> KeyboardOptions(keyboardType = KeyboardType.Password)
             else -> KeyboardOptions.Default
         },
+        supportingText = if (field.kind == ProxyEditFieldKind.List) {
+            { Text("Comma-separated values") }
+        } else {
+            null
+        },
         modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}"),
     )
 }
 
 @Composable
-private fun SelectField(field: ProxyEditField, onChange: (String, String) -> Unit) {
+private fun SelectField(
+    field: ProxyEditField,
+    enabled: Boolean,
+    onChange: (String, String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
     var expanded by remember(field.key) { mutableStateOf(false) }
+    val options = (field.options + field.value).distinct()
     Box {
         OutlinedTextField(
             value = field.value.ifEmpty { "Default" },
+            enabled = enabled,
             onValueChange = {},
             readOnly = true,
-            label = { Text(field.label) },
+            label = { Text(field.label + if (field.required) " *" else "") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}")
-                .clickable { expanded = true },
+                .clickable(enabled = enabled) { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            field.options.forEach { option ->
+            options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.ifEmpty { "Default" }) },
                     onClick = {
                         expanded = false
                         onChange(field.key, option)
+                    },
+                )
+            }
+            if (enabled && field.present && !field.required) {
+                DropdownMenuItem(
+                    text = { Text("Remove") },
+                    onClick = {
+                        expanded = false
+                        onRemove(field.key)
                     },
                 )
             }

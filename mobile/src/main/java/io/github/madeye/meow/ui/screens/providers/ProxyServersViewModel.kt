@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 private const val INLINE_PROXIES_ID = "inline-proxies"
-private val BUILTIN_PROXY_TYPES = setOf("Direct", "Reject", "RejectDrop", "Pass", "PassRule", "Compatible")
+private val BUILTIN_PROXY_TYPES = setOf("direct", "reject", "rejectdrop", "pass", "passrule", "compatible")
 
 enum class ProxyServerKind {
     Provider,
@@ -196,7 +196,7 @@ internal fun proxyServerProviders(
     val providerCards = providers.map(ProxyProvider::toUi)
     val inlineNodes = inline?.proxies.orEmpty()
         .values
-        .filterNot { it.type in BUILTIN_PROXY_TYPES }
+        .filterNot { it.type.lowercase() in BUILTIN_PROXY_TYPES }
         .sortedWith(compareBy<Proxy, String>(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.name })
         .map { proxy ->
             ProxyServerNodeUi(

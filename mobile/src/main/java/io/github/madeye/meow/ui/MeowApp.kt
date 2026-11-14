@@ -1262,6 +1262,7 @@ private fun ProxyEditRoute(onBack: () -> Unit) {
             state = state,
             contentPadding = padding,
             onChange = viewModel::update,
+            onRemove = viewModel::remove,
         )
     }
 

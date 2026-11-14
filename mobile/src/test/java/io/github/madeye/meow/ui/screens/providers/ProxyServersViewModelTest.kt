@@ -116,6 +116,37 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `multiple nested additions keep each map and the following proxy intact`() {
+        val yaml = """
+            proxies:
+              - name: Nested
+                type: vless
+                server: old.example
+                port: 443
+                uuid: id
+                ws-opts:
+                  path: /old
+                reality-opts:
+                  short-id: old
+              - name: Other
+                type: direct
+        """.trimIndent()
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Nested",
+            mapOf(
+                "ws-opts.headers.Host" to "edge.example",
+                "reality-opts.public-key" to "new-key",
+            ),
+        )!!
+
+        assertTrue(updated.contains("ws-opts:\n      path: /old\n      headers:\n        Host: edge.example"))
+        assertTrue(updated.contains("reality-opts:\n      short-id: old\n      public-key: new-key"))
+        assertTrue(updated.contains("- name: Other"))
+    }
+
+    @Test
     fun `flow style proxy names and scalar fields can be edited`() {
         val yaml = """
             proxies:
@@ -283,7 +314,7 @@ class ProxyServersViewModelTest {
     }
 
     @Test
-    fun `hysteria2 multiplex port and unknown credentials get mature controls`() {
+    fun `hysteria2 port hopping is conditional and unknown credentials stay visible`() {
         val parsed = parseProxyEntry(
             """
             proxies:
@@ -299,8 +330,206 @@ class ProxyServersViewModelTest {
         )!!
 
         assertEquals("35000-39000", parsed.fields.first { it.key == "mport" }.value)
-        assertEquals("Endpoint", parsed.fields.first { it.key == "mport" }.section)
+        assertEquals("Advanced", parsed.fields.first { it.key == "mport" }.section)
+        assertTrue(parsed.fields.first { it.key == "port" }.required)
         assertTrue(parsed.fields.first { it.key == "new-secret-token" }.sensitive)
+    }
+
+    @Test
+    fun `protocol capability changes keep invalidated values in advanced`() {
+        val snell = parseProxyEntry(
+            """
+            proxies:
+              - name: Snell v6
+                type: snell
+                server: edge.example
+                port: 443
+                psk: secret
+                version: 6
+                mode: unshaped
+                obfs-opts:
+                  mode: http
+                  host: cover.example
+            """.trimIndent(),
+            "Snell v6",
+        )!!
+        assertTrue(snell.fields.any { it.key == "mode" && it.section == "Transport" })
+        assertTrue(snell.fields.any { it.key == "obfs-opts.mode" && it.section == "Advanced" })
+
+        val hy2 = parseProxyEntry(
+            """
+            proxies:
+              - name: Gecko
+                type: hysteria2
+                server: edge.example
+                ports: 443-445
+                password: secret
+                obfs: gecko
+                obfs-password: obfs-secret
+                obfs-min-packet-size: 64
+                obfs-max-packet-size: 512
+            """.trimIndent(),
+            "Gecko",
+        )!!
+        assertTrue(hy2.fields.any { it.key == "port" && !it.required })
+        assertTrue(hy2.fields.any { it.key == "obfs-min-packet-size" && it.section == "QUIC" })
+        val salamander = adaptProxyFields(
+            hy2.type,
+            hy2.fields.map { field ->
+                if (field.key == "obfs") field.copy(value = "salamander", present = true) else field
+            },
+        )
+        assertTrue(salamander.none { it.key == "obfs-min-packet-size" && it.section == "QUIC" })
+        assertTrue(salamander.any { it.key == "obfs-min-packet-size" && it.section == "Advanced" && !it.required })
+    }
+
+    @Test
+    fun `plugin controls match the in-process transport capabilities`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: plugin
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: v2ray-plugin
+            """.trimIndent(),
+            "plugin",
+        )!!
+        val v2ray = parsed.fields.filter { it.key.startsWith("plugin-opts.") }
+        assertTrue(v2ray.any { it.key == "plugin-opts.skip-cert-verify" })
+        assertTrue(v2ray.any { it.key == "plugin-opts.headers.Host" })
+        assertTrue(v2ray.none { it.key == "plugin-opts.mode" && it.options.contains("quic") })
+
+        val gost = adaptProxyFields(
+            parsed.type,
+            parsed.fields.map { field ->
+                if (field.key == "plugin") field.copy(value = "gost-plugin", present = true) else field
+            },
+        )
+        assertTrue(gost.any { it.key == "plugin-opts.mode" && it.required })
+        assertTrue(gost.any { it.key == "plugin-opts.headers.Host" })
+        assertTrue(gost.none { it.key == "plugin-opts.mode" && it.options.contains("grpc") })
+    }
+
+    @Test
+    fun `hysteria2 gecko exposes packet sizing controls and restls exposes required host`() {
+        val gecko = parseProxyEntry(
+            """
+            proxies:
+              - name: Gecko
+                type: hysteria2
+                server: edge.example
+                port: 443
+                password: secret
+                obfs: gecko
+                obfs-password: obfs-secret
+            """.trimIndent(),
+            "Gecko",
+        )!!
+
+        assertTrue(gecko.fields.any { it.key == "obfs" && it.options.contains("gecko") })
+        assertTrue(gecko.fields.any { it.key == "obfs-min-packet-size" && it.section == "QUIC" })
+        assertTrue(gecko.fields.any { it.key == "obfs-max-packet-size" && it.section == "QUIC" })
+        assertEquals("512", gecko.fields.first { it.key == "obfs-min-packet-size" }.value)
+        assertEquals("1200", gecko.fields.first { it.key == "obfs-max-packet-size" }.value)
+
+        val restls = parseProxyEntry(
+            """
+            proxies:
+              - name: Restls
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: restls
+                plugin-opts:
+                  host: cover.example
+                  password: plugin-secret
+                  version-hint: tls13
+            """.trimIndent(),
+            "Restls",
+        )!!
+        assertTrue(restls.fields.any { it.key == "plugin-opts.host" && it.required })
+    }
+
+    @Test
+    fun `plugin aliases keep existing ech tls tunnel spelling`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: ECH
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: ech-tls-tunnel
+                plugin-opts:
+                  mode: client
+                  sni: tunnel.example
+                  path: /ws
+                  ech_config: QUJD
+                  fast_open: true
+            """.trimIndent(),
+            "ECH",
+        )!!
+
+        assertTrue(parsed.fields.any { it.key == "plugin-opts.ech_config" && it.present })
+        assertTrue(parsed.fields.any { it.key == "plugin-opts.fast_open" && it.present })
+        assertTrue(parsed.fields.none { it.key == "plugin-opts.ech-config" })
+        assertTrue(parsed.fields.none { it.key == "plugin-opts.fast-open" })
+
+        val updated = replaceProxyEntry(
+            """
+            proxies:
+              - name: ECH
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: ech-tls-tunnel
+                plugin-opts:
+                  mode: client
+                  sni: tunnel.example
+                  path: /ws
+                  ech_config: QUJD
+                  fast_open: true
+            """.trimIndent(),
+            "ECH",
+            mapOf("plugin-opts.ech_config" to "REVG"),
+        )!!
+
+        assertTrue(updated.contains("ech_config: REVG"))
+        assertTrue(!updated.contains("ech-config:"))
+        assertTrue(updated.contains("fast_open: true"))
+    }
+
+    @Test
+    fun `gost plugin keeps its backend default mux enabled`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Gost
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: gost-plugin
+                plugin-opts:
+                  mode: websocket
+            """.trimIndent(),
+            "Gost",
+        )!!
+
+        val mux = parsed.fields.first { it.key == "plugin-opts.mux" }
+        assertEquals("true", mux.value)
+        assertTrue(!mux.present)
     }
 
     @Test
@@ -403,5 +632,423 @@ class ProxyServersViewModelTest {
         )!!
 
         assertTrue(updated.contains("host: [one.example, two.example]"))
+    }
+
+    @Test
+    fun `transport fields follow the selected network instead of showing every protocol`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: WebSocket node
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                network: ws
+                ws-opts:
+                  path: /ray
+            """.trimIndent(),
+            "WebSocket node",
+        )!!
+
+        assertTrue(parsed.fields.any { it.key == "ws-opts.path" })
+        assertTrue(parsed.fields.none { it.key == "grpc-opts.grpc-service-name" })
+        assertTrue(parsed.fields.none { it.key == "h2-opts.host" })
+
+        val switched = adaptProxyFields(
+            parsed.type,
+            parsed.fields.map { field ->
+                if (field.key == "network") field.copy(value = "grpc", present = true) else field
+            },
+        )
+        assertTrue(switched.any { it.key == "grpc-opts.grpc-service-name" })
+        // Existing transport values are retained in Advanced so changing the
+        // selector never silently destroys a working node configuration.
+        assertTrue(switched.any { it.key == "ws-opts.path" && it.section == "Advanced" })
+        assertTrue(switched.none { it.key == "h2-opts.host" })
+    }
+
+    @Test
+    fun `changing an empty plugin adds that plugins controls`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Plugin node
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+            """.trimIndent(),
+            "Plugin node",
+        )!!
+
+        assertTrue(parsed.fields.none { it.key == "plugin-opts.mode" })
+        val selected = adaptProxyFields(
+            parsed.type,
+            parsed.fields.map { field ->
+                if (field.key == "plugin") field.copy(value = "v2ray-plugin", present = true) else field
+            },
+        )
+        assertTrue(selected.any { it.key == "plugin-opts.mode" })
+        assertTrue(selected.any { it.key == "plugin-opts.path" })
+    }
+
+    @Test
+    fun `optional fields can be removed from block and flow entries`() {
+        val block = """
+            proxies:
+              - name: Block
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                udp: true
+        """.trimIndent()
+        val blockUpdated = replaceProxyEntry(
+            block,
+            "Block",
+            mapOf("udp" to ""),
+            mapOf("udp" to ProxyEditFieldKind.Boolean),
+            mapOf("udp" to false),
+            setOf("udp"),
+        )!!
+        assertTrue(!blockUpdated.contains("udp: true"))
+
+        val flow = """
+            proxies:
+              - { name: Flow, type: ss, server: edge.example, port: 443, udp: true }
+        """.trimIndent()
+        val flowUpdated = replaceProxyEntry(
+            flow,
+            "Flow",
+            mapOf("udp" to ""),
+            mapOf("udp" to ProxyEditFieldKind.Boolean),
+            mapOf("udp" to false),
+            setOf("udp"),
+        )!!
+        assertTrue(!flowUpdated.contains("udp: true"))
+    }
+
+    @Test
+    fun `unknown advanced fields removed from the form are removed from yaml`() {
+        val yaml = """
+            proxies:
+              - name: Future
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                future-option: keep-me
+                future-map:
+                  key: keep-too
+              - name: Other
+                type: direct
+        """.trimIndent()
+
+        val parsed = parseProxyEntry(yaml, "Future")!!
+        val advanced = parsed.fields.filter { it.section == "Advanced" }
+        assertTrue(advanced.any { it.key == "future-option" })
+        assertTrue(advanced.any { it.key == "future-map.key" })
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Future",
+            parsed.fields.filter { it.key != "future-option" && it.key != "future-map.key" }
+                .associate { it.key to it.value },
+            removed = setOf("future-option", "future-map.key"),
+        )!!
+
+        assertTrue(!updated.contains("future-option"))
+        assertTrue(!updated.contains("key: keep-too"))
+        assertTrue(updated.contains("- name: Other"))
+    }
+
+    @Test
+    fun `plugin schema keeps restls unique and exposes supported ss plugins`() {
+        val restls = parseProxyEntry(
+            """
+            proxies:
+              - name: RESTLS
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: restls
+                plugin-opts:
+                  host: cover.example
+                  password: plugin-secret
+            """.trimIndent(),
+            "RESTLS",
+        )!!
+        assertEquals(1, restls.fields.count { it.key == "plugin-opts.host" })
+
+        val plugins = restls.fields.first { it.key == "plugin" }.options
+        assertTrue(plugins.contains("ech-tls-tunnel"))
+
+        val gost = adaptProxyFields(
+            restls.type,
+            restls.fields.map { field ->
+                if (field.key == "plugin") field.copy(value = "gost-plugin", present = true) else field
+            },
+        )
+        assertTrue(gost.any { it.key == "plugin-opts.headers.Host" })
+    }
+
+    @Test
+    fun `capability toggles collapse child controls without dropping existing values`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Tuned VLESS
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                tls: true
+                skip-cert-verify: true
+                smux:
+                  enabled: true
+                  protocol: yamux
+            """.trimIndent(),
+            "Tuned VLESS",
+        )!!
+
+        val collapsed = adaptProxyFields(
+            parsed.type,
+            parsed.fields.map { field ->
+                when (field.key) {
+                    "tls", "smux.enabled" -> field.copy(value = "false", present = true)
+                    else -> field
+                }
+            },
+        )
+
+        assertTrue(collapsed.none { it.key == "skip-cert-verify" && it.section == "TLS" })
+        assertTrue(collapsed.any { it.key == "skip-cert-verify" && it.section == "Advanced" })
+        assertTrue(collapsed.none { it.key == "smux.protocol" && it.section == "Multiplexing" })
+        assertTrue(collapsed.any { it.key == "smux.protocol" && it.section == "Advanced" })
+    }
+
+    @Test
+    fun `plugin controls expose only the backend supported mode`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: V2Ray plugin
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: v2ray-plugin
+                plugin-opts:
+                  mode: websocket
+                  path: /ray
+            """.trimIndent(),
+            "V2Ray plugin",
+        )!!
+
+        val mode = parsed.fields.first { it.key == "plugin-opts.mode" }
+        assertTrue(mode.options.contains("websocket"))
+        assertTrue(!mode.options.contains("quic"))
+        assertTrue(!mode.options.contains("grpc"))
+        assertTrue(parsed.fields.any { it.key == "plugin-opts.path" && it.section == "Plugin options" })
+    }
+
+    @Test
+    fun `kcptun schema retains every backend option`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: KCP
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: kcptun
+            """.trimIndent(),
+            "KCP",
+        )!!
+        val keys = parsed.fields.map { it.key }.toSet()
+        assertTrue(keys.containsAll(setOf(
+            "plugin-opts.scavengettl",
+            "plugin-opts.ratelimit",
+            "plugin-opts.acknodelay",
+            "plugin-opts.nodelay",
+            "plugin-opts.interval",
+            "plugin-opts.resend",
+            "plugin-opts.nc",
+            "plugin-opts.sockbuf",
+            "plugin-opts.smuxbuf",
+            "plugin-opts.framesize",
+            "plugin-opts.streambuf",
+        )))
+        val mode = parsed.fields.first { it.key == "plugin-opts.mode" }
+        assertTrue(mode.options.contains("manual"))
+    }
+
+    @Test
+    fun `socks5 does not render duplicate udp controls`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: SOCKS
+                type: socks5
+                server: edge.example
+                port: 1080
+            """.trimIndent(),
+            "SOCKS",
+        )!!
+
+        assertEquals(1, parsed.fields.count { it.key == "udp" })
+    }
+
+    @Test
+    fun `enabling mux then editing a missing child keeps one mux map`() {
+        val yaml = """
+            proxies:
+              - name: Mux node
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                smux:
+                  enabled: false
+              - name: Other
+                type: direct
+        """.trimIndent()
+        val parsed = parseProxyEntry(yaml, "Mux node")!!
+        val enabled = adaptProxyFields(
+            parsed.type,
+            parsed.fields.map { field ->
+                if (field.key == "smux.enabled") field.copy(value = "true", present = true) else field
+            },
+        )
+        val edited = enabled.map { field ->
+            if (field.key == "smux.protocol") field.copy(value = "yamux", present = true) else field
+        }
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Mux node",
+            edited.associate { it.key to it.value },
+            edited.associate { it.key to it.kind },
+            edited.associate { it.key to it.present },
+        )!!
+
+        assertEquals(1, updated.lines().count { it.trim() == "smux:" })
+        assertTrue(updated.contains("smux:\n      enabled: true\n      protocol: yamux"))
+        assertTrue(updated.contains("- name: Other"))
+    }
+
+    @Test
+    fun `removing the final child removes its empty parent map`() {
+        val yaml = """
+            proxies:
+              - name: Future
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                future-map:
+                  key: keep-too
+              - name: Other
+                type: direct
+        """.trimIndent()
+        val parsed = parseProxyEntry(yaml, "Future")!!
+        val kept = parsed.fields.filterNot { it.key == "future-map.key" }
+        val updated = replaceProxyEntry(
+            yaml,
+            "Future",
+            kept.associate { it.key to it.value },
+            removed = setOf("future-map.key"),
+        )!!
+
+        assertTrue(!updated.contains("future-map:"))
+        assertTrue(!updated.contains("key: keep-too"))
+        assertTrue(updated.contains("- name: Other"))
+    }
+
+    @Test
+    fun `inline map removal and sibling update are applied atomically`() {
+        val yaml = """
+            proxies:
+              - name: Inline plugin
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+                plugin: v2ray-plugin
+                plugin-opts: { host: old.example, path: /ray }
+        """.trimIndent()
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Inline plugin",
+            mapOf("plugin-opts.host" to "new.example", "plugin-opts.path" to ""),
+            presence = mapOf("plugin-opts.host" to true, "plugin-opts.path" to false),
+            removed = setOf("plugin-opts.path"),
+        )!!
+
+        assertTrue(updated.contains("plugin-opts: { host: new.example }"))
+        assertTrue(!updated.contains("path: /ray"))
+    }
+
+    @Test
+    fun `trusttunnel credentials are marked required`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Trust
+                type: trusttunnel
+                server: vpn.example
+                port: 443
+                username: user
+                password: secret
+            """.trimIndent(),
+            "Trust",
+        )!!
+
+        assertTrue(parsed.fields.first { it.key == "username" }.required)
+        assertTrue(parsed.fields.first { it.key == "password" }.required)
+    }
+
+    @Test
+    fun `supported open ended headers have their own editable section`() {
+        val http = parseProxyEntry(
+            """
+            proxies:
+              - name: HTTP
+                type: http
+                server: proxy.example
+                port: 8080
+                headers:
+                  X-Trace: enabled
+            """.trimIndent(),
+            "HTTP",
+        )!!
+        assertEquals("Headers", http.fields.first { it.key == "headers.X-Trace" }.section)
+
+        val ws = parseProxyEntry(
+            """
+            proxies:
+              - name: WS
+                type: vless
+                server: edge.example
+                port: 443
+                uuid: id
+                network: ws
+                ws-opts:
+                  headers:
+                    X-Trace: enabled
+            """.trimIndent(),
+            "WS",
+        )!!
+        assertEquals("WebSocket headers", ws.fields.first { it.key == "ws-opts.headers.X-Trace" }.section)
     }
 }

@@ -28,6 +28,7 @@ data class ProxyEditField(
     /** Whether the key existed in the original YAML. Used to add optional keys only on edit. */
     val present: Boolean = true,
     val sensitive: Boolean = false,
+    val required: Boolean = false,
 )
 
 @Immutable
@@ -36,6 +37,8 @@ data class ProxyEditUiState(
     val type: String = "",
     val fields: List<ProxyEditField> = emptyList(),
     val initialFields: List<ProxyEditField> = emptyList(),
+    /** Keys explicitly removed by the user, including unknown Advanced keys. */
+    val removedKeys: Set<String> = emptySet(),
     val loading: Boolean = true,
     val saving: Boolean = false,
     val error: String? = null,
@@ -74,10 +77,36 @@ class ProxyEditViewModel(
 
     fun update(key: String, value: String) {
         _state.update { state ->
+            if (state.saving) return@update state
+            val changed = state.fields.map { field ->
+                if (field.key == key) {
+                    // Clearing an optional control means "use the protocol
+                    // default" and removes the key on save. Required values
+                    // stay present so the validator can report a useful
+                    // configuration error instead of silently dropping them.
+                    field.copy(value = value, present = field.required || value.isNotEmpty())
+                } else {
+                    field
+                }
+            }
             state.copy(
-                fields = state.fields.map { field ->
-                    if (field.key == key) field.copy(value = value, present = true) else field
-                },
+                fields = adaptProxyFields(state.type, changed),
+                removedKeys = state.removedKeys - key,
+                error = null,
+            )
+        }
+    }
+
+    /** Removes an optional key from the YAML while keeping it available to add again. */
+    fun remove(key: String) {
+        _state.update { state ->
+            if (state.saving) return@update state
+            val changed = state.fields.map { field ->
+                if (field.key == key) field.copy(value = "", present = false) else field
+            }
+            state.copy(
+                fields = adaptProxyFields(state.type, changed),
+                removedKeys = state.removedKeys + key,
                 error = null,
             )
         }
@@ -96,13 +125,18 @@ class ProxyEditViewModel(
                 _state.update { it.copy(saving = false, error = "Only local profiles can be edited") }
                 return@launch
             }
-            val fields = _state.value.fields
+            // Read the state after the repository lookup. Editing is disabled
+            // while saving, so this snapshot includes the complete set of
+            // removal tombstones and field values that will be validated.
+            val latest = _state.value
+            val fields = latest.fields
             val updated = replaceProxyEntry(
                 yaml = profile.yamlContent,
                 name = route.name,
                 fields = fields.associate { it.key to it.value },
                 kinds = fields.associate { it.key to it.kind },
                 presence = fields.associate { it.key to it.present },
+                removed = latest.removedKeys + fields.filter { !it.present }.mapTo(mutableSetOf()) { it.key },
             )
             if (updated == null) {
                 _state.update { it.copy(saving = false, error = "Proxy entry is unavailable") }
@@ -114,7 +148,7 @@ class ProxyEditViewModel(
                 return@launch
             }
             profiles.updateYaml(route.profileId, updated)
-            _state.update { it.copy(saving = false, initialFields = it.fields) }
+            _state.update { it.copy(saving = false, initialFields = it.fields, removedKeys = emptySet()) }
             onDone()
         }
     }
@@ -128,13 +162,31 @@ private data class ProxyFieldSpec(
     val defaultValue: String = "",
     val options: List<String> = emptyList(),
     val sensitive: Boolean = false,
+    val required: Boolean = false,
 )
 
-private fun text(path: String, label: String, section: String, sensitive: Boolean = false) =
-    ProxyFieldSpec(path, label, ProxyEditFieldKind.Text, section, sensitive = sensitive)
+private fun text(
+    path: String,
+    label: String,
+    section: String,
+    sensitive: Boolean = false,
+    required: Boolean = false,
+) = ProxyFieldSpec(path, label, ProxyEditFieldKind.Text, section, sensitive = sensitive, required = required)
 
-private fun number(path: String, label: String, section: String) =
-    ProxyFieldSpec(path, label, ProxyEditFieldKind.Number, section)
+private fun number(
+    path: String,
+    label: String,
+    section: String,
+    required: Boolean = false,
+    default: String = "",
+) = ProxyFieldSpec(
+    path,
+    label,
+    ProxyEditFieldKind.Number,
+    section,
+    defaultValue = default,
+    required = required,
+)
 
 private fun boolean(path: String, label: String, section: String, default: Boolean = false) =
     ProxyFieldSpec(path, label, ProxyEditFieldKind.Boolean, section, defaultValue = default.toString())
@@ -142,36 +194,78 @@ private fun boolean(path: String, label: String, section: String, default: Boole
 private fun list(path: String, label: String, section: String) =
     ProxyFieldSpec(path, label, ProxyEditFieldKind.List, section)
 
-private fun select(path: String, label: String, section: String, options: List<String>, default: String = "") =
-    ProxyFieldSpec(path, label, ProxyEditFieldKind.Select, section, defaultValue = default, options = options)
-
-private fun muxSpecs(root: String) = listOf(
-    boolean("$root.enabled", "Multiplexing", "Multiplexing"),
-    select("$root.protocol", "Protocol", "Multiplexing", listOf("", "smux", "yamux", "h2mux", "muxcool"), "h2mux"),
-    boolean("$root.padding", "Padding", "Multiplexing"),
-    number("$root.max-connections", "Maximum connections", "Multiplexing"),
-    number("$root.min-streams", "Minimum streams", "Multiplexing"),
-    number("$root.max-streams", "Maximum streams", "Multiplexing"),
-    boolean("$root.only-tcp", "TCP only", "Multiplexing"),
+private fun select(
+    path: String,
+    label: String,
+    section: String,
+    options: List<String>,
+    default: String = "",
+    required: Boolean = false,
+) = ProxyFieldSpec(
+    path,
+    label,
+    ProxyEditFieldKind.Select,
+    section,
+    defaultValue = default,
+    options = options,
+    required = required,
 )
 
-private fun pluginOptsSpecs(plugin: String?): List<ProxyFieldSpec> = when (plugin.orEmpty().lowercase()) {
+private fun muxSpecs(
+    root: String,
+    existing: Map<String, ParsedValue>,
+    current: Map<String, String>,
+): List<ProxyFieldSpec> {
+    val enabled = current["$root.enabled"].toBoolean()
+    val hasOptions = existing.keys.any { it.startsWith("$root.") && it != "$root.enabled" }
+    // A legacy entry may omit `enabled` and still carry mux options. Once the
+    // user explicitly turns the switch off, those children belong in
+    // Advanced until the switch is turned back on.
+    val showOptions = enabled || (!existing.containsKey("$root.enabled") && hasOptions)
+    return listOf(boolean("$root.enabled", "Multiplexing", "Multiplexing")) +
+        if (showOptions) {
+            listOf(
+                select(
+                    "$root.protocol",
+                    "Protocol",
+                    "Multiplexing",
+                    listOf("", "smux", "yamux", "h2mux", "muxcool"),
+                    "h2mux",
+                ),
+                boolean("$root.padding", "Padding", "Multiplexing"),
+                number("$root.max-connections", "Maximum connections", "Multiplexing"),
+                number("$root.min-streams", "Minimum streams", "Multiplexing"),
+                number("$root.max-streams", "Maximum streams", "Multiplexing"),
+                boolean("$root.only-tcp", "TCP only", "Multiplexing"),
+            )
+        } else {
+            emptyList()
+        }
+}
+
+private fun pluginOptsSpecs(
+    plugin: String?,
+    actualKeys: Set<String> = emptySet(),
+): List<ProxyFieldSpec> = when (plugin.orEmpty().lowercase()) {
     "obfs", "obfs-local", "simple-obfs" -> listOf(
         select("plugin-opts.mode", "Obfuscation mode", "Plugin options", listOf("", "http", "tls")),
         text("plugin-opts.host", "Obfuscation host", "Plugin options"),
-        number("plugin-opts.port", "Obfuscation port", "Plugin options"),
     )
     "v2ray-plugin" -> listOf(
-        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "websocket", "quic", "grpc")),
+        // The in-process adapter implements the websocket transport only.
+        // Do not offer quic/grpc values that the backend cannot consume.
+        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "websocket")),
         text("plugin-opts.host", "Host", "Plugin options"),
         text("plugin-opts.path", "Path", "Plugin options"),
         boolean("plugin-opts.tls", "TLS", "Plugin options"),
         boolean("plugin-opts.mux", "Mux", "Plugin options"),
+        boolean("plugin-opts.skip-cert-verify", "Skip certificate verification", "Plugin options"),
         text("plugin-opts.headers.Host", "Host header", "Plugin options"),
     )
     "kcptun" -> listOf(
-        select("plugin-opts.crypt", "Encryption", "Plugin options", listOf("", "aes", "aes-128", "aes-192", "aes-256", "salsa20", "blowfish", "none")),
-        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "fast", "fast2", "fast3", "normal")),
+        select("plugin-opts.crypt", "Encryption", "Plugin options", listOf("", "aes", "aes-128", "aes-192", "aes-256", "aes-128-gcm", "salsa20", "blowfish", "none", "null", "xor", "tea", "xtea", "twofish", "cast5", "3des")),
+        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "fast", "fast2", "fast3", "normal", "manual")),
+        number("plugin-opts.conn", "Parallel sessions", "Plugin options"),
         number("plugin-opts.mtu", "MTU", "Plugin options"),
         number("plugin-opts.sndwnd", "Send window", "Plugin options"),
         number("plugin-opts.rcvwnd", "Receive window", "Plugin options"),
@@ -179,54 +273,213 @@ private fun pluginOptsSpecs(plugin: String?): List<ProxyFieldSpec> = when (plugi
         number("plugin-opts.parityshard", "Parity shard", "Plugin options"),
         text("plugin-opts.key", "Key", "Plugin options", sensitive = true),
         number("plugin-opts.smuxver", "SMux version", "Plugin options"),
+        boolean("plugin-opts.nocomp", "Disable compression", "Plugin options"),
+        number("plugin-opts.keepalive", "Keepalive (seconds)", "Plugin options"),
+        number("plugin-opts.autoexpire", "Session expiry (seconds)", "Plugin options"),
+        number("plugin-opts.scavengettl", "Scavenge TTL (seconds)", "Plugin options"),
+        number("plugin-opts.ratelimit", "Rate limit", "Plugin options"),
+        number("plugin-opts.dscp", "DSCP", "Plugin options"),
+        boolean("plugin-opts.acknodelay", "ACK no delay", "Plugin options"),
+        number("plugin-opts.nodelay", "No delay", "Plugin options"),
+        number("plugin-opts.interval", "Flush interval (ms)", "Plugin options"),
+        number("plugin-opts.resend", "Resend", "Plugin options"),
+        number("plugin-opts.nc", "No congestion control", "Plugin options"),
+        number("plugin-opts.sockbuf", "Socket buffer", "Plugin options"),
+        number("plugin-opts.smuxbuf", "SMux buffer", "Plugin options"),
+        number("plugin-opts.framesize", "Frame size", "Plugin options"),
+        number("plugin-opts.streambuf", "Stream buffer", "Plugin options"),
     )
     "shadow-tls" -> listOf(
-        text("plugin-opts.host", "Host", "Plugin options"),
+        text("plugin-opts.host", "Host", "Plugin options", required = true),
         text("plugin-opts.password", "Password", "Plugin options", sensitive = true),
-        select("plugin-opts.version", "Version", "Plugin options", listOf("", "1", "2", "3")),
-        boolean("plugin-opts.strict", "Strict mode", "Plugin options"),
+        select("plugin-opts.version", "Version", "Plugin options", listOf("", "1", "2", "3"), required = true),
+        list("plugin-opts.alpn", "ALPN (comma separated)", "Plugin options"),
+        boolean("plugin-opts.strict-mode", "Strict mode", "Plugin options"),
+        boolean("plugin-opts.skip-cert-verify", "Skip certificate verification", "Plugin options"),
+        text("plugin-opts.name-cert-verify", "Certificate name", "Plugin options"),
+        text("plugin-opts.fingerprint", "Certificate fingerprint", "Plugin options"),
+        text("plugin-opts.certificate", "Client certificate", "Plugin options", sensitive = true),
+        text("plugin-opts.private-key", "Client private key", "Plugin options", sensitive = true),
     )
-    "restls", "jls" -> listOf(
-        text("plugin-opts.host", "Host", "Plugin options"),
-        text("plugin-opts.password", "Password", "Plugin options", sensitive = true),
-        select("plugin-opts.version", "Version", "Plugin options", listOf("", "1", "2", "3")),
+    "restls" -> listOf(
+        text("plugin-opts.host", "Host", "Plugin options", required = true),
+        text("plugin-opts.password", "Password", "Plugin options", sensitive = true, required = true),
+        select("plugin-opts.version-hint", "TLS version", "Plugin options", listOf("", "tls12", "tls13"), required = true),
+        text("plugin-opts.restls-script", "Handshake script", "Plugin options"),
+        boolean("plugin-opts.force-tls12", "Force TLS 1.2", "Plugin options"),
+        boolean("plugin-opts.skip-cert-verify", "Skip certificate verification", "Plugin options"),
+        text("plugin-opts.name-cert-verify", "Certificate name", "Plugin options"),
+        text("plugin-opts.fingerprint", "Certificate fingerprint", "Plugin options"),
+    )
+    "jls" -> listOf(
+        text("plugin-opts.host", "Host", "Plugin options", required = true),
+        text("plugin-opts.username", "Username", "Plugin options", required = true),
+        text("plugin-opts.password", "Password", "Plugin options", sensitive = true, required = true),
         list("plugin-opts.alpn", "ALPN (comma separated)", "Plugin options"),
     )
     "gost-plugin" -> listOf(
-        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "websocket", "quic", "grpc")),
+        // The in-process gost adapter accepts websocket mode only.
+        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "websocket"), required = true),
         text("plugin-opts.host", "Host", "Plugin options"),
         text("plugin-opts.path", "Path", "Plugin options"),
         boolean("plugin-opts.tls", "TLS", "Plugin options"),
-        boolean("plugin-opts.mux", "Mux", "Plugin options"),
-        text("plugin-opts.servername", "Server name", "Plugin options"),
+        boolean("plugin-opts.mux", "Mux", "Plugin options", default = true),
+        boolean("plugin-opts.skip-cert-verify", "Skip certificate verification", "Plugin options"),
+        text("plugin-opts.name-cert-verify", "Certificate name", "Plugin options"),
+        text("plugin-opts.fingerprint", "Certificate fingerprint", "Plugin options"),
+        text("plugin-opts.headers.Host", "Host header", "Plugin options"),
+        text("plugin-opts.certificate", "Client certificate", "Plugin options", sensitive = true),
+        text("plugin-opts.private-key", "Client private key", "Plugin options", sensitive = true),
+        boolean("plugin-opts.ech-opts.enable", "ECH", "Plugin options"),
+        text("plugin-opts.ech-opts.config", "ECH config (base64)", "Plugin options"),
+    )
+    "ech-tls-tunnel" -> listOf(
+        select("plugin-opts.mode", "Mode", "Plugin options", listOf("", "client"), required = true),
+        text("plugin-opts.sni", "Inner SNI", "Plugin options", required = true),
+        text("plugin-opts.path", "Path", "Plugin options", required = true),
+        // The upstream option is spelled `ech_config`; the Rust parser also
+        // accepts the hyphenated alias. Preserve whichever spelling an
+        // existing profile uses so editing does not create duplicate tokens.
+        text(
+            if ("plugin-opts.ech-config" in actualKeys) "plugin-opts.ech-config" else "plugin-opts.ech_config",
+            "ECH config (base64)",
+            "Plugin options",
+            required = true,
+        ),
+        text("plugin-opts.fingerprint", "Client fingerprint", "Plugin options"),
+        boolean(
+            if ("plugin-opts.fast-open" in actualKeys) "plugin-opts.fast-open" else "plugin-opts.fast_open",
+            "Fast open",
+            "Plugin options",
+        ),
     )
     else -> emptyList()
 }
 
-private fun endpointSpecs(withDialer: Boolean = true, udpDefault: Boolean = false): List<ProxyFieldSpec> = buildList {
-    add(text("server", "Server", "Endpoint"))
-    add(number("port", "Port", "Endpoint"))
+private fun endpointSpecs(
+    withDialer: Boolean = true,
+    udpDefault: Boolean = false,
+    portRequired: Boolean = true,
+): List<ProxyFieldSpec> = buildList {
+    add(text("server", "Server", "Endpoint", required = true))
+    add(number("port", "Port", "Endpoint", required = portRequired))
     add(boolean("udp", "UDP relay", "Transport", default = udpDefault))
     if (withDialer) add(text("dialer-proxy", "Dialer proxy", "Transport"))
 }
 
 /** Every protocol has its own option set, while unknown keys remain in Advanced. */
-private fun proxyFieldSpecs(type: String, existing: Map<String, ParsedValue>): List<ProxyFieldSpec> {
+private fun proxyFieldSpecs(
+    type: String,
+    actual: Map<String, ParsedValue>,
+    current: Map<String, String> = actual.mapValues { it.value.value },
+): List<ProxyFieldSpec> {
     val muxRoot = when {
-        existing.keys.any { it == "smux" || it.startsWith("smux.") } -> "smux"
-        existing.keys.any { it == "mux" || it.startsWith("mux.") } -> "mux"
+        actual.keys.any { it == "smux" || it.startsWith("smux.") } -> "smux"
+        actual.keys.any { it == "mux" || it.startsWith("mux.") } -> "mux"
         else -> "smux"
     }
-    val plugin = existing["plugin"]?.value
-    val hasRawPluginOpts = existing.containsKey("plugin-opts")
-    val hasNestedPluginOpts = existing.keys.any { it.startsWith("plugin-opts.") }
-    val pluginFields = if (hasNestedPluginOpts || !hasRawPluginOpts) {
-        pluginOptsSpecs(plugin)
+    val plugin = current["plugin"] ?: actual["plugin"]?.value
+    val hasRawPluginOpts = actual.containsKey("plugin-opts")
+    val hasNestedPluginOpts = actual.keys.any { it.startsWith("plugin-opts.") }
+    val pluginChanged = current["plugin"]?.lowercase() != actual["plugin"]?.value?.lowercase()
+    val pluginFields = if (hasRawPluginOpts && !hasNestedPluginOpts && !pluginChanged) {
+        emptyList()
+    } else {
+        pluginOptsSpecs(plugin, actual.keys)
+    }
+    val rawPluginField = if (hasRawPluginOpts && !hasNestedPluginOpts && !pluginChanged) {
+        // SIP003 strings can carry passwords even when the plugin is unknown.
+        listOf(text("plugin-opts", "Plugin options (key=value;...)", "Transport", sensitive = true))
+    } else emptyList()
+    val network = current["network"].orEmpty().ifEmpty { "tcp" }.lowercase()
+    val tls = current["tls"].toBoolean()
+    // TLS controls are capability-gated. If TLS is switched off, existing
+    // values are moved to Advanced and retained in YAML until the user removes
+    // them explicitly; switching TLS back on restores the controls.
+    val tlsFields = if (tls) {
+        listOf(
+            boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
+            text("servername", "Server name (SNI)", "TLS"),
+            text("client-fingerprint", "Client fingerprint", "TLS"),
+            list("alpn", "ALPN (comma separated)", "TLS"),
+        )
+    } else emptyList()
+    // Keep REALITY controls available for a plain VLESS node too. They are
+    // optional and are only serialized after the user edits them, so this
+    // does not add empty maps to existing profiles.
+    val realityFields = if (type.equals("vless", ignoreCase = true)) {
+        listOf(
+            text("reality-opts.public-key", "REALITY public key", "REALITY"),
+            text("reality-opts.short-id", "REALITY short ID", "REALITY"),
+            boolean("reality-opts.support-x25519mlkem768", "REALITY X25519-Mlkem", "REALITY"),
+        )
+    } else emptyList()
+    val echFields = if (tls || actual.keys.any { it.startsWith("ech-opts.") }) {
+        listOf(
+            boolean("ech-opts.enable", "ECH", "TLS"),
+            text("ech-opts.config", "ECH config (base64)", "TLS"),
+        )
+    } else emptyList()
+    val transportFields = when (network) {
+        "ws" -> listOf(
+            text("ws-opts.path", "WebSocket path", "WebSocket"),
+            text("ws-opts.headers.Host", "WebSocket Host", "WebSocket"),
+            number("ws-opts.max-early-data", "WebSocket early data", "WebSocket"),
+            text("ws-opts.early-data-header-name", "Early data header", "WebSocket"),
+        )
+        "grpc" -> listOf(text("grpc-opts.grpc-service-name", "gRPC service", "gRPC"))
+        "h2" -> listOf(
+            list("h2-opts.host", "HTTP/2 hosts (comma separated)", "HTTP/2"),
+            text("h2-opts.path", "HTTP/2 path", "HTTP/2"),
+        )
+        "httpupgrade" -> listOf(
+            text("http-upgrade-opts.host", "HTTP Upgrade Host", "HTTP Upgrade"),
+            text("http-upgrade-opts.path", "HTTP Upgrade path", "HTTP Upgrade"),
+        )
+        "xhttp" -> listOf(
+            list("xhttp-opts.host", "XHTTP hosts (comma separated)", "XHTTP"),
+            text("xhttp-opts.path", "XHTTP path", "XHTTP"),
+            select("xhttp-opts.mode", "XHTTP mode", "XHTTP", listOf("stream-one"), "stream-one"),
+            boolean("xhttp-opts.no-grpc-header", "XHTTP without gRPC header", "XHTTP"),
+            text("xhttp-opts.x-padding-bytes", "XHTTP padding range", "XHTTP"),
+        )
+        else -> emptyList()
+    }
+    val hysteriaPortRequired = current["ports"].orEmpty().isBlank()
+    val hysteriaObfs = current["obfs"].orEmpty().lowercase()
+    val hysteriaObfsFields = listOf(
+        select("obfs", "Obfuscation", "QUIC", listOf("", "salamander", "gecko")),
+    ) + if (hysteriaObfs == "salamander" || hysteriaObfs == "gecko") {
+        listOf(text("obfs-password", "Obfuscation password", "QUIC", sensitive = true, required = true))
+    } else {
+        emptyList()
+    } + if (hysteriaObfs == "gecko") {
+        listOf(
+            number("obfs-min-packet-size", "Minimum packet size", "QUIC", default = "512"),
+            number("obfs-max-packet-size", "Maximum packet size", "QUIC", default = "1200"),
+        )
     } else {
         emptyList()
     }
-    val rawPluginField = if (hasNestedPluginOpts) emptyList() else {
-        listOf(text("plugin-opts", "Plugin options (key=value;...)", "Transport"))
+    val snellVersion = current["version"].orEmpty().ifEmpty { "4" }
+        .removePrefix("v")
+        .lowercase()
+    val snellObfsEnabled = current["obfs-opts.mode"].orEmpty().lowercase()
+        .let { it.isNotEmpty() && it != "off" && it != "none" }
+    val snellTransportFields = if (snellVersion == "6") {
+        listOf(select("mode", "v6 mode", "Transport", listOf("", "default", "unshaped", "unsafe-raw")))
+    } else {
+        emptyList()
+    } + if (snellVersion != "6") {
+        listOf(
+            select("obfs-opts.mode", "Obfuscation mode", "Obfuscation", listOf("off", "http", "tls")),
+        ) + if (snellObfsEnabled) {
+            listOf(text("obfs-opts.host", "Obfuscation host", "Obfuscation"))
+        } else {
+            emptyList()
+        }
+    } else {
+        emptyList()
     }
     return when (type.lowercase()) {
     "direct" -> listOf(
@@ -234,107 +487,69 @@ private fun proxyFieldSpecs(type: String, existing: Map<String, ParsedValue>): L
         list("dns", "DNS servers (comma separated)", "Direct"),
     )
     "ss" -> endpointSpecs() + listOf(
-        text("cipher", "Cipher", "Authentication"),
-        text("password", "Password", "Authentication", sensitive = true),
-        select("plugin", "Plugin", "Transport", listOf("", "obfs", "obfs-local", "simple-obfs", "v2ray-plugin", "kcptun", "shadow-tls", "restls", "gost-plugin", "jls")),
+        text("cipher", "Cipher", "Authentication", required = true),
+        text("password", "Password", "Authentication", sensitive = true, required = true),
+        select("plugin", "Plugin", "Transport", listOf("", "obfs", "obfs-local", "simple-obfs", "v2ray-plugin", "kcptun", "shadow-tls", "restls", "gost-plugin", "jls", "ech-tls-tunnel")),
         text("client-fingerprint", "Client fingerprint", "TLS"),
-    ) + rawPluginField + pluginFields + muxSpecs(muxRoot)
+    ) + rawPluginField + pluginFields + muxSpecs(muxRoot, actual, current)
     "trojan" -> endpointSpecs() + listOf(
-        text("password", "Password", "Authentication", sensitive = true),
+        text("password", "Password", "Authentication", sensitive = true, required = true),
         text("sni", "SNI", "TLS"),
         boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
-        list("alpn", "ALPN (comma separated)", "TLS"),
-    ) + muxSpecs(muxRoot)
+    ) + muxSpecs(muxRoot, actual, current)
     "vless" -> endpointSpecs() + listOf(
-        text("uuid", "UUID", "Authentication", sensitive = true),
+        text("uuid", "UUID", "Authentication", sensitive = true, required = true),
         select("encryption", "Encryption", "Authentication", listOf("none", "mlkem768x25519plus"), "none"),
         select("flow", "Flow", "Transport", listOf("", "xtls-rprx-vision")),
         select("network", "Network", "Transport", listOf("tcp", "ws", "grpc", "h2", "httpupgrade", "xhttp"), "tcp"),
         boolean("tls", "TLS", "TLS"),
-        boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
-        text("servername", "Server name (SNI)", "TLS"),
-        text("client-fingerprint", "Client fingerprint", "TLS"),
-        list("alpn", "ALPN (comma separated)", "TLS"),
-        text("reality-opts.public-key", "REALITY public key", "REALITY"),
-        text("reality-opts.short-id", "REALITY short ID", "REALITY"),
-        boolean("reality-opts.support-x25519mlkem768", "REALITY X25519ML-KEM", "REALITY"),
-        text("ech-opts.config", "ECH config (base64)", "TLS"),
-        boolean("ech-opts.enable", "ECH", "TLS"),
-        text("ws-opts.path", "WebSocket path", "WebSocket"),
-        text("ws-opts.headers.Host", "WebSocket Host", "WebSocket"),
-        number("ws-opts.max-early-data", "WebSocket early data", "WebSocket"),
-        text("ws-opts.early-data-header-name", "Early data header", "WebSocket"),
-        text("grpc-opts.grpc-service-name", "gRPC service", "gRPC"),
-        list("h2-opts.host", "HTTP/2 hosts (comma separated)", "HTTP/2"),
-        text("h2-opts.path", "HTTP/2 path", "HTTP/2"),
-        text("http-upgrade-opts.host", "HTTP Upgrade Host", "HTTP Upgrade"),
-        text("http-upgrade-opts.path", "HTTP Upgrade path", "HTTP Upgrade"),
-        list("xhttp-opts.host", "XHTTP hosts (comma separated)", "XHTTP"),
-        text("xhttp-opts.path", "XHTTP path", "XHTTP"),
-        select("xhttp-opts.mode", "XHTTP mode", "XHTTP", listOf("stream-one"), "stream-one"),
-        boolean("xhttp-opts.no-grpc-header", "XHTTP without gRPC header", "XHTTP"),
-        text("xhttp-opts.x-padding-bytes", "XHTTP padding range", "XHTTP"),
-    ) + muxSpecs(muxRoot)
+    ) + tlsFields + realityFields + echFields + transportFields + muxSpecs(muxRoot, actual, current)
     "vmess" -> endpointSpecs() + listOf(
-        text("uuid", "UUID", "Authentication", sensitive = true),
+        text("uuid", "UUID", "Authentication", sensitive = true, required = true),
         select("cipher", "Cipher", "Authentication", listOf("auto", "aes-128-gcm", "chacha20-poly1305", "none"), "auto"),
         number("alterId", "Alter ID", "Authentication"),
         select("network", "Network", "Transport", listOf("tcp", "ws"), "tcp"),
         boolean("tls", "TLS", "TLS"),
-        boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
-        text("servername", "Server name (SNI)", "TLS"),
-        text("client-fingerprint", "Client fingerprint", "TLS"),
-        list("alpn", "ALPN (comma separated)", "TLS"),
-        text("ws-opts.path", "WebSocket path", "WebSocket"),
-        text("ws-opts.headers.Host", "WebSocket Host", "WebSocket"),
-        number("ws-opts.max-early-data", "WebSocket early data", "WebSocket"),
-        text("ws-opts.early-data-header-name", "Early data header", "WebSocket"),
-    ) + muxSpecs(muxRoot)
-    "hysteria2" -> endpointSpecs(withDialer = false, udpDefault = true) + listOf(
+    ) + tlsFields + transportFields.filter { it.path.startsWith("ws-opts.") } + muxSpecs(muxRoot, actual, current)
+    "hysteria2" -> endpointSpecs(
+        withDialer = false,
+        udpDefault = true,
+        portRequired = hysteriaPortRequired,
+    ) + listOf(
         text("ports", "Port hopping range", "Endpoint"),
-        text("mport", "Multiplex port range", "Endpoint"),
-        text("password", "Password", "Authentication", sensitive = true),
+        text("password", "Password", "Authentication", sensitive = true, required = true),
         text("up", "Upload limit", "QUIC"),
         text("down", "Download limit", "QUIC"),
         text("sni", "SNI", "TLS"),
         boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
         text("fingerprint", "Certificate fingerprint", "TLS"),
-        select("obfs", "Obfuscation", "QUIC", listOf("", "salamander", "gecko")),
-        text("obfs-password", "Obfuscation password", "QUIC", sensitive = true),
-        number("obfs-min-packet-size", "Obfuscation minimum packet", "QUIC"),
-        number("obfs-max-packet-size", "Obfuscation maximum packet", "QUIC"),
         text("hop-interval", "Hop interval", "QUIC"),
         boolean("fast-open", "Fast open", "QUIC", default = true),
         list("alpn", "ALPN (comma separated)", "TLS"),
-    )
+    ) + hysteriaObfsFields
     "anytls" -> endpointSpecs(withDialer = false) + listOf(
-        text("password", "Password", "Authentication", sensitive = true),
+        text("password", "Password", "Authentication", sensitive = true, required = true),
         text("sni", "SNI", "TLS"),
         boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
     )
     "snell" -> endpointSpecs() + listOf(
-        text("psk", "PSK", "Authentication", sensitive = true),
+        text("psk", "PSK", "Authentication", sensitive = true, required = true),
         select("version", "Version", "Authentication", listOf("3", "4", "5", "6"), "4"),
         boolean("reuse", "Connection reuse", "Transport"),
-        select("mode", "v6 mode", "Transport", listOf("", "default", "unshaped", "unsafe-raw")),
-        select("obfs-opts.mode", "Obfuscation mode", "Obfuscation", listOf("off", "http", "tls"), "off"),
-        text("obfs-opts.host", "Obfuscation host", "Obfuscation"),
-    )
+    ) + snellTransportFields
     "http" -> endpointSpecs() + listOf(
         text("username", "Username", "Authentication"),
         text("password", "Password", "Authentication", sensitive = true),
         boolean("tls", "TLS", "TLS"),
-        boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
-    )
+    ) + if (tls) listOf(boolean("skip-cert-verify", "Skip certificate verification", "TLS")) else emptyList()
     "socks5" -> endpointSpecs() + listOf(
         text("username", "Username", "Authentication"),
         text("password", "Password", "Authentication", sensitive = true),
         boolean("tls", "TLS", "TLS"),
-        boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
-    )
+    ) + if (tls) listOf(boolean("skip-cert-verify", "Skip certificate verification", "TLS")) else emptyList()
     "trusttunnel" -> endpointSpecs(withDialer = false) + listOf(
-        text("username", "Username", "Authentication"),
-        text("password", "Password", "Authentication", sensitive = true),
+        text("username", "Username", "Authentication", required = true),
+        text("password", "Password", "Authentication", sensitive = true, required = true),
         text("sni", "SNI", "TLS"),
         boolean("skip-cert-verify", "Skip certificate verification", "TLS"),
         text("name-cert-verify", "Certificate name", "TLS"),
@@ -443,6 +658,7 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
                     options = spec.options,
                     present = parsed != null,
                     sensitive = spec.sensitive,
+                    required = spec.required,
                 ),
             )
         }
@@ -453,8 +669,8 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
                         key = parsed.path,
                         value = normalizeFieldValue(parsed.value, parsed.kind),
                         kind = parsed.kind,
-                        label = parsed.path,
-                        section = "Advanced",
+                        label = humanizeFieldPath(parsed.path),
+                        section = parsedFieldSection(type, parsed.path),
                         present = true,
                         sensitive = isSensitivePath(parsed.path),
                     ),
@@ -463,6 +679,64 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
         }
     }
     return ParsedProxyEntry(type, fields)
+}
+
+/** Header maps are a supported part of several transports, even though their
+ * key set is intentionally open ended. Keep existing entries in a dedicated
+ * section so they are editable without pretending the editor knows every
+ * possible header name. Other unknown paths remain in Advanced. */
+private fun parsedFieldSection(type: String, path: String): String = when {
+    path.startsWith("headers.") && type.equals("http", ignoreCase = true) -> "Headers"
+    path.startsWith("headers.") && type.equals("trusttunnel", ignoreCase = true) -> "Headers"
+    path.startsWith("ws-opts.headers.") -> "WebSocket headers"
+    path.startsWith("http-upgrade-opts.headers.") -> "HTTP Upgrade headers"
+    path.startsWith("xhttp-opts.headers.") -> "XHTTP headers"
+    path.startsWith("plugin-opts.headers.") -> "Plugin headers"
+    else -> "Advanced"
+}
+
+private fun humanizeFieldPath(path: String): String = path.substringAfterLast('.')
+    .replace('-', ' ')
+    .replace('_', ' ')
+    .replace(Regex("\\s+"), " ")
+    .trim()
+    .replaceFirstChar { it.titlecase() }
+
+/** Rebuilds the visible schema after a selector changes, without losing values. */
+internal fun adaptProxyFields(type: String, fields: List<ProxyEditField>): List<ProxyEditField> {
+    val oldByPath = fields.associateBy { it.key }
+    // The list also contains schema controls that were never present in YAML.
+    // Only present values should influence capability detection; otherwise
+    // toggling a switch would make every generated child look configured.
+    val actual = oldByPath.filterValues { it.present }.mapValues { (_, field) ->
+        ParsedValue(field.key, field.value, field.kind)
+    }
+    val current = oldByPath.mapValues { it.value.value }
+    val specs = proxyFieldSpecs(type, actual, current)
+    val specPaths = specs.mapTo(mutableSetOf()) { it.path }
+    return buildList {
+        specs.forEach { spec ->
+            val old = oldByPath[spec.path]
+            add(
+                ProxyEditField(
+                    key = spec.path,
+                    value = old?.value ?: spec.defaultValue,
+                    kind = spec.kind,
+                    label = spec.label,
+                    section = spec.section,
+                    options = spec.options,
+                    present = old?.present ?: false,
+                    sensitive = spec.sensitive,
+                    required = spec.required,
+                ),
+            )
+        }
+        fields.filter { it.key !in specPaths && it.present && it.key != "name" && it.key != "type" }
+            // A value moved out of its active capability is optional in the
+            // current schema. Keep it editable/removable in Advanced rather
+            // than leaving a stale required marker from the old capability.
+            .forEach { add(it.copy(section = "Advanced", required = false)) }
+    }
 }
 
 private fun parseBlockValues(lines: List<String>, from: Int, until: Int): List<ParsedValue> {
@@ -626,19 +900,33 @@ internal fun replaceProxyEntry(
     fields: Map<String, String>,
     kinds: Map<String, ProxyEditFieldKind> = emptyMap(),
     presence: Map<String, Boolean> = emptyMap(),
+    removed: Set<String> = emptySet(),
 ): String? {
     val normalized = yaml.replace("\r\n", "\n")
     val lines = normalized.split('\n').toMutableList()
     val location = findProxyLocation(lines, name) ?: return null
-    if (location.flow) return replaceFlowEntry(lines, location.start, fields, kinds, presence)
+    if (location.flow) return replaceFlowEntry(lines, location.start, fields, kinds, presence, removed)
 
     val existing = parseBlockValues(lines, location.start + 1, location.end).associateBy { it.path }
     val occurrences = findBlockOccurrences(lines, location.start + 1, location.end)
     val inlineUpdates = mutableMapOf<Int, MutableMap<String, Pair<String, ProxyEditFieldKind>>>()
+    val inlineRemovals = mutableMapOf<Int, MutableSet<String>>()
+    val removeIndexes = mutableSetOf<Int>()
+    val removedPaths = mutableSetOf<String>()
     fields.forEach { (path, value) ->
         val occurrence = occurrences[path]
         val shouldWrite = presence[path] ?: true
-        if (occurrence == null || !shouldWrite) return@forEach
+        if (occurrence == null) return@forEach
+        if (!shouldWrite || path in removed) {
+            removedPaths += path
+            if (occurrence.inlineRoot != null) {
+                inlineRemovals.getOrPut(occurrence.index) { mutableSetOf() } +=
+                    path.removePrefix(occurrence.inlineRoot + ".")
+            } else {
+                removeIndexes += occurrence.index
+            }
+            return@forEach
+        }
         val kind = kinds[path] ?: existing[path]?.kind ?: inferFieldKind(path, value)
         if (occurrence.inlineRoot != null) {
             val relative = path.removePrefix(occurrence.inlineRoot + ".")
@@ -647,15 +935,40 @@ internal fun replaceProxyEntry(
             lines[occurrence.index] = "${occurrence.indent}${occurrence.key}: ${yamlRenderValue(value, kind)}"
         }
     }
-    inlineUpdates.forEach { (index, updates) ->
-        val mapping = parseMappingLine(lines[index]) ?: return@forEach
-        lines[index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates)}"
+    // Unknown Advanced fields are intentionally removed from the form after
+    // the user taps delete. Their tombstones are therefore not present in
+    // `fields`; apply those removals separately so the original YAML cannot
+    // silently retain them.
+    removed.filter { it !in fields }.forEach { path ->
+        val occurrence = occurrences[path] ?: return@forEach
+        removedPaths += path
+        if (occurrence.inlineRoot != null) {
+            inlineRemovals.getOrPut(occurrence.index) { mutableSetOf() } +=
+                path.removePrefix(occurrence.inlineRoot + ".")
+        } else {
+            removeIndexes += occurrence.index
+        }
     }
+    // Render each inline map once. Applying removals and updates in separate
+    // passes against the original raw value lets the second pass resurrect a
+    // key removed by the first pass when the same map has both operations.
+    (inlineRemovals.keys + inlineUpdates.keys).distinct().forEach { index ->
+        val mapping = parseMappingLine(lines[index]) ?: return@forEach
+        val updates = inlineUpdates[index].orEmpty()
+        val removals = inlineRemovals[index].orEmpty()
+        lines[index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates, removals)}"
+    }
+    // Keep line indices stable for nested additions below. A blank line is
+    // valid YAML and preserves the surrounding profile formatting.
+    removeIndexes.forEach { index -> lines[index] = "" }
 
+    // Removal changes indices but additions are relative to the proxy's end,
+    // so the original location remains the correct insertion point.
     val missing = fields.filter { (path, value) ->
         path !in occurrences && (presence[path] ?: true) && value.isNotEmpty() && path !in setOf("name", "type")
     }
     val additions = mutableListOf<String>()
+    val nestedInsertions = mutableListOf<Pair<Int, List<String>>>()
     val nested = missing.filterKeys { it.contains('.') }
     missing.filterKeys { !it.contains('.') }.forEach { (path, value) ->
         additions += "${fieldIndent(lines, location)}$path: ${yamlRenderValue(value, kinds[path] ?: inferFieldKind(path, value))}"
@@ -678,7 +991,10 @@ internal fun replaceProxyEntry(
                 },
                 " ".repeat(parentIndent + 2),
             )
-            lines.addAll(insertAt, rendered)
+            // Apply these after collecting all insertions. Keeping the
+            // original indices lets multiple nested maps be added without
+            // one insertion shifting the next parent's location.
+            nestedInsertions += insertAt to rendered
         } else {
             val baseIndent = fieldIndent(lines, location)
             additions += "$baseIndent$parent:"
@@ -690,7 +1006,26 @@ internal fun replaceProxyEntry(
             )
         }
     }
-    if (additions.isNotEmpty()) lines.addAll(location.end, additions)
+    var insertedBeforeEnd = 0
+    nestedInsertions.sortedByDescending { it.first }.forEach { (index, rendered) ->
+        lines.addAll(index, rendered)
+        if (index <= location.end) insertedBeforeEnd += rendered.size
+    }
+    if (additions.isNotEmpty()) lines.addAll(location.end + insertedBeforeEnd, additions)
+
+    // Removing the final child of a nested map should remove that map too;
+    // leaving `headers:`/`plugin-opts:`/`future-map:` with no children is
+    // both noisy in the editor and can change how strict YAML consumers
+    // interpret the value. Run this after additions so a map that receives a
+    // replacement child in the same save is retained.
+    if (removedPaths.isNotEmpty()) {
+        removeEmptyBlockMaps(
+            lines = lines,
+            from = location.start + 1,
+            until = location.end + insertedBeforeEnd + additions.size,
+            removedPaths = removedPaths,
+        )
+    }
     return lines.joinToString("\n")
 }
 
@@ -722,6 +1057,56 @@ private fun findBlockOccurrences(lines: List<String>, from: Int, until: Int): Ma
     return result
 }
 
+/** Removes only maps made empty by a user removal, deepest map first. */
+private fun removeEmptyBlockMaps(
+    lines: MutableList<String>,
+    from: Int,
+    until: Int,
+    removedPaths: Set<String>,
+) {
+    val candidates = removedPaths
+        .flatMap { path ->
+            val parts = path.split('.')
+            (1 until parts.size).map { parts.take(it).joinToString(".") }
+        }
+        .toSet()
+        .sortedByDescending { it.count { char -> char == '.' } }
+    candidates.forEach { candidate ->
+        val stack = mutableListOf<Pair<Int, String>>()
+        var mapIndex: Int? = null
+        var mapIndent = 0
+        for (index in from until until.coerceAtMost(lines.size)) {
+            val mapping = parseMappingLine(lines[index]) ?: continue
+            val indent = mapping.indent.length
+            while (stack.lastOrNull()?.first ?: -1 >= indent) stack.removeAt(stack.lastIndex)
+            val path = (stack.map { it.second } + mapping.key).joinToString(".")
+            if (path == candidate && mapping.raw.isEmpty()) {
+                mapIndex = index
+                mapIndent = indent
+                break
+            }
+            if (mapping.raw.isEmpty()) stack += indent to mapping.key
+        }
+        val index = mapIndex ?: return@forEach
+        var hasChild = false
+        for (childIndex in index + 1 until until.coerceAtMost(lines.size)) {
+            val line = lines[childIndex]
+            val trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith("#")) {
+                continue
+            } else if (leadingSpaces(line) <= mapIndent) {
+                break
+            } else {
+                if (parseMappingLine(line) != null || trimmed.startsWith("-")) {
+                    hasChild = true
+                    break
+                }
+            }
+        }
+        if (!hasChild) lines[index] = ""
+    }
+}
+
 private fun fieldIndent(lines: List<String>, location: ProxyLocation): String {
     val existing = lines.subList(location.start + 1, location.end).firstOrNull { parseMappingLine(it) != null }
     return existing?.let { parseMappingLine(it)?.indent } ?: " ".repeat(location.itemIndent + 2)
@@ -733,35 +1118,54 @@ private fun replaceFlowEntry(
     fields: Map<String, String>,
     kinds: Map<String, ProxyEditFieldKind>,
     presence: Map<String, Boolean>,
+    removed: Set<String>,
 ): String {
     val line = lines[index]
     val open = line.indexOf('{')
     val close = line.lastIndexOf('}')
     if (open < 0 || close <= open) return lines.joinToString("\n")
     val updates = fields.filter { (path, value) ->
-        (presence[path] ?: true) && path !in setOf("name", "type")
+        (presence[path] ?: true) && path !in removed && path !in setOf("name", "type")
     }.mapValues { (path, value) -> value to (kinds[path] ?: inferFieldKind(path, value)) }
-    lines[index] = line.substring(0, open) + renderInlineMap(line.substring(open, close + 1), updates) + line.substring(close + 1)
+    lines[index] = line.substring(0, open) +
+        renderInlineMap(line.substring(open, close + 1), updates, removed) +
+        line.substring(close + 1)
     return lines.joinToString("\n")
 }
 
-private fun renderInlineMap(raw: String, updates: Map<String, Pair<String, ProxyEditFieldKind>>): String {
+private fun renderInlineMap(
+    raw: String,
+    updates: Map<String, Pair<String, ProxyEditFieldKind>>,
+    removals: Set<String> = emptySet(),
+): String {
     val trimmed = raw.trim()
     val body = trimmed.removePrefix("{").removeSuffix("}")
     val pairs = splitFlowPairs(body).toMutableList()
     val used = mutableSetOf<String>()
     for (index in pairs.indices) {
         val (key, value) = pairs[index]
+        if (key in removals) {
+            pairs[index] = "" to ""
+            used += key
+            continue
+        }
         val direct = updates[key]
         val nested = updates.filterKeys { it.startsWith("$key.") }
+        val nestedRemovals = removals.filter { it.startsWith("$key.") }
         pairs[index] = when {
             direct != null -> {
                 used += key
                 key to yamlRenderValue(direct.first, direct.second)
             }
-            nested.isNotEmpty() && isInlineMap(value) -> {
+            (nested.isNotEmpty() || nestedRemovals.isNotEmpty()) && isInlineMap(value) -> {
                 nested.keys.forEach { used += it }
-                key to renderInlineMap(value, nested.mapKeys { it.key.removePrefix("$key.") })
+                nestedRemovals.forEach { used += it }
+                val rendered = renderInlineMap(
+                    value,
+                    nested.mapKeys { it.key.removePrefix("$key.") },
+                    nestedRemovals.map { it.removePrefix("$key.") }.toSet(),
+                )
+                if (isEmptyInlineMap(rendered)) "" to "" else key to rendered
             }
             else -> key to value
         }
@@ -774,8 +1178,11 @@ private fun renderInlineMap(raw: String, updates: Map<String, Pair<String, Proxy
         val nested = children.associate { it.removePrefix("$parent.") to updates.getValue(it) }
         pairs += parent to renderInlineMap("{}", nested)
     }
-    return "{ ${pairs.joinToString(", ") { (key, value) -> "$key: $value" }} }"
+    return "{ ${pairs.filter { it.first.isNotEmpty() }.joinToString(", ") { (key, value) -> "$key: $value" }} }"
 }
+
+private fun isEmptyInlineMap(value: String): Boolean =
+    value.trim().removePrefix("{").removeSuffix("}").trim().isEmpty()
 
 private fun yamlScalar(value: String): String = stripYamlComment(value.trim())
     .removeSuffix(",")
