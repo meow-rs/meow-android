@@ -476,7 +476,7 @@ private fun parseBlockValues(lines: List<String>, from: Int, until: Int): List<P
             continue
         }
         val indent = mapping.indent.length
-        while (stack.lastOrNull()?.first ?: -1 >= indent) stack.removeLast()
+        while (stack.lastOrNull()?.first ?: -1 >= indent) stack.removeAt(stack.lastIndex)
         val path = (stack.map { it.second } + mapping.key).joinToString(".")
         if (mapping.raw.isEmpty()) {
             val list = mutableListOf<String>()
@@ -707,7 +707,7 @@ private fun findBlockOccurrences(lines: List<String>, from: Int, until: Int): Ma
     for (index in from until until) {
         val mapping = parseMappingLine(lines[index]) ?: continue
         val indent = mapping.indent.length
-        while (stack.lastOrNull()?.first ?: -1 >= indent) stack.removeLast()
+        while (stack.lastOrNull()?.first ?: -1 >= indent) stack.removeAt(stack.lastIndex)
         val path = (stack.map { it.second } + mapping.key).joinToString(".")
         if (isInlineMap(mapping.raw)) {
             result[path] = BlockOccurrence(index, mapping.indent, mapping.key, path)
