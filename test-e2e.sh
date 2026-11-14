@@ -24,6 +24,10 @@ SS_HOST_FROM_EMU="${SS_HOST_FROM_EMU:-10.0.2.2}"
 SS_PORT=8388
 SUB_PORT="${SUB_PORT:-8080}"
 SCREENSHOT_PROXY_SERVERS="${SCREENSHOT_PROXY_SERVERS:-false}"
+# Optional real profile used by the screenshot job. Keeping this opt-in means
+# the normal offline E2E fixture remains deterministic, while a review run can
+# exercise the exact public Clash YAML supplied with the feature request.
+SCREENSHOT_PROFILE_URL="${SCREENSHOT_PROFILE_URL:-}"
 
 SSSERVER_PID=""
 HTTPD_PID=""
@@ -123,7 +127,7 @@ mkdir -p /tmp/test-sub
 # Keeping it behind an opt-in flag leaves the normal end-to-end test focused on
 # subscriptions while making the Proxy Servers page deterministic.
 SCREENSHOT_INLINE_PROXY=""
-if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" && -z "$SCREENSHOT_PROFILE_URL" ]]; then
     SCREENSHOT_INLINE_PROXY=$(cat <<INLINEPROXY
   - name: Screenshot Inline SS
     type: ss
@@ -258,8 +262,16 @@ SUB_YAML=$(cat /tmp/test-sub/config.yaml)
 PROFILE_URL="http://$SS_HOST_FROM_EMU:$SUB_PORT/config.yaml"
 if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
     # The editor is intentionally exercised against a local profile. A
-    # subscription-backed profile remains read-only in the app.
+    # subscription-backed profile remains read-only in the app. When a review
+    # URL is provided, its downloaded YAML is still stored as a local profile
+    # so the same edit affordance is tested without changing the source URL.
     PROFILE_URL=""
+fi
+
+if [[ -n "$SCREENSHOT_PROFILE_URL" ]]; then
+    info "  Downloading screenshot profile from configured review URL"
+    SUB_YAML=$(curl -fsSL --max-time 45 "$SCREENSHOT_PROFILE_URL") ||
+        fail "Screenshot profile download failed"
 fi
 
 # Create a fresh Room database on the host with the correct schema.
@@ -490,8 +502,8 @@ capture_proxy_servers() {
         page_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
         if echo "$page_xml" | grep -q 'resource-id="proxy_servers_root"'; then
             if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] &&
-               ! echo "$page_xml" | grep -q 'text="Screenshot Inline SS"'; then
-                fail "Proxy Servers page rendered without the inline proxy"
+               ! echo "$page_xml" | grep -q 'resource-id="proxy_servers_test_'; then
+                fail "Proxy Servers page rendered without any testable proxy"
             fi
             screenshot "06_proxy_servers"
 

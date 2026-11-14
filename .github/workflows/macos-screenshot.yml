@@ -77,6 +77,7 @@ jobs:
             APK="$GITHUB_WORKSPACE/mobile/build/outputs/apk/debug/mobile-debug.apk" \
             SSSERVER=ssserver \
             SCREENSHOT_PROXY_SERVERS=true \
+            SCREENSHOT_PROFILE_URL=https://api.gengjiawen.com/clash.yml \
             SKIP_EMULATOR_BOOT=true \
             TUN_WAIT_SECS=120 \
             ./test-e2e.sh
