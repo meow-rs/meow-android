@@ -92,8 +92,9 @@ wait_for_boot() {
 
 screenshot() {
     local name="$1"
-    "$ADB" shell screencap -p //sdcard/screen_${name}.png 2>/dev/null || true
-    "$ADB" pull //sdcard/screen_${name}.png "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
+    # Stream the PNG directly like the dedicated Claude screenshot harnesses;
+    # this avoids stale /sdcard files and a second adb pull operation.
+    "$ADB" exec-out screencap -p > "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
     info "  Screenshot saved: screen_${name}.png"
 }
 
