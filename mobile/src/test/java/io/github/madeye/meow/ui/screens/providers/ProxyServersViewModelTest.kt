@@ -853,6 +853,28 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `proxy editor catches invalid endpoint values before native validation`() {
+        val invalidPort = validateProxyFields(
+            listOf(
+                ProxyEditField(
+                    key = "port",
+                    value = "70000",
+                    kind = ProxyEditFieldKind.Number,
+                    required = true,
+                ),
+                ProxyEditField(
+                    key = "ports",
+                    value = "443-abc",
+                    kind = ProxyEditFieldKind.Text,
+                ),
+            ),
+        )
+
+        assertEquals("Port must be between 1 and 65535", invalidPort[0].error)
+        assertEquals("Use a port or range such as 443-8443", invalidPort[1].error)
+    }
+
+    @Test
     fun `http2 host list is rendered as an array when edited`() {
         val yaml = """
             proxies:

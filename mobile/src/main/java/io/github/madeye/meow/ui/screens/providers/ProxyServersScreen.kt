@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -157,9 +163,13 @@ private fun ProviderCard(
     onEditProfile: (Long, String) -> Unit,
 ) {
     val colors = MaterialTheme.meow
+    var expanded by rememberSaveable(provider.id) { mutableStateOf(true) }
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -184,6 +194,10 @@ private fun ProviderCard(
                     color = colors.mutedText,
                 )
             }
+            Icon(
+                imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = if (expanded) "Collapse ${provider.name}" else "Expand ${provider.name}",
+            )
             if (provider.kind == ProxyServerKind.Inline) {
                 Spacer(Modifier.size(20.dp))
             } else if (provider.checking) {
@@ -200,6 +214,9 @@ private fun ProviderCard(
                     )
                 }
             }
+        }
+        if (!expanded) {
+            return@GlassCard
         }
         if (provider.nodes.isEmpty()) {
             Text(

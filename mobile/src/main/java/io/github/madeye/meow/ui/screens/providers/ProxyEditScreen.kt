@@ -180,6 +180,7 @@ private fun SensitiveTextField(
         onValueChange = { onChange(field.key, it) },
         label = { Text(field.label + if (field.required) " *" else "") },
         singleLine = true,
+        isError = field.error != null,
         visualTransformation = if (field.sensitive && !revealed) {
             PasswordVisualTransformation()
         } else {
@@ -214,10 +215,10 @@ private fun SensitiveTextField(
             field.sensitive -> KeyboardOptions(keyboardType = KeyboardType.Password)
             else -> KeyboardOptions.Default
         },
-        supportingText = if (field.kind == ProxyEditFieldKind.List) {
-            { Text("Comma-separated values") }
-        } else {
-            null
+        supportingText = when {
+            field.error != null -> ({ Text(field.error, color = MaterialTheme.meow.danger) })
+            field.kind == ProxyEditFieldKind.List -> ({ Text("Comma-separated values") })
+            else -> null
         },
         modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}"),
     )
@@ -240,6 +241,10 @@ private fun SelectField(
             readOnly = true,
             label = { Text(field.label + if (field.required) " *" else "") },
             singleLine = true,
+            isError = field.error != null,
+            supportingText = field.error?.let { error ->
+                { Text(error, color = MaterialTheme.meow.danger) }
+            },
             modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}")
                 .clickable(enabled = enabled) { expanded = true },
         )

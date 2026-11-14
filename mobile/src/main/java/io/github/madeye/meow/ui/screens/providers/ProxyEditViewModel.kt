@@ -30,6 +30,8 @@ data class ProxyEditField(
     val present: Boolean = true,
     val sensitive: Boolean = false,
     val required: Boolean = false,
+    /** A local, actionable error shown before the engine validator runs. */
+    val error: String? = null,
 )
 
 @Immutable
@@ -89,13 +91,17 @@ class ProxyEditViewModel(
                     // default" and removes the key on save. Required values
                     // stay present so the validator can report a useful
                     // configuration error instead of silently dropping them.
-                    field.copy(value = value, present = field.required || value.isNotEmpty())
+                    field.copy(
+                        value = value,
+                        present = field.required || value.isNotEmpty(),
+                        error = null,
+                    )
                 } else {
                     field
                 }
             }
             state.copy(
-                fields = adaptProxyFields(state.type, changed),
+                fields = validateProxyFields(adaptProxyFields(state.type, changed)),
                 removedKeys = state.removedKeys - key,
                 error = null,
             )
@@ -114,7 +120,7 @@ class ProxyEditViewModel(
                 if (field.key == key) field.copy(value = "", present = false) else field
             }
             state.copy(
-                fields = adaptProxyFields(state.type, changed),
+                fields = validateProxyFields(adaptProxyFields(state.type, changed)),
                 removedKeys = state.removedKeys + key,
                 error = null,
             )
@@ -127,7 +133,12 @@ class ProxyEditViewModel(
             if (!current.loading && !current.saving && !current.dirty) onDone()
             return
         }
-        _state.update { it.copy(saving = true, error = null) }
+        val validated = validateProxyFields(current.fields)
+        if (validated.any { it.error != null }) {
+            _state.update { it.copy(fields = validated, error = "Fix the highlighted fields before saving") }
+            return
+        }
+        _state.update { it.copy(fields = validated, saving = true, error = null) }
         viewModelScope.launch {
             try {
                 val profile = profiles.getById(route.profileId)
@@ -171,6 +182,35 @@ class ProxyEditViewModel(
             }
         }
     }
+}
+
+/**
+ * Catches the mistakes that are easiest to correct in a form. The native
+ * validator still remains authoritative for protocol-specific combinations;
+ * these checks only prevent a user from submitting an obviously unusable
+ * value and then having to decipher an engine error.
+ */
+internal fun validateProxyFields(fields: List<ProxyEditField>): List<ProxyEditField> = fields.map { field ->
+    val value = field.value.trim()
+    val error = when {
+        field.required && value.isEmpty() -> "Required"
+        field.kind == ProxyEditFieldKind.Number && value.isNotEmpty() && value.toLongOrNull() == null ->
+            "Enter a whole number"
+        field.key == "port" && value.isNotEmpty() && value.toIntOrNull()?.let { it !in 1..65_535 } == true ->
+            "Port must be between 1 and 65535"
+        field.key in setOf("ports", "mport") && value.isNotEmpty() && !isValidPortRange(value) ->
+            "Use a port or range such as 443-8443"
+        else -> null
+    }
+    field.copy(error = error)
+}
+
+private fun isValidPortRange(value: String): Boolean {
+    val parts = value.split('-', limit = 2).map(String::trim)
+    if (parts.size !in 1..2) return false
+    val start = parts[0].toIntOrNull() ?: return false
+    val end = parts.getOrNull(1)?.let { it.toIntOrNull() ?: return false } ?: start
+    return start in 1..65_535 && end in 1..65_535 && start <= end
 }
 
 private data class ProxyFieldSpec(
