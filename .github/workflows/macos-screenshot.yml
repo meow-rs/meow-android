@@ -25,7 +25,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android
+          targets: x86_64-linux-android
 
       - name: Cargo cache
         uses: actions/cache@v4
@@ -35,14 +35,14 @@ jobs:
             ~/.cargo/git
             ~/.cargo/bin/cargo-ndk
             core/src/main/rust/meow-android-ffi/target
-          key: cargo-${{ runner.os }}-arm64-screenshot-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-arm64-screenshot-
+          key: cargo-${{ runner.os }}-x86_64-screenshot-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-x86_64-screenshot-
 
       - name: Install Android NDK
         run: |
           echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "emulator" "platform-tools" "platforms;android-35" \
-            "system-images;android-35;google_apis;arm64-v8a" \
+            "system-images;android-35;google_apis;x86_64" \
             "ndk;28.2.13676358" "ndk;27.0.12077973"
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
@@ -55,15 +55,15 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build arm64 debug APK for the emulator
-        run: ./gradlew :mobile:assembleDebug -PTARGET_ABI=arm64 -PCARGO_PROFILE=debug
+      - name: Build x86_64 debug APK for the emulator
+        run: ./gradlew :mobile:assembleDebug -PTARGET_ABI=x86_64 -PCARGO_PROFILE=debug
 
       - name: Boot emulator and capture Proxy Servers
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
