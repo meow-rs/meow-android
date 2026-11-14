@@ -25,7 +25,9 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-linux-android
+          # macos-latest is Apple Silicon. Build the ABI that its emulator
+          # can execute natively; x86_64 system images time out on this host.
+          targets: aarch64-linux-android
 
       - name: Cargo cache
         uses: actions/cache@v4
@@ -35,14 +37,14 @@ jobs:
             ~/.cargo/git
             ~/.cargo/bin/cargo-ndk
             core/src/main/rust/meow-android-ffi/target
-          key: cargo-${{ runner.os }}-x86_64-screenshot-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-x86_64-screenshot-
+          key: cargo-${{ runner.os }}-arm64-screenshot-${{ hashFiles('core/src/main/rust/**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-arm64-screenshot-
 
       - name: Install Android NDK
         run: |
           echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "emulator" "platform-tools" "platforms;android-35" \
-            "system-images;android-35;google_apis;x86_64" \
+            "system-images;android-35;google_apis;arm64-v8a" \
             "ndk;28.2.13676358" "ndk;27.0.12077973"
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
@@ -51,7 +53,13 @@ jobs:
           command -v cargo-ndk || cargo install cargo-ndk
           SS_VERSION=1.25.0
           mkdir -p "$HOME/.cargo/bin"
-          curl -fsSL "https://github.com/shadowsocks/shadowsocks-rust/releases/download/v${SS_VERSION}/shadowsocks-v${SS_VERSION}.x86_64-apple-darwin.tar.xz" \
+          HOST_ARCH="$(uname -m)"
+          case "$HOST_ARCH" in
+            arm64|aarch64) SS_TARGET="aarch64-apple-darwin" ;;
+            x86_64) SS_TARGET="x86_64-apple-darwin" ;;
+            *) echo "Unsupported macOS architecture: $HOST_ARCH" >&2; exit 1 ;;
+          esac
+          curl -fsSL "https://github.com/shadowsocks/shadowsocks-rust/releases/download/v${SS_VERSION}/shadowsocks-v${SS_VERSION}.${SS_TARGET}.tar.xz" \
             | tar -xJ -C "$HOME/.cargo/bin" ssserver
           chmod +x "$HOME/.cargo/bin/ssserver"
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
@@ -59,15 +67,15 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build x86_64 debug APK for the emulator
-        run: ./gradlew :mobile:assembleDebug -PTARGET_ABI=x86_64 -PCARGO_PROFILE=debug
+      - name: Build arm64 debug APK for the emulator
+        run: ./gradlew :mobile:assembleDebug -PTARGET_ABI=arm64 -PCARGO_PROFILE=debug
 
       - name: Boot emulator and capture Proxy Servers
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
-          arch: x86_64
+          arch: arm64-v8a
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
