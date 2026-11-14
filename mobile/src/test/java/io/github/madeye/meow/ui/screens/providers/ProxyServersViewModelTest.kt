@@ -283,6 +283,27 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `hysteria2 multiplex port and unknown credentials get mature controls`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Hysteria
+                type: hysteria2
+                server: edge.example
+                port: 443
+                mport: 35000-39000
+                password: secret
+                new-secret-token: hidden
+            """.trimIndent(),
+            "Hysteria",
+        )!!
+
+        assertEquals("35000-39000", parsed.fields.first { it.key == "mport" }.value)
+        assertEquals("Endpoint", parsed.fields.first { it.key == "mport" }.section)
+        assertTrue(parsed.fields.first { it.key == "new-secret-token" }.sensitive)
+    }
+
+    @Test
     fun `inline proxies become a visible profile card while builtins are hidden`() {
         val result = ProxiesResult(
             groups = emptyMap(),

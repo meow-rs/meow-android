@@ -292,6 +292,7 @@ private fun proxyFieldSpecs(type: String, existing: Map<String, ParsedValue>): L
     ) + muxSpecs(muxRoot)
     "hysteria2" -> endpointSpecs(withDialer = false, udpDefault = true) + listOf(
         text("ports", "Port hopping range", "Endpoint"),
+        text("mport", "Multiplex port range", "Endpoint"),
         text("password", "Password", "Authentication", sensitive = true),
         text("up", "Upload limit", "QUIC"),
         text("down", "Download limit", "QUIC"),
@@ -455,6 +456,7 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
                         label = parsed.path,
                         section = "Advanced",
                         present = true,
+                        sensitive = isSensitivePath(parsed.path),
                     ),
                 )
             }
@@ -599,6 +601,23 @@ private fun normalizeFieldValue(value: String, kind: ProxyEditFieldKind): String
     }
     else -> value
 }
+
+/** Keep credentials hidden even when a newer engine key falls into Advanced. */
+private fun isSensitivePath(path: String): Boolean =
+    path.split('.', '-', '_').any {
+        it.lowercase() in setOf(
+            "password",
+            "passwd",
+            "psk",
+            "secret",
+            "token",
+            "uuid",
+            "private",
+            "credential",
+            "credentials",
+            "authorization",
+        )
+    }
 
 /** Replaces existing paths and adds only optional fields the user touched. */
 internal fun replaceProxyEntry(
