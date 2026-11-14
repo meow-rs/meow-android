@@ -92,7 +92,7 @@ jobs:
           # enough time for the first boot.
           emulator-options: >-
             -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-            -no-snapshot -accel off -qemu -accel tcg,thread=multi
+            -no-snapshot -accel off -feature -Vulkan
           emulator-boot-timeout: 1200
           disable-animations: true
           # The action executes each physical script line in its own shell.
