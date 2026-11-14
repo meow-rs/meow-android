@@ -90,6 +90,8 @@ import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsTipsDialog
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.providers.ProxyServersScreen
 import io.github.madeye.meow.ui.screens.providers.ProxyServersViewModel
+import io.github.madeye.meow.ui.screens.providers.ProxyEditScreen
+import io.github.madeye.meow.ui.screens.providers.ProxyEditViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesScreen
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsEvent
@@ -265,7 +267,13 @@ private fun MeowNavHost(
                 onBack = navController::popBackStack,
             )
         }
-        composable<Dest.ProxyServers> { ProxyServersRoute(onBack = navController::popBackStack) }
+        composable<Dest.ProxyServers> {
+            ProxyServersRoute(
+                onBack = navController::popBackStack,
+                onEditProfile = { profileId, name -> navController.navigate(Dest.ProxyEdit(profileId, name)) },
+            )
+        }
+        composable<Dest.ProxyEdit> { ProxyEditRoute(onBack = navController::popBackStack) }
         composable<Dest.PerAppProxy> {
             PerAppProxyRoute(snackbarHost = snackbarHost, onBack = navController::popBackStack)
         }
@@ -1202,7 +1210,7 @@ private fun RulesRoute(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ProxyServersRoute(onBack: () -> Unit) {
+private fun ProxyServersRoute(onBack: () -> Unit, onEditProfile: (Long, String) -> Unit) {
     val viewModel: ProxyServersViewModel = viewModel(factory = AppGraph.viewModelFactory)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -1216,6 +1224,33 @@ private fun ProxyServersRoute(onBack: () -> Unit) {
             onRetry = viewModel::load,
             onHealthCheck = viewModel::healthCheck,
             onTestNode = viewModel::testNode,
+            onEditProfile = onEditProfile,
+        )
+    }
+}
+
+@Composable
+private fun ProxyEditRoute(onBack: () -> Unit) {
+    val viewModel: ProxyEditViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    MeowScaffold(
+        title = state.name,
+        navigationIcon = { BackButton(onBack) },
+        actions = {
+            IconButton(
+                onClick = { viewModel.save(onBack) },
+                enabled = state.dirty && !state.saving,
+                modifier = Modifier.testTag("proxy_edit_save"),
+            ) {
+                Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.common_save))
+            }
+        },
+    ) { padding ->
+        ProxyEditScreen(
+            state = state,
+            contentPadding = padding,
+            onChange = viewModel::update,
         )
     }
 }

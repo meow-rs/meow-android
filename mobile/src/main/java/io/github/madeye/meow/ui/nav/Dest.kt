@@ -73,6 +73,9 @@ sealed interface Dest {
 
     /** [testUrl]: the health-check URL of the group the node was opened from, if it has one. */
     @Serializable data class ProxyDetail(val name: String, val testUrl: String? = null) : Dest
+
+    /** Editor for a proxy entry in a local profile. */
+    @Serializable data class ProxyEdit(val profileId: Long, val name: String) : Dest
 }
 
 data class TabDestination(

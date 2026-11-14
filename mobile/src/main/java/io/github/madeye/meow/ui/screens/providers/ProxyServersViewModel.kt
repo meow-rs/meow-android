@@ -9,6 +9,7 @@ import io.github.madeye.meow.api.Proxy
 import io.github.madeye.meow.api.ProxiesResult
 import io.github.madeye.meow.api.ProxyProvider
 import io.github.madeye.meow.api.ProxyProviderNode
+import io.github.madeye.meow.repo.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,12 +53,17 @@ data class ProxyServerProviderUi(
 @Immutable
 data class ProxyServersUiState(
     val providers: List<ProxyServerProviderUi> = emptyList(),
+    /** The selected local profile can be edited from the inline proxy card. */
+    val editableProfileId: Long? = null,
     val loading: Boolean = false,
     val failed: Boolean = false,
 )
 
 /** Loads both configured provider nodes and inline `proxies:` nodes. */
-class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
+class ProxyServersViewModel(
+    private val api: MeowApi,
+    private val profiles: ProfileRepository,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(ProxyServersUiState())
     val uiState: StateFlow<ProxyServersUiState> = _state.asStateFlow()
@@ -70,16 +76,18 @@ class ProxyServersViewModel(private val api: MeowApi) : ViewModel() {
         if (_state.value.loading) return
         _state.update { it.copy(loading = true, failed = false) }
         viewModelScope.launch {
-            val (inline, providers) = supervisorScope {
+            val (inline, providers, selectedProfile) = supervisorScope {
                 val inline = async { read("inline proxies") { api.proxies() } }
                 val providers = async { read("proxy providers") { api.proxyProviders() } }
-                inline.await() to providers.await()
+                val selectedProfile = async { profiles.getSelected() }
+                Triple(inline.await(), providers.await(), selectedProfile.await())
             }
             if (inline == null && providers == null) {
                 _state.update { it.copy(loading = false, failed = true) }
             } else {
                 _state.value = ProxyServersUiState(
                     providers = proxyServerProviders(inline, providers.orEmpty()),
+                    editableProfileId = selectedProfile?.takeIf { it.url.isBlank() }?.id,
                     loading = false,
                 )
             }

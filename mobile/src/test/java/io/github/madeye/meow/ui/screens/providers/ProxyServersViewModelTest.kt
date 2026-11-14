@@ -10,6 +10,37 @@ import org.junit.Test
 class ProxyServersViewModelTest {
 
     @Test
+    fun `local proxy fields can be parsed and replaced without touching other entries`() {
+        val yaml = """
+            proxies:
+              - name: Local SS
+                type: ss
+                server: old.example
+                port: 443
+                password: old-secret
+              - name: Other
+                type: direct
+            rules:
+              - MATCH,Local SS
+        """.trimIndent()
+
+        val parsed = parseProxyEntry(yaml, "Local SS")
+        assertEquals("ss", parsed?.type)
+        assertEquals("old.example", parsed?.fields?.first { it.key == "server" }?.value)
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Local SS",
+            parsed!!.fields.associate { field ->
+                field.key to if (field.key == "server") "new.example" else field.value
+            },
+        )
+        assertTrue(updated!!.contains("server: new.example"))
+        assertTrue(updated.contains("- name: Other"))
+        assertTrue(updated.contains("MATCH,Local SS"))
+    }
+
+    @Test
     fun `inline proxies become a visible profile card while builtins are hidden`() {
         val result = ProxiesResult(
             groups = emptyMap(),

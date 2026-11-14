@@ -255,6 +255,12 @@ sleep 2
 
 info "  Creating database with subscription profile on host..."
 SUB_YAML=$(cat /tmp/test-sub/config.yaml)
+PROFILE_URL="http://$SS_HOST_FROM_EMU:$SUB_PORT/config.yaml"
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+    # The editor is intentionally exercised against a local profile. A
+    # subscription-backed profile remains read-only in the app.
+    PROFILE_URL=""
+fi
 
 # Create a fresh Room database on the host with the correct schema.
 # Schema must match core/schemas/io.github.madeye.meow.database.PrivateDatabase/4.json —
@@ -286,7 +292,7 @@ CREATE TABLE IF NOT EXISTS daily_traffic (
 INSERT INTO clash_profile (name, url, yaml_content, selected, last_updated, tx, rx, selected_proxy, yaml_backup)
 -- last_updated is epoch MILLIseconds (SubscriptionService uses
 -- System.currentTimeMillis()); seeding seconds here rendered as 1970-01-21.
-VALUES ('Test Sub', 'http://$SS_HOST_FROM_EMU:$SUB_PORT/config.yaml', '$(echo "$SUB_YAML" | sed "s/'/''/g")', 1, $(( $(date +%s) * 1000 )), 0, 0, '', '');
+VALUES ('Test Sub', '$PROFILE_URL', '$(echo "$SUB_YAML" | sed "s/'/''/g")', 1, $(( $(date +%s) * 1000 )), 0, 0, '', '');
 DBEOF
 
 info "  Verifying profile..."
@@ -488,6 +494,27 @@ capture_proxy_servers() {
                 fail "Proxy Servers page rendered without the inline proxy"
             fi
             screenshot "06_proxy_servers"
+
+            # Screenshot fixtures use a local profile so the inline node must
+            # expose the edit action. Subscription-backed profiles stay read-only.
+            if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+                local edit_line=""
+                edit_line=$(echo "$page_xml" | tr '>' '\n' | grep -F 'resource-id="proxy_servers_edit_' | head -1 || true)
+                [[ -n "$edit_line" ]] || fail "Local inline proxy edit action not found"
+                tap_bounds "$edit_line" "inline proxy edit"
+                for i in $(seq 1 30); do
+                    "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+                    "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+                    local edit_xml
+                    edit_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+                    if echo "$edit_xml" | grep -q 'resource-id="proxy_edit_name"'; then
+                        screenshot "07_proxy_edit"
+                        return 0
+                    fi
+                    sleep 1
+                done
+                fail "Local inline proxy editor did not render"
+            fi
             return 0
         fi
         sleep 1

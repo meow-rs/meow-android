@@ -45,6 +45,7 @@ import io.github.madeye.meow.ui.nav.Dest
 import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
 import io.github.madeye.meow.ui.screens.providers.ProxyServersViewModel
+import io.github.madeye.meow.ui.screens.providers.ProxyEditViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsViewModel
 import io.github.madeye.meow.ui.screens.statistics.StatisticsViewModel
@@ -166,7 +167,13 @@ object AppGraph {
                 ProxyGroupsViewModel::class.java ->
                     ProxyGroupsViewModel(vpn, profiles, api, analytics, routeChanges)
 
-                ProxyServersViewModel::class.java -> ProxyServersViewModel(api)
+                ProxyServersViewModel::class.java -> ProxyServersViewModel(api, profiles)
+
+                ProxyEditViewModel::class.java -> ProxyEditViewModel(
+                    extras.createSavedStateHandle(),
+                    profiles,
+                    configValidator,
+                )
 
                 ProxyDetailViewModel::class.java -> {
                     val route = extras.createSavedStateHandle().toRoute<Dest.ProxyDetail>()
