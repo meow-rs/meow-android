@@ -23,6 +23,7 @@ SS_METHOD="aes-256-gcm"
 SS_HOST_FROM_EMU="${SS_HOST_FROM_EMU:-10.0.2.2}"
 SS_PORT=8388
 SUB_PORT="${SUB_PORT:-8080}"
+SCREENSHOT_PROXY_SERVERS="${SCREENSHOT_PROXY_SERVERS:-false}"
 
 SSSERVER_PID=""
 HTTPD_PID=""
@@ -115,6 +116,41 @@ info "ssserver running (PID $SSSERVER_PID)"
 # Step 3: Subscription HTTP server
 info "Step 3: Starting subscription HTTP server on port $SUB_PORT ..."
 mkdir -p /tmp/test-sub
+
+# The macOS screenshot job serves one small proxy-provider document alongside
+# the profile. Keeping this fixture behind an opt-in flag leaves the normal
+# end-to-end test focused on subscriptions while making the provider screen
+# deterministic on the hosted runner.
+PROXY_PROVIDER_CONFIG=""
+PROXY_PROVIDER_GROUP=""
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+    cat > /tmp/test-sub/provider.yaml <<PROVIDEREOF
+proxies:
+  - name: Screenshot SS
+    type: ss
+    server: $SS_HOST_FROM_EMU
+    port: $SS_PORT
+    cipher: $SS_METHOD
+    password: $SS_PASSWORD
+PROVIDEREOF
+    PROXY_PROVIDER_CONFIG=$(cat <<PROVIDERCFG
+proxy-providers:
+  screenshot:
+    type: http
+    url: http://$SS_HOST_FROM_EMU:$SUB_PORT/provider.yaml
+    path: ./proxy-providers/screenshot.yaml
+    health-check:
+      enable: false
+PROVIDERCFG
+    )
+    PROXY_PROVIDER_GROUP=$(cat <<PROVIDERGROUP
+    use:
+      - screenshot
+PROVIDERGROUP
+    )
+    info "  Provider fixture enabled at /provider.yaml"
+fi
+
 cat > /tmp/test-sub/config.yaml <<SUBEOF
 mixed-port: 7890
 mode: rule
@@ -132,11 +168,13 @@ proxies:
     port: $SS_PORT
     cipher: $SS_METHOD
     password: $SS_PASSWORD
+$PROXY_PROVIDER_CONFIG
 proxy-groups:
   - name: Proxy
     type: select
     proxies:
       - test-ss
+$PROXY_PROVIDER_GROUP
 rules:
   - MATCH,test-ss
 SUBEOF
@@ -435,6 +473,41 @@ for i in $(seq 1 "${TUN_WAIT_SECS:-60}"); do
 done
 sleep 3   # let the first flows settle once the interface exists
 screenshot "05_vpn_status"
+
+capture_proxy_servers() {
+    [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] || return 0
+
+    info "  Opening Proxy Servers and capturing the provider page..."
+    local row_line=""
+    for i in $(seq 1 30); do
+        "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        local ui_xml
+        ui_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+        row_line=$(echo "$ui_xml" | tr '>' '\n' | grep -F 'text="Proxy Servers"' | head -1 || true)
+        if [[ -n "$row_line" ]]; then
+            tap_bounds "$row_line" "Proxy Servers"
+            break
+        fi
+        sleep 1
+    done
+    [[ -n "$row_line" ]] || fail "Proxy Servers Home entry not found"
+
+    for i in $(seq 1 30); do
+        "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        local page_xml
+        page_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+        if echo "$page_xml" | grep -q 'resource-id="proxy_servers_root"'; then
+            screenshot "06_proxy_servers"
+            return 0
+        fi
+        sleep 1
+    done
+    fail "Proxy Servers page did not render"
+}
+
+capture_proxy_servers
 
 PASS=0
 TOTAL=5

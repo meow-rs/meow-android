@@ -93,6 +93,14 @@
     <string name="proxy_groups_tips_long_press">برای باز کردن جزئیات یک گره و تست جداگانهٔ آن، آن را لمس طولانی کنید:</string>
     <string name="proxy_groups_tips_connect">برای تست‌ها باید VPN وصل باشد.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">سرورهای پروکسی</string>
+    <string name="proxy_servers_empty">‏هیچ سرور پروکسی یافت نشد. VPN را با پروفایلی که ارائه‌دهنده پروکسی دارد وصل کنید.</string>
+    <string name="proxy_servers_no_nodes">‏هیچ گرهی در این ارائه‌دهنده وجود ندارد.</string>
+    <string name="proxy_servers_load_error">‏بارگیری سرورهای پروکسی انجام نشد</string>
+    <string name="proxy_servers_health_check">‏بررسی همه گره‌ها</string>
+    <string name="proxy_servers_test">‏آزمایش گره</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">اشتراک‌ها</string>
     <string name="subs_none">اشتراکی وجود ندارد</string>

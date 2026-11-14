@@ -262,6 +262,57 @@ class MeowApi(
     }
 
     // -------------------------------------------------------------------------
+    // Proxy providers
+    // -------------------------------------------------------------------------
+
+    /** Configured proxy providers and their current node health. */
+    suspend fun proxyProviders(): List<ProxyProvider> {
+        val body = get("/providers/proxies", operation = "proxyProviders")
+        return decode("proxyProviders") {
+            ProxyProvidersResult.parse(json.parseToJsonElement(body).jsonObject).providers
+        }
+    }
+
+    /** Runs the provider's configured health check for every node. */
+    suspend fun healthCheckProxyProvider(name: String) {
+        val request = Request.Builder()
+            .url(
+                baseUrl.newBuilder()
+                    .addPathSegment("providers").addPathSegment("proxies").addPathSegment(name)
+                    .addPathSegment("healthcheck").build(),
+            )
+            .get()
+            .build()
+        // A provider without a health-check answers 204 without probing.
+        execute(request, "healthCheckProxyProvider", okCodes = setOf(200, 204), client = providerUpdateClient)
+    }
+
+    /** Probes one provider node, recording the result in the engine. */
+    suspend fun testProxyProviderDelay(
+        provider: String,
+        name: String,
+        url: String = DELAY_TEST_URL,
+        timeoutMs: Int = GroupDelayTester.PROBE_TIMEOUT_MS,
+        expectedStatus: String? = null,
+    ): Int {
+        val requestUrl = baseUrl.newBuilder()
+            .addPathSegment("providers").addPathSegment("proxies").addPathSegment(provider)
+            .addPathSegment(name).addPathSegment("healthcheck")
+            .addQueryParameter("url", url)
+            .addQueryParameter("timeout", timeoutMs.toString())
+            .apply { if (!expectedStatus.isNullOrBlank()) addQueryParameter("expected", expectedStatus) }
+            .build()
+        val scoped = client.newBuilder()
+            .callTimeout(timeoutMs + 5_000L, TimeUnit.MILLISECONDS)
+            .readTimeout(timeoutMs + 5_000L, TimeUnit.MILLISECONDS)
+            .build()
+        val body = execute(Request.Builder().url(requestUrl).get().build(), "testProxyProviderDelay", client = scoped)
+        return decode("testProxyProviderDelay") {
+            json.parseToJsonElement(body).jsonObject["delay"]?.jsonPrimitive?.intOrNull ?: 0
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Rules / connections / configs
     // -------------------------------------------------------------------------
 

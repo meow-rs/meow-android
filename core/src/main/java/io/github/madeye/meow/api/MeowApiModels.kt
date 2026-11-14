@@ -5,6 +5,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -71,6 +74,88 @@ data class Proxy(
 ) {
     /** Delay of the most recent probe; 0 when never tested or timed out. */
     val latestDelay: Int get() = history.lastOrNull()?.delay ?: 0
+}
+
+/** One node listed by a proxy provider (`/providers/proxies`). */
+data class ProxyProviderNode(
+    val name: String,
+    val type: String,
+    val alive: Boolean,
+    val delay: Int?,
+    val history: List<ProxyHistory>,
+) {
+    /** Last successful delay, or the most recent history value on older engines. */
+    val latestDelay: Int?
+        get() = delay ?: history.lastOrNull()?.delay?.takeIf { it > 0 }
+
+    /** A probe has run and the most recent result was a timeout/failure. */
+    val timedOut: Boolean
+        get() = history.isNotEmpty() && history.last().delay <= 0
+
+    companion object {
+        internal fun parse(json: JsonObject): ProxyProviderNode = ProxyProviderNode(
+            name = json.string("name"),
+            type = json.string("type"),
+            alive = json["alive"]?.jsonPrimitive?.booleanOrNull ?: false,
+            delay = json["delay"]?.jsonPrimitive?.intOrNull,
+            history = json.historyList(),
+        )
+    }
+}
+
+/** Subscription quota reported by a proxy provider's response headers. */
+data class ProxyProviderUsage(
+    val upload: Long = 0,
+    val download: Long = 0,
+    val total: Long = 0,
+    val expire: Long = 0,
+)
+
+/** A configured proxy provider and its current nodes. */
+data class ProxyProvider(
+    val name: String,
+    val vehicleType: String,
+    val nodes: List<ProxyProviderNode>,
+    val testUrl: String,
+    val expectedStatus: String,
+    val updatedAt: String?,
+    val usage: ProxyProviderUsage?,
+)
+
+data class ProxyProvidersResult(val providers: List<ProxyProvider>) {
+    companion object {
+        fun parse(root: JsonObject): ProxyProvidersResult {
+            val raw = root["providers"]?.asObjectOrNull() ?: JsonObject(emptyMap())
+            val providers = raw.mapNotNull { (key, element) ->
+                val data = element.asObjectOrNull() ?: return@mapNotNull null
+                val usage = data["subscriptionInfo"]?.asObjectOrNull()?.let { info ->
+                    ProxyProviderUsage(
+                        upload = info["Upload"]?.jsonPrimitive?.longOrNull ?: 0,
+                        download = info["Download"]?.jsonPrimitive?.longOrNull ?: 0,
+                        total = info["Total"]?.jsonPrimitive?.longOrNull ?: 0,
+                        expire = info["Expire"]?.jsonPrimitive?.longOrNull ?: 0,
+                    )
+                }
+                ProxyProvider(
+                    name = data.string("name").ifEmpty { key },
+                    vehicleType = data.string("vehicleType"),
+                    nodes = data["proxies"]?.let { value ->
+                        runCatching {
+                            value.jsonArray.mapNotNull { it.asObjectOrNull()?.let(ProxyProviderNode::parse) }
+                        }.getOrDefault(emptyList())
+                    }.orEmpty(),
+                    testUrl = data.string("testUrl"),
+                    expectedStatus = data.string("expectedStatus"),
+                    updatedAt = data["updatedAt"]?.jsonPrimitive?.contentOrNull,
+                    usage = usage,
+                )
+            }.sortedWith(
+                compareBy<ProxyProvider, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+                    .thenBy { it.name },
+            )
+            return ProxyProvidersResult(providers)
+        }
+    }
 }
 
 /** One proxy or group as `GET /proxies/{name}` describes it. */

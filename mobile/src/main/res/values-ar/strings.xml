@@ -97,6 +97,14 @@
     <string name="proxy_groups_tips_long_press">اضغط مطولًا على عقدة لفتح تفاصيلها واختبارها بمفردها:</string>
     <string name="proxy_groups_tips_connect">تتطلب الاختبارات اتصال VPN.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">خوادم البروكسي</string>
+    <string name="proxy_servers_empty">لم يتم العثور على خوادم بروكسي. صِل VPN بملف يعرّف موفري البروكسي.</string>
+    <string name="proxy_servers_no_nodes">لا توجد عقد في موفر الخدمة هذا.</string>
+    <string name="proxy_servers_load_error">تعذر تحميل خوادم البروكسي</string>
+    <string name="proxy_servers_health_check">فحص كل العقد</string>
+    <string name="proxy_servers_test">اختبار العقدة</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">الاشتراكات</string>
     <string name="subs_none">لا توجد اشتراكات</string>

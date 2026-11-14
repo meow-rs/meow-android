@@ -85,6 +85,14 @@
     <string name="proxy_groups_tips_long_press">Нажмите и удерживайте узел, чтобы открыть подробности и проверить только его:</string>
     <string name="proxy_groups_tips_connect">Для тестов нужно подключение VPN.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">Прокси-серверы</string>
+    <string name="proxy_servers_empty">Прокси-серверы не найдены. Подключите VPN с профилем, в котором настроены провайдеры прокси.</string>
+    <string name="proxy_servers_no_nodes">У этого провайдера нет узлов.</string>
+    <string name="proxy_servers_load_error">Не удалось загрузить прокси-серверы</string>
+    <string name="proxy_servers_health_check">Проверить все узлы</string>
+    <string name="proxy_servers_test">Проверить узел</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">Подписки</string>
     <string name="subs_none">Нет подписок</string>

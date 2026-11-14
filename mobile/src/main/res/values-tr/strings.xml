@@ -85,6 +85,14 @@
     <string name="proxy_groups_tips_long_press">Ayrıntılarını açmak ve yalnızca onu test etmek için bir düğüme uzun basın:</string>
     <string name="proxy_groups_tips_connect">Testler için VPN bağlı olmalıdır.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">Proxy Sunucuları</string>
+    <string name="proxy_servers_empty">Proxy sunucusu bulunamadı. Proxy sağlayıcıları tanımlayan bir profille VPN’e bağlanın.</string>
+    <string name="proxy_servers_no_nodes">Bu sağlayıcıda düğüm yok.</string>
+    <string name="proxy_servers_load_error">Proxy sunucuları yüklenemedi</string>
+    <string name="proxy_servers_health_check">Tüm düğümleri denetle</string>
+    <string name="proxy_servers_test">Düğümü test et</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">Abonelikler</string>
     <string name="subs_none">Abonelik yok</string>
