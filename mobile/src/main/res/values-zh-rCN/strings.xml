@@ -85,6 +85,15 @@
     <string name="proxy_groups_tips_long_press">长按节点：打开节点详情，单独测试该节点：</string>
     <string name="proxy_groups_tips_connect">测试需要先连接 VPN。</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">代理服务器</string>
+    <string name="proxy_servers_inline_title">配置中的代理</string>
+    <string name="proxy_servers_empty">未找到代理服务器。请连接包含内联代理或代理提供商的配置。</string>
+    <string name="proxy_servers_no_nodes">此提供商没有节点。</string>
+    <string name="proxy_servers_load_error">代理服务器加载失败</string>
+    <string name="proxy_servers_health_check">检查所有节点</string>
+    <string name="proxy_servers_test">测试节点</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">订阅管理</string>
     <string name="subs_none">暂无订阅</string>
@@ -360,4 +369,11 @@
     <plurals name="perapp_selected">
         <item quantity="other">已选 %1$d 个</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">搜索服务器…</string>
+    <string name="proxy_servers_clear_search">清除服务器搜索</string>
+    <string name="proxy_servers_no_matches">没有匹配的代理服务器。</string>
+    <string name="proxy_servers_node_count">%1$d 个节点</string>
+    <string name="proxy_edit_discard_changes">放弃未保存的更改？</string>
 </resources>

@@ -96,6 +96,15 @@
     <string name="proxy_groups_tips_long_press">Long-press a node to open its details and test it on its own:</string>
     <string name="proxy_groups_tips_connect">Tests need the VPN connected.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">Proxy Servers</string>
+    <string name="proxy_servers_inline_title">Profile proxies</string>
+    <string name="proxy_servers_empty">No proxy servers found. Connect the VPN with a profile that defines inline proxies or proxy providers.</string>
+    <string name="proxy_servers_no_nodes">No nodes in this provider.</string>
+    <string name="proxy_servers_load_error">Failed to load proxy servers</string>
+    <string name="proxy_servers_health_check">Check all nodes</string>
+    <string name="proxy_servers_test">Test node</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">Subscriptions</string>
     <string name="subs_none">No subscriptions</string>
@@ -381,4 +390,11 @@
         <item quantity="one">%1$d selected</item>
         <item quantity="other">%1$d selected</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">Search servers…</string>
+    <string name="proxy_servers_clear_search">Clear server search</string>
+    <string name="proxy_servers_no_matches">No matching proxy servers.</string>
+    <string name="proxy_servers_node_count">%1$d nodes</string>
+    <string name="proxy_edit_discard_changes">Discard unsaved changes?</string>
 </resources>

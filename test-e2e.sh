@@ -23,6 +23,11 @@ SS_METHOD="aes-256-gcm"
 SS_HOST_FROM_EMU="${SS_HOST_FROM_EMU:-10.0.2.2}"
 SS_PORT=8388
 SUB_PORT="${SUB_PORT:-8080}"
+SCREENSHOT_PROXY_SERVERS="${SCREENSHOT_PROXY_SERVERS:-false}"
+# Optional real profile used by the screenshot job. Keeping this opt-in means
+# the normal offline E2E fixture remains deterministic, while a review run can
+# exercise the exact public Clash YAML supplied with the feature request.
+SCREENSHOT_PROFILE_URL="${SCREENSHOT_PROFILE_URL:-}"
 
 SSSERVER_PID=""
 HTTPD_PID=""
@@ -91,8 +96,9 @@ wait_for_boot() {
 
 screenshot() {
     local name="$1"
-    "$ADB" shell screencap -p //sdcard/screen_${name}.png 2>/dev/null || true
-    "$ADB" pull //sdcard/screen_${name}.png "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
+    # Stream the PNG directly like the dedicated Claude screenshot harnesses;
+    # this avoids stale /sdcard files and a second adb pull operation.
+    "$ADB" exec-out screencap -p > "$SCRIPT_DIR/screen_${name}.png" 2>/dev/null || true
     info "  Screenshot saved: screen_${name}.png"
 }
 
@@ -115,6 +121,25 @@ info "ssserver running (PID $SSSERVER_PID)"
 # Step 3: Subscription HTTP server
 info "Step 3: Starting subscription HTTP server on port $SUB_PORT ..."
 mkdir -p /tmp/test-sub
+
+# The macOS screenshot job adds a named inline node so the screenshot covers
+# profiles that use top-level `proxies:` without any `proxy-providers:` map.
+# Keeping it behind an opt-in flag leaves the normal end-to-end test focused on
+# subscriptions while making the Proxy Servers page deterministic.
+SCREENSHOT_INLINE_PROXY=""
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" && -z "$SCREENSHOT_PROFILE_URL" ]]; then
+    SCREENSHOT_INLINE_PROXY=$(cat <<INLINEPROXY
+  - name: Screenshot Inline SS
+    type: ss
+    server: $SS_HOST_FROM_EMU
+    port: $SS_PORT
+    cipher: $SS_METHOD
+    password: $SS_PASSWORD
+INLINEPROXY
+    )
+    info "  Inline proxy fixture enabled"
+fi
+
 cat > /tmp/test-sub/config.yaml <<SUBEOF
 mixed-port: 7890
 mode: rule
@@ -132,6 +157,7 @@ proxies:
     port: $SS_PORT
     cipher: $SS_METHOD
     password: $SS_PASSWORD
+$SCREENSHOT_INLINE_PROXY
 proxy-groups:
   - name: Proxy
     type: select
@@ -233,6 +259,20 @@ sleep 2
 
 info "  Creating database with subscription profile on host..."
 SUB_YAML=$(cat /tmp/test-sub/config.yaml)
+PROFILE_URL="http://$SS_HOST_FROM_EMU:$SUB_PORT/config.yaml"
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+    # The editor is intentionally exercised against a local profile. A
+    # subscription-backed profile remains read-only in the app. When a review
+    # URL is provided, its downloaded YAML is still stored as a local profile
+    # so the same edit affordance is tested without changing the source URL.
+    PROFILE_URL=""
+fi
+
+if [[ -n "$SCREENSHOT_PROFILE_URL" ]]; then
+    info "  Downloading screenshot profile from configured review URL"
+    SUB_YAML=$(curl -fsSL --max-time 45 "$SCREENSHOT_PROFILE_URL") ||
+        fail "Screenshot profile download failed"
+fi
 
 # Create a fresh Room database on the host with the correct schema.
 # Schema must match core/schemas/io.github.madeye.meow.database.PrivateDatabase/4.json —
@@ -264,7 +304,7 @@ CREATE TABLE IF NOT EXISTS daily_traffic (
 INSERT INTO clash_profile (name, url, yaml_content, selected, last_updated, tx, rx, selected_proxy, yaml_backup)
 -- last_updated is epoch MILLIseconds (SubscriptionService uses
 -- System.currentTimeMillis()); seeding seconds here rendered as 1970-01-21.
-VALUES ('Test Sub', 'http://$SS_HOST_FROM_EMU:$SUB_PORT/config.yaml', '$(echo "$SUB_YAML" | sed "s/'/''/g")', 1, $(( $(date +%s) * 1000 )), 0, 0, '', '');
+VALUES ('Test Sub', '$PROFILE_URL', '$(echo "$SUB_YAML" | sed "s/'/''/g")', 1, $(( $(date +%s) * 1000 )), 0, 0, '', '');
 DBEOF
 
 info "  Verifying profile..."
@@ -435,6 +475,66 @@ for i in $(seq 1 "${TUN_WAIT_SECS:-60}"); do
 done
 sleep 3   # let the first flows settle once the interface exists
 screenshot "05_vpn_status"
+
+capture_proxy_servers() {
+    [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] || return 0
+
+    info "  Opening Proxy Servers and capturing the provider page..."
+    local row_line=""
+    for i in $(seq 1 30); do
+        "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        local ui_xml
+        ui_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+        row_line=$(echo "$ui_xml" | tr '>' '\n' | grep -F 'text="Proxy Servers"' | head -1 || true)
+        if [[ -n "$row_line" ]]; then
+            tap_bounds "$row_line" "Proxy Servers"
+            break
+        fi
+        sleep 1
+    done
+    [[ -n "$row_line" ]] || fail "Proxy Servers Home entry not found"
+
+    for i in $(seq 1 30); do
+        "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        local page_xml
+        page_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+        if echo "$page_xml" | grep -q 'resource-id="proxy_servers_root"'; then
+            if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] &&
+               ! echo "$page_xml" | grep -q 'resource-id="proxy_servers_test_'; then
+                fail "Proxy Servers page rendered without any testable proxy"
+            fi
+            screenshot "06_proxy_servers"
+
+            # Screenshot fixtures use a local profile so the inline node must
+            # expose the edit action. Subscription-backed profiles stay read-only.
+            if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+                local edit_line=""
+                edit_line=$(echo "$page_xml" | tr '>' '\n' | grep -F 'resource-id="proxy_servers_edit_' | head -1 || true)
+                [[ -n "$edit_line" ]] || fail "Local inline proxy edit action not found"
+                tap_bounds "$edit_line" "inline proxy edit"
+                for i in $(seq 1 30); do
+                    "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+                    "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+                    local edit_xml
+                    edit_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+                    if echo "$edit_xml" | grep -q 'resource-id="proxy_edit_name"'; then
+                        screenshot "07_proxy_edit"
+                        return 0
+                    fi
+                    sleep 1
+                done
+                fail "Local inline proxy editor did not render"
+            fi
+            return 0
+        fi
+        sleep 1
+    done
+    fail "Proxy Servers page did not render"
+}
+
+capture_proxy_servers
 
 PASS=0
 TOTAL=5

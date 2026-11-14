@@ -2,6 +2,7 @@ package io.github.madeye.meow.ui
 
 import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +91,10 @@ import io.github.madeye.meow.ui.screens.proxies.ProxyDetailViewModel
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsScreen
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsTipsDialog
 import io.github.madeye.meow.ui.screens.proxies.ProxyGroupsViewModel
+import io.github.madeye.meow.ui.screens.providers.ProxyServersScreen
+import io.github.madeye.meow.ui.screens.providers.ProxyServersViewModel
+import io.github.madeye.meow.ui.screens.providers.ProxyEditScreen
+import io.github.madeye.meow.ui.screens.providers.ProxyEditViewModel
 import io.github.madeye.meow.ui.screens.rules.RulesScreen
 import io.github.madeye.meow.ui.screens.rules.RulesViewModel
 import io.github.madeye.meow.ui.screens.settings.SettingsEvent
@@ -218,6 +225,7 @@ private fun MeowNavHost(
                 onOpenSubscriptions = {
                     navController.navigate(Dest.Subscriptions) { launchSingleTop = true }
                 },
+                onProxyServers = { navController.navigate(Dest.ProxyServers) },
                 onRules = { navController.navigate(Dest.Rules()) },
                 onOpenTraffic = { route -> navController.navigate(route) },
                 bottomBar = { BottomBar(navController, onTab) },
@@ -262,6 +270,13 @@ private fun MeowNavHost(
                 onBack = navController::popBackStack,
             )
         }
+        composable<Dest.ProxyServers> {
+            ProxyServersRoute(
+                onBack = navController::popBackStack,
+                onEditProfile = { profileId, name -> navController.navigate(Dest.ProxyEdit(profileId, name)) },
+            )
+        }
+        composable<Dest.ProxyEdit> { ProxyEditRoute(onBack = navController::popBackStack) }
         composable<Dest.PerAppProxy> {
             PerAppProxyRoute(snackbarHost = snackbarHost, onBack = navController::popBackStack)
         }
@@ -380,6 +395,7 @@ private fun HomeRoute(
     snackbarHost: SnackbarHostState,
     autoConnect: Boolean,
     onOpenSubscriptions: () -> Unit,
+    onProxyServers: () -> Unit,
     onRules: () -> Unit,
     onOpenTraffic: (Dest) -> Unit,
     bottomBar: @Composable () -> Unit,
@@ -465,6 +481,7 @@ private fun HomeRoute(
             exitNat = exitNatState,
             onRefreshExitIp = exitIp::refresh,
             onOpenSubscriptions = onOpenSubscriptions,
+            onProxyServers = onProxyServers,
             onRules = onRules,
             topTraffic = topTrafficState,
             appIcon = AppGraph.installedApps::icon,
@@ -1191,6 +1208,78 @@ private fun RulesRoute(onBack: () -> Unit) {
             contentPadding = padding,
             onQueryChange = viewModel::onQueryChange,
             onRetry = viewModel::load,
+        )
+    }
+}
+
+@Composable
+private fun ProxyServersRoute(onBack: () -> Unit, onEditProfile: (Long, String) -> Unit) {
+    val viewModel: ProxyServersViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    MeowScaffold(
+        title = stringResource(R.string.proxy_servers_title),
+        navigationIcon = { BackButton(onBack) },
+    ) { padding ->
+        ProxyServersScreen(
+            state = state,
+            contentPadding = padding,
+            onRetry = viewModel::load,
+            onQueryChange = viewModel::setQuery,
+            onHealthCheck = viewModel::healthCheck,
+            onTestNode = viewModel::testNode,
+            onEditProfile = onEditProfile,
+        )
+    }
+}
+
+@Composable
+private fun ProxyEditRoute(onBack: () -> Unit) {
+    val viewModel: ProxyEditViewModel = viewModel(factory = AppGraph.viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var confirmDiscard by remember { mutableStateOf(false) }
+
+    fun requestBack() {
+        if (state.dirty) confirmDiscard = true else onBack()
+    }
+
+    BackHandler(enabled = state.dirty) { confirmDiscard = true }
+
+    MeowScaffold(
+        title = state.name,
+        navigationIcon = { BackButton(::requestBack) },
+        actions = {
+            IconButton(
+                onClick = { viewModel.save(onBack) },
+                enabled = state.dirty && !state.saving,
+                modifier = Modifier.testTag("proxy_edit_save"),
+            ) {
+                Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.common_save))
+            }
+        },
+    ) { padding ->
+        ProxyEditScreen(
+            state = state,
+            contentPadding = padding,
+            onChange = viewModel::update,
+            onRemove = viewModel::remove,
+        )
+    }
+
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.proxy_edit_discard_changes)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDiscard = false; onBack() }) {
+                    Text(stringResource(R.string.common_discard))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDiscard = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
         )
     }
 }
