@@ -8,6 +8,7 @@ import androidx.navigation.toRoute
 import io.github.madeye.meow.repo.ConfigValidator
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.ui.nav.Dest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +44,11 @@ data class ProxyEditUiState(
     val saving: Boolean = false,
     val error: String? = null,
 ) {
-    val dirty: Boolean get() = fields != initialFields
+    // Keep deletion tombstones in the dirty calculation.  A field that was
+    // already hidden by a capability switch can still have an explicit
+    // removal pending, and dropping that bit would make Save silently do
+    // nothing.
+    val dirty: Boolean get() = fields != initialFields || removedKeys.isNotEmpty()
 }
 
 /** Edits one proxy in a local profile. Subscription profiles remain read-only. */
@@ -101,6 +106,10 @@ class ProxyEditViewModel(
     fun remove(key: String) {
         _state.update { state ->
             if (state.saving) return@update state
+            // Required fields are deliberately not removable. The UI hides
+            // their delete affordance, but keep the invariant in the
+            // ViewModel for callers that invoke it directly.
+            if (state.fields.firstOrNull { it.key == key }?.required == true) return@update state
             val changed = state.fields.map { field ->
                 if (field.key == key) field.copy(value = "", present = false) else field
             }
@@ -120,36 +129,46 @@ class ProxyEditViewModel(
         }
         _state.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            val profile = profiles.getById(route.profileId)
-            if (profile == null || profile.url.isNotBlank()) {
-                _state.update { it.copy(saving = false, error = "Only local profiles can be edited") }
-                return@launch
+            try {
+                val profile = profiles.getById(route.profileId)
+                if (profile == null || profile.url.isNotBlank()) {
+                    _state.update { it.copy(saving = false, error = "Only local profiles can be edited") }
+                    return@launch
+                }
+                // Read the state after the repository lookup. Editing is disabled
+                // while saving, so this snapshot includes the complete set of
+                // removal tombstones and field values that will be validated.
+                val latest = _state.value
+                val fields = latest.fields
+                val updated = replaceProxyEntry(
+                    yaml = profile.yamlContent,
+                    name = route.name,
+                    fields = fields.associate { it.key to it.value },
+                    kinds = fields.associate { it.key to it.kind },
+                    presence = fields.associate { it.key to it.present },
+                    removed = latest.removedKeys + fields.filter { !it.present }.mapTo(mutableSetOf()) { it.key },
+                )
+                if (updated == null) {
+                    _state.update { it.copy(saving = false, error = "Proxy entry is unavailable") }
+                    return@launch
+                }
+                val validationError = validator.validate(updated)
+                if (validationError != null) {
+                    _state.update { it.copy(saving = false, error = validationError) }
+                    return@launch
+                }
+                profiles.updateYaml(route.profileId, updated)
+                _state.update { it.copy(saving = false, initialFields = it.fields, removedKeys = emptySet()) }
+                onDone()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A Room/config-reload failure must return the editor to an
+                // actionable state instead of leaving Save disabled forever.
+                _state.update {
+                    it.copy(saving = false, error = e.message?.takeIf(String::isNotBlank) ?: "Could not save proxy")
+                }
             }
-            // Read the state after the repository lookup. Editing is disabled
-            // while saving, so this snapshot includes the complete set of
-            // removal tombstones and field values that will be validated.
-            val latest = _state.value
-            val fields = latest.fields
-            val updated = replaceProxyEntry(
-                yaml = profile.yamlContent,
-                name = route.name,
-                fields = fields.associate { it.key to it.value },
-                kinds = fields.associate { it.key to it.kind },
-                presence = fields.associate { it.key to it.present },
-                removed = latest.removedKeys + fields.filter { !it.present }.mapTo(mutableSetOf()) { it.key },
-            )
-            if (updated == null) {
-                _state.update { it.copy(saving = false, error = "Proxy entry is unavailable") }
-                return@launch
-            }
-            val validationError = validator.validate(updated)
-            if (validationError != null) {
-                _state.update { it.copy(saving = false, error = validationError) }
-                return@launch
-            }
-            profiles.updateYaml(route.profileId, updated)
-            _state.update { it.copy(saving = false, initialFields = it.fields, removedKeys = emptySet()) }
-            onDone()
         }
     }
 }
@@ -517,6 +536,10 @@ private fun proxyFieldSpecs(
         portRequired = hysteriaPortRequired,
     ) + listOf(
         text("ports", "Port hopping range", "Endpoint"),
+        // mihomo profiles in the wild use `mport` as an alias for the same
+        // hopping range. Preserve both spellings so editing one node never
+        // erases a provider's original key.
+        text("mport", "Port hopping range (mport)", "Endpoint"),
         text("password", "Password", "Authentication", sensitive = true, required = true),
         text("up", "Upload limit", "QUIC"),
         text("down", "Download limit", "QUIC"),
@@ -573,7 +596,13 @@ internal data class ParsedProxyEntry(val type: String, val fields: List<ProxyEdi
 
 private data class ProxyLocation(val start: Int, val end: Int, val itemIndent: Int, val flow: Boolean)
 
-private data class MappingLine(val indent: String, val key: String, val raw: String)
+private data class MappingLine(
+    val indent: String,
+    val key: String,
+    val raw: String,
+    /** Inline comment, including the leading #, kept when a scalar changes. */
+    val comment: String = "",
+)
 
 private val proxyListPattern = Regex("^(\\s*)proxies\\s*:")
 private val mappingPattern = Regex("^(\\s*)([^:#][^:]*?)\\s*:\\s*(.*)?$")
@@ -588,7 +617,11 @@ private fun findProxyLocation(lines: List<String>, name: String): ProxyLocation?
         val trimmed = line.trim()
         if (!inProxies) {
             val match = proxyListPattern.matchEntire(line.substringBefore('#').trimEnd())
-            if (match != null && !line.trimStart().startsWith("-")) {
+            // Only the root-level proxies list describes outbound nodes. A
+            // proxy-group can itself contain a `proxies:` key; treating that
+            // nested list as the editable profile would show phantom nodes
+            // and route edits to the wrong YAML block.
+            if (match != null && match.groupValues[1].isEmpty() && !line.trimStart().startsWith("-")) {
                 inProxies = true
                 proxiesIndent = match.groupValues[1].length
             }
@@ -701,7 +734,7 @@ internal fun proxyNamesFromYaml(yaml: String): List<String> {
         val trimmed = line.trim()
         if (!inProxies) {
             val match = proxyListPattern.matchEntire(line.substringBefore('#').trimEnd())
-            if (match != null && !trimmed.startsWith("-")) {
+            if (match != null && match.groupValues[1].isEmpty() && !trimmed.startsWith("-")) {
                 inProxies = true
                 proxiesIndent = match.groupValues[1].length
                 itemIndent = null
@@ -833,7 +866,17 @@ private fun parseMappingLine(line: String): MappingLine? {
     if (line.trim().isEmpty() || line.trimStart().startsWith("#") || line.trimStart().startsWith("-")) return null
     val match = mappingPattern.matchEntire(line) ?: return null
     val key = match.groupValues[2].trim().removeSurrounding("\"").removeSurrounding("'")
-    return MappingLine(match.groupValues[1], key, stripYamlComment(match.groupValues.getOrNull(3).orEmpty()).trim())
+    val originalValue = match.groupValues.getOrNull(3).orEmpty()
+    val commentIndex = yamlCommentIndex(originalValue)
+    return MappingLine(
+        indent = match.groupValues[1],
+        key = key,
+        raw = stripYamlComment(originalValue).trim(),
+        comment = commentIndex?.let { index ->
+            val start = originalValue.substring(0, index).indexOfLast { !it.isWhitespace() } + 1
+            originalValue.substring(start).trimEnd()
+        }.orEmpty(),
+    )
 }
 
 private fun isInlineMap(value: String): Boolean = value.trim().let { it.startsWith("{") && it.endsWith("}") }
@@ -924,6 +967,16 @@ private fun normalizeFieldValue(value: String, kind: ProxyEditFieldKind): String
     else -> value
 }
 
+private fun sameFieldValue(existing: ParsedValue?, value: String, kind: ProxyEditFieldKind): Boolean {
+    if (existing == null) return false
+    val left = normalizeFieldValue(existing.value, kind).trim()
+    val right = normalizeFieldValue(value, kind).trim()
+    return when (kind) {
+        ProxyEditFieldKind.Boolean -> left.equals(right, ignoreCase = true)
+        else -> left == right
+    }
+}
+
 /** Keep credentials hidden even when a newer engine key falls into Advanced. */
 private fun isSensitivePath(path: String): Boolean =
     path.split('.', '-', '_').any {
@@ -976,11 +1029,17 @@ internal fun replaceProxyEntry(
             return@forEach
         }
         val kind = kinds[path] ?: existing[path]?.kind ?: inferFieldKind(path, value)
+        // A form save sends the complete field map. Avoid rewriting values
+        // that the user did not touch: this preserves inline comments,
+        // quoting and provider formatting on hand-maintained files.
+        if (sameFieldValue(existing[path], value, kind)) return@forEach
         if (occurrence.inlineRoot != null) {
             val relative = path.removePrefix(occurrence.inlineRoot + ".")
             inlineUpdates.getOrPut(occurrence.index) { mutableMapOf() }[relative] = value to kind
         } else {
-            lines[occurrence.index] = "${occurrence.indent}${occurrence.key}: ${yamlRenderValue(value, kind)}"
+            val mapping = parseMappingLine(lines[occurrence.index])
+            lines[occurrence.index] = "${occurrence.indent}${occurrence.key}: ${yamlRenderValue(value, kind)}" +
+                mapping?.comment.orEmpty()
         }
     }
     // Unknown Advanced fields are intentionally removed from the form after
@@ -1004,7 +1063,8 @@ internal fun replaceProxyEntry(
         val mapping = parseMappingLine(lines[index]) ?: return@forEach
         val updates = inlineUpdates[index].orEmpty()
         val removals = inlineRemovals[index].orEmpty()
-        lines[index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates, removals)}"
+        lines[index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates, removals)}" +
+            mapping.comment
     }
     // Keep line indices stable for nested additions below. A blank line is
     // valid YAML and preserves the surrounding profile formatting.
@@ -1026,7 +1086,8 @@ internal fun replaceProxyEntry(
         if (parentOccurrence?.inlineRoot != null) {
             val updates = entries.associate { it.key.substringAfter('.') to (it.value to (kinds[it.key] ?: inferFieldKind(it.key, it.value))) }
             val mapping = parseMappingLine(lines[parentOccurrence.index]) ?: return@forEach
-            lines[parentOccurrence.index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates)}"
+            lines[parentOccurrence.index] = "${mapping.indent}${mapping.key}: ${renderInlineMap(mapping.raw, updates)}" +
+                mapping.comment
         } else if (parentOccurrence != null) {
             val parentIndent = parentOccurrence.indent.length
             val insertAt = (parentOccurrence.index + 1 until location.end).firstOrNull { index ->
@@ -1172,8 +1233,13 @@ private fun replaceFlowEntry(
     val open = line.indexOf('{')
     val close = line.lastIndexOf('}')
     if (open < 0 || close <= open) return lines.joinToString("\n")
+    val existing = parseFlowValues(line).associate { (path, value) ->
+        path to ParsedValue(path, yamlScalar(value), inferFieldKind(path, value))
+    }
     val updates = fields.filter { (path, value) ->
-        (presence[path] ?: true) && path !in removed && path !in setOf("name", "type")
+        val kind = kinds[path] ?: existing[path]?.kind ?: inferFieldKind(path, value)
+        (presence[path] ?: true) && path !in removed && path !in setOf("name", "type") &&
+            !sameFieldValue(existing[path], value, kind)
     }.mapValues { (path, value) -> value to (kinds[path] ?: inferFieldKind(path, value)) }
     lines[index] = line.substring(0, open) +
         renderInlineMap(line.substring(open, close + 1), updates, removed) +
@@ -1241,6 +1307,12 @@ private fun yamlScalar(value: String): String = stripYamlComment(value.trim())
     .orEmpty()
 
 private fun stripYamlComment(value: String): String {
+    val comment = yamlCommentIndex(value) ?: return value
+    return value.substring(0, comment)
+}
+
+/** Returns an inline YAML comment position while respecting quoted # values. */
+private fun yamlCommentIndex(value: String): Int? {
     var quote: Char? = null
     value.forEachIndexed { index, char ->
         if (quote != null) {
@@ -1248,10 +1320,10 @@ private fun stripYamlComment(value: String): String {
         } else if (char == '\'' || char == '"') {
             quote = char
         } else if (char == '#' && (index == 0 || value[index - 1].isWhitespace())) {
-            return value.substring(0, index)
+            return index
         }
     }
-    return value
+    return null
 }
 
 private fun yamlRenderValue(value: String, kind: ProxyEditFieldKind): String = when (kind) {

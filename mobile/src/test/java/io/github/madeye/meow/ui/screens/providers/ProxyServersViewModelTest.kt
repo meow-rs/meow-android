@@ -41,6 +41,90 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `real subscription protocol shapes expose independent editors`() {
+        val yaml = """
+            proxies:
+              - name: VLESS WS
+                type: vless
+                server: vless.example
+                port: 443
+                uuid: vless-id
+                tls: true
+                network: ws
+                servername: vless.example
+                ws-opts:
+                  path: /edge
+                  headers:
+                    Host: vless.example
+              - name: Hysteria hopping
+                type: hysteria2
+                server: hy2.example
+                port: 443
+                ports: 35000-39000
+                mport: 35000-39000
+                password: hy2-secret
+                sni: hy2.example
+                skip-cert-verify: true
+              - name: Snell HTTP obfs
+                type: snell
+                server: snell.example
+                port: 8443
+                psk: snell-secret
+                version: 3
+                obfs-opts:
+                  mode: http
+                  host: snell.example
+              - name: Shadowsocks
+                type: ss
+                server: ss.example
+                port: 7890
+                cipher: aes-256-gcm
+                password: ss-secret
+        """.trimIndent()
+
+        assertEquals(
+            listOf("VLESS WS", "Hysteria hopping", "Snell HTTP obfs", "Shadowsocks"),
+            proxyNamesFromYaml(yaml),
+        )
+        val vless = parseProxyEntry(yaml, "VLESS WS")!!
+        assertTrue(vless.fields.any { it.key == "ws-opts.headers.Host" && it.section == "WebSocket" })
+        val hysteria = parseProxyEntry(yaml, "Hysteria hopping")!!
+        assertTrue(hysteria.fields.any { it.key == "ports" })
+        assertTrue(hysteria.fields.any { it.key == "mport" })
+        val snell = parseProxyEntry(yaml, "Snell HTTP obfs")!!
+        assertTrue(snell.fields.any { it.key == "obfs-opts.mode" && it.section == "Obfuscation" })
+        val shadowsocks = parseProxyEntry(yaml, "Shadowsocks")!!
+        assertTrue(shadowsocks.fields.any { it.key == "cipher" && it.section == "Authentication" })
+    }
+
+    @Test
+    fun `editing one scalar preserves comments on untouched profile fields`() {
+        val yaml = """
+            proxies:
+              - name: Commented
+                type: ss # protocol is intentionally documented
+                server: old.example # endpoint comment
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+        """.trimIndent()
+        val parsed = parseProxyEntry(yaml, "Commented")!!
+        val fields = parsed.fields.map { field ->
+            if (field.key == "server") field.copy(value = "new.example") else field
+        }
+
+        val updated = replaceProxyEntry(
+            yaml,
+            "Commented",
+            fields.associate { it.key to it.value },
+            fields.associate { it.key to it.kind },
+            fields.associate { it.key to it.present },
+        )!!
+        assertTrue(updated.contains("type: ss # protocol is intentionally documented"))
+        assertTrue(updated.contains("server: new.example # endpoint comment"))
+    }
+
+    @Test
     fun `vless editor exposes protocol transport and reality fields`() {
         val yaml = """
             proxies:
@@ -330,9 +414,30 @@ class ProxyServersViewModelTest {
         )!!
 
         assertEquals("35000-39000", parsed.fields.first { it.key == "mport" }.value)
-        assertEquals("Advanced", parsed.fields.first { it.key == "mport" }.section)
+        assertEquals("Endpoint", parsed.fields.first { it.key == "mport" }.section)
         assertTrue(parsed.fields.first { it.key == "port" }.required)
         assertTrue(parsed.fields.first { it.key == "new-secret-token" }.sensitive)
+    }
+
+    @Test
+    fun `hysteria2 mport alias is exposed without hiding ports`() {
+        val parsed = parseProxyEntry(
+            """
+            proxies:
+              - name: Hysteria aliases
+                type: hysteria2
+                server: edge.example
+                port: 443
+                ports: 443-445
+                mport: 8443-8445
+                password: secret
+            """.trimIndent(),
+            "Hysteria aliases",
+        )!!
+
+        assertEquals("443-445", parsed.fields.first { it.key == "ports" }.value)
+        assertEquals("8443-8445", parsed.fields.first { it.key == "mport" }.value)
+        assertEquals(2, parsed.fields.count { it.label.contains("Port hopping") })
     }
 
     @Test
@@ -674,6 +779,28 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `nested proxy group list is not mistaken for profile proxies`() {
+        val yaml = """
+            proxy-groups:
+              - name: Proxy
+                type: select
+                proxies:
+                  - Phantom
+            proxies:
+              - name: Actual
+                type: ss
+                server: edge.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+        """.trimIndent()
+
+        assertEquals(listOf("Actual"), proxyNamesFromYaml(yaml))
+        assertEquals("ss", parseProxyEntry(yaml, "Actual")?.type)
+        assertTrue(parseProxyEntry(yaml, "Phantom") == null)
+    }
+
+    @Test
     fun `server search matches names and protocol while retaining provider grouping`() {
         val cards = listOf(
             ProxyServerProviderUi(
@@ -701,6 +828,28 @@ class ProxyServersViewModelTest {
 
         assertEquals(listOf("airport"), filtered.map { it.id })
         assertEquals(listOf("Singapore"), filtered.single().nodes.map { it.name })
+    }
+
+    @Test
+    fun `server search by provider name keeps all of its nodes`() {
+        val cards = listOf(
+            ProxyServerProviderUi(
+                id = "airport",
+                name = "Fast Airport",
+                vehicleType = "HTTP",
+                testUrl = "",
+                expectedStatus = "",
+                nodes = listOf(
+                    ProxyServerNodeUi("Tokyo", "Vless", null, false),
+                    ProxyServerNodeUi("Singapore", "Hysteria2", null, false),
+                ),
+            ),
+        )
+
+        val filtered = filterProxyServerProviders(cards, "airport")
+
+        assertEquals(listOf("Fast Airport"), filtered.map { it.name })
+        assertEquals(listOf("Tokyo", "Singapore"), filtered.single().nodes.map { it.name })
     }
 
     @Test
@@ -860,6 +1009,24 @@ class ProxyServersViewModelTest {
         assertTrue(!updated.contains("future-option"))
         assertTrue(!updated.contains("key: keep-too"))
         assertTrue(updated.contains("- name: Other"))
+    }
+
+    @Test
+    fun `removal tombstone keeps an otherwise unchanged editor dirty`() {
+        val field = ProxyEditField(
+            key = "future-option",
+            value = "",
+            present = false,
+        )
+        val state = ProxyEditUiState(
+            name = "Future",
+            fields = listOf(field),
+            initialFields = listOf(field),
+            removedKeys = setOf("future-option"),
+            loading = false,
+        )
+
+        assertTrue(state.dirty)
     }
 
     @Test

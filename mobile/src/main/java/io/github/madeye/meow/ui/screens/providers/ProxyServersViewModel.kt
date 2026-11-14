@@ -10,11 +10,11 @@ import io.github.madeye.meow.api.ProxiesResult
 import io.github.madeye.meow.api.ProxyProvider
 import io.github.madeye.meow.api.ProxyProviderNode
 import io.github.madeye.meow.repo.ProfileRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.launch
@@ -277,6 +277,10 @@ internal fun filterProxyServerProviders(
     val needle = query.trim()
     if (needle.isEmpty()) return providers
     return providers.mapNotNull { provider ->
+        // Searching a provider name should keep its complete node list. This
+        // mirrors how a mature provider browser behaves: selecting an airport
+        // or file source is a useful way to inspect every node it supplies.
+        if (provider.name.contains(needle, ignoreCase = true)) return@mapNotNull provider
         val nodes = provider.nodes.filter { node ->
             node.name.contains(needle, ignoreCase = true) ||
                 node.type.contains(needle, ignoreCase = true)
