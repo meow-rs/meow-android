@@ -350,6 +350,52 @@ done
 "$ADB" shell rm -f //data/local/tmp/meow.db
 info "  Subscription configuration done."
 
+# Generic bounds tap helper used by both the VPN and UI-only screenshot paths.
+tap_bounds() {
+    local line="$1"
+    local label="$2"
+    local bounds nums x1 y1 x2 y2 cx cy
+    bounds=$(echo "$line" | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' || true)
+    [[ -n "$bounds" ]] || return 1
+    nums=$(echo "$bounds" | grep -o '[0-9]*')
+    x1=$(echo "$nums" | sed -n '1p'); y1=$(echo "$nums" | sed -n '2p')
+    x2=$(echo "$nums" | sed -n '3p'); y2=$(echo "$nums" | sed -n '4p')
+    cx=$(( (x1 + x2) / 2 )); cy=$(( (y1 + y2) / 2 ))
+    info "  Tapping $label at ($cx, $cy)"
+    "$ADB" shell input tap "$cx" "$cy"
+}
+
+# The proxy page is independent of the VPN engine. Avoid auto-connect for the
+# screenshot job: starting the Rust tunnel while a large public profile is being
+# parsed can trigger Android's app-not-responding dialog and obscure the page.
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+    ensure_emulator
+    info "Step 7: Launching app for UI screenshot (VPN disabled) ..."
+    "$ADB" shell am force-stop "$PKG" >/dev/null 2>&1 || true
+    "$ADB" shell am start -W -n "$MAIN_ACTIVITY"
+
+    info "  Waiting for Compose home and dismissing transient ANR dialogs..."
+    UI_READY=false
+    for i in $(seq 1 90); do
+        "$ADB" shell rm -f //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
+        UI_CHECK=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
+        anr_line=$(echo "$UI_CHECK" | tr '>' '\n' | grep -F 'resource-id="android:id/aerr_wait"' | head -1 || true)
+        if [[ -n "$anr_line" ]]; then
+            tap_bounds "$anr_line" "system ANR Wait" || true
+            sleep 2
+            continue
+        fi
+        if echo "$UI_CHECK" | grep -q 'resource-id="home_root"'; then
+            UI_READY=true
+            info "  Compose UI loaded (attempt $i)"
+            break
+        fi
+        sleep 1
+    done
+    [[ "$UI_READY" == "true" ]] || fail "Compose home did not render for screenshot"
+    screenshot "05_home"
+else
 # Step 7: Enable VPN
 ensure_emulator
 info "Step 7: Enabling VPN..."
@@ -502,6 +548,9 @@ done
 sleep 3   # let the first flows settle once the interface exists
 screenshot "05_vpn_status"
 
+
+fi
+
 capture_proxy_servers() {
     [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]] || return 0
 
@@ -560,7 +609,13 @@ capture_proxy_servers() {
     fail "Proxy Servers page did not render"
 }
 
+
 capture_proxy_servers
+
+if [[ "$SCREENSHOT_PROXY_SERVERS" == "true" ]]; then
+    info "Screenshot flow complete."
+    exit 0
+fi
 
 PASS=0
 TOTAL=5

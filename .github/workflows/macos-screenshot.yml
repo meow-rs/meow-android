@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "emulator" "platform-tools" "platforms;android-35" \
-            "system-images;android-35;google_apis;$EMULATOR_ARCH" \
+            "system-images;android-30;google_apis;$EMULATOR_ARCH" \
             "ndk;28.2.13676358" "ndk;27.0.12077973"
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
@@ -83,7 +83,7 @@ jobs:
           SKIP_EMULATOR_BOOT: "true"
           TUN_WAIT_SECS: "120"
         with:
-          api-level: 35
+          api-level: 30
           target: google_apis
           arch: ${{ env.EMULATOR_ARCH }}
           profile: pixel_2
