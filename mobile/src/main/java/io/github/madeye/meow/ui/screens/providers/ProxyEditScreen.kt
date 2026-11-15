@@ -14,8 +14,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.ExpandLess
@@ -225,6 +228,7 @@ private fun SensitiveTextField(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun SelectField(
     field: ProxyEditField,
     enabled: Boolean,
@@ -233,7 +237,11 @@ private fun SelectField(
 ) {
     var expanded by remember(field.key) { mutableStateOf(false) }
     val options = (field.options + field.value).distinct()
-    Box {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { if (enabled) expanded = !expanded },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         OutlinedTextField(
             value = field.value.ifEmpty { "Default" },
             enabled = enabled,
@@ -245,10 +253,12 @@ private fun SelectField(
             supportingText = field.error?.let { error ->
                 { Text(error, color = MaterialTheme.meow.danger) }
             },
-            modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}")
-                .clickable(enabled = enabled) { expanded = true },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
+                .testTag("proxy_edit_${field.key}"),
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.ifEmpty { "Default" }) },

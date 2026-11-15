@@ -431,6 +431,7 @@ private fun proxyFieldSpecs(
     type: String,
     actual: Map<String, ParsedValue>,
     current: Map<String, String> = actual.mapValues { it.value.value },
+    availableProxyNames: List<String> = emptyList(),
 ): List<ProxyFieldSpec> {
     val muxRoot = when {
         actual.keys.any { it == "smux" || it.startsWith("smux.") } -> "smux"
@@ -521,8 +522,8 @@ private fun proxyFieldSpecs(
         emptyList()
     }
     val snellVersion = current["version"].orEmpty().ifEmpty { "4" }
-        .removePrefix("v")
         .lowercase()
+        .removePrefix("v")
     val snellObfsEnabled = current["obfs-opts.mode"].orEmpty().lowercase()
         .let { it.isNotEmpty() && it != "off" && it != "none" }
     val snellTransportFields = if (snellVersion == "6") {
@@ -540,7 +541,7 @@ private fun proxyFieldSpecs(
     } else {
         emptyList()
     }
-    return when (type.lowercase()) {
+    val specs = when (type.lowercase()) {
     "direct" -> listOf(
         number("connect-timeout", "Connect timeout (seconds)", "Direct"),
         list("dns", "DNS servers (comma separated)", "Direct"),
@@ -628,6 +629,15 @@ private fun proxyFieldSpecs(
     )
     else -> endpointSpecs() // Keep a useful editor for a newer engine type.
     }
+    // Dialer proxy is a routing override rather than a connection primitive.
+    // Keep it in its own final section, and make it a real selector so users
+    // cannot mistype a group or proxy name.
+    val dialer = specs.firstOrNull { it.path == "dialer-proxy" }?.copy(
+        section = "Routing",
+        kind = ProxyEditFieldKind.Select,
+        options = availableProxyNames.distinct(),
+    )
+    return if (dialer == null) specs else specs.filterNot { it.path == "dialer-proxy" } + dialer
 }
 
 private data class ParsedValue(val path: String, val value: String, val kind: ProxyEditFieldKind)
@@ -716,10 +726,16 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
     }
     val type = values.firstOrNull { it.path == "type" }?.value.orEmpty()
     val byPath = values.associateBy { it.path }
-    val specs = proxyFieldSpecs(type, byPath)
+    val specs = proxyFieldSpecs(
+        type = type,
+        actual = byPath,
+        availableProxyNames = proxyTargetNamesFromYaml(yaml).filterNot { it == name },
+    )
     val specPaths = specs.map { it.path }.toSet()
+    val regularSpecs = specs.filterNot { it.path == "dialer-proxy" }
+    val dialerSpecs = specs.filter { it.path == "dialer-proxy" }
     val fields = buildList {
-        specs.forEach { spec ->
+        regularSpecs.forEach { spec ->
             val parsed = byPath[spec.path]
             add(
                 ProxyEditField(
@@ -749,6 +765,22 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
                     ),
                 )
             }
+        }
+        dialerSpecs.forEach { spec ->
+            val parsed = byPath[spec.path]
+            add(
+                ProxyEditField(
+                    key = spec.path,
+                    value = normalizeFieldValue(parsed?.value ?: spec.defaultValue, spec.kind),
+                    kind = spec.kind,
+                    label = spec.label,
+                    section = spec.section,
+                    options = spec.options,
+                    present = parsed != null,
+                    sensitive = spec.sensitive,
+                    required = spec.required,
+                ),
+            )
         }
     }
     return ParsedProxyEntry(type, fields)
@@ -802,6 +834,46 @@ internal fun proxyNamesFromYaml(yaml: String): List<String> {
     return names.toList()
 }
 
+/** Returns top-level proxy-group names that can also be used as a dialer. */
+internal fun proxyGroupNamesFromYaml(yaml: String): List<String> {
+    val lines = yaml.replace("\r\n", "\n").split('\n')
+    var inGroups = false
+    var groupsIndent = -1
+    var itemIndent: Int? = null
+    val names = linkedSetOf<String>()
+    lines.forEach { line ->
+        val trimmed = line.trim()
+        if (!inGroups) {
+            val header = line.substringBefore('#').trimEnd()
+            if (header == "proxy-groups:" || header.startsWith("proxy-groups:")) {
+                inGroups = true
+                groupsIndent = leadingSpaces(line)
+                itemIndent = null
+            }
+            return@forEach
+        }
+        if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && leadingSpaces(line) <= groupsIndent) {
+            inGroups = false
+            return@forEach
+        }
+        if (trimmed.isEmpty() || trimmed.startsWith("#") || !trimmed.startsWith("-")) return@forEach
+        val indent = leadingSpaces(line)
+        if (indent <= groupsIndent) return@forEach
+        val expectedIndent = itemIndent
+        if (expectedIndent == null) {
+            itemIndent = indent
+        } else if (indent != expectedIndent) {
+            return@forEach
+        }
+        proxyNameFromItem(line)?.takeIf(String::isNotBlank)?.let(names::add)
+    }
+    return names.toList()
+}
+
+/** All valid local routing targets, excluding the entry currently edited. */
+internal fun proxyTargetNamesFromYaml(yaml: String): List<String> =
+    (proxyNamesFromYaml(yaml) + proxyGroupNamesFromYaml(yaml)).distinct()
+
 /** Header maps are a supported part of several transports, even though their
  * key set is intentionally open ended. Keep existing entries in a dedicated
  * section so they are editable without pretending the editor knows every
@@ -833,10 +905,17 @@ internal fun adaptProxyFields(type: String, fields: List<ProxyEditField>): List<
         ParsedValue(field.key, field.value, field.kind)
     }
     val current = oldByPath.mapValues { it.value.value }
-    val specs = proxyFieldSpecs(type, actual, current)
+    val specs = proxyFieldSpecs(
+        type = type,
+        actual = actual,
+        current = current,
+        availableProxyNames = oldByPath["dialer-proxy"]?.options.orEmpty(),
+    )
     val specPaths = specs.mapTo(mutableSetOf()) { it.path }
+    val regularSpecs = specs.filterNot { it.path == "dialer-proxy" }
+    val dialerSpecs = specs.filter { it.path == "dialer-proxy" }
     return buildList {
-        specs.forEach { spec ->
+        regularSpecs.forEach { spec ->
             val old = oldByPath[spec.path]
             add(
                 ProxyEditField(
@@ -857,6 +936,22 @@ internal fun adaptProxyFields(type: String, fields: List<ProxyEditField>): List<
             // current schema. Keep it editable/removable in Advanced rather
             // than leaving a stale required marker from the old capability.
             .forEach { add(it.copy(section = "Advanced", required = false)) }
+        dialerSpecs.forEach { spec ->
+            val old = oldByPath[spec.path]
+            add(
+                ProxyEditField(
+                    key = spec.path,
+                    value = old?.value ?: spec.defaultValue,
+                    kind = spec.kind,
+                    label = spec.label,
+                    section = spec.section,
+                    options = spec.options,
+                    present = old?.present ?: false,
+                    sensitive = spec.sensitive,
+                    required = spec.required,
+                ),
+            )
+        }
     }
 }
 

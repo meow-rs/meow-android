@@ -98,6 +98,51 @@ class ProxyServersViewModelTest {
     }
 
     @Test
+    fun `snell version and dialer proxy are selectable`() {
+        val yaml = """
+            proxies:
+              - name: Snell node
+                type: snell
+                server: snell.example
+                port: 443
+                psk: secret
+                version: 3
+                dialer-proxy: Relay
+                future-option: retained
+              - name: Relay
+                type: ss
+                server: relay.example
+                port: 443
+                cipher: aes-256-gcm
+                password: secret
+            proxy-groups:
+              - name: Auto
+                type: select
+                proxies: [Relay]
+        """.trimIndent()
+
+        assertEquals(listOf("Snell node", "Relay"), proxyNamesFromYaml(yaml))
+        assertEquals(listOf("Auto"), proxyGroupNamesFromYaml(yaml))
+
+        val parsed = parseProxyEntry(yaml, "Snell node")!!
+        val version = parsed.fields.first { it.key == "version" }
+        assertEquals(ProxyEditFieldKind.Select, version.kind)
+        assertEquals(listOf("3", "4", "5", "6"), version.options)
+
+        val dialer = parsed.fields.last()
+        assertEquals("dialer-proxy", dialer.key)
+        assertEquals("Routing", dialer.section)
+        assertEquals(ProxyEditFieldKind.Select, dialer.kind)
+        assertEquals(listOf("Relay", "Auto"), dialer.options)
+
+        val v6 = parseProxyEntry(
+            yaml.replace("version: 3", "version: V6"),
+            "Snell node",
+        )!!
+        assertTrue(v6.fields.any { it.key == "mode" && it.section == "Transport" })
+    }
+
+    @Test
     fun `editing one scalar preserves comments on untouched profile fields`() {
         val yaml = """
             proxies:
