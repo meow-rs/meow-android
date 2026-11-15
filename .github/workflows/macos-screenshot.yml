@@ -10,14 +10,12 @@ permissions:
 
 jobs:
   proxy-servers:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     timeout-minutes: 90
     env:
-      # macos-latest is Apple Silicon. The hosted image cannot expose a usable
-      # HVF vCPU to an arm64 Android guest: the emulator exits with
-      # `HVF_UNSUPPORTED` before adb can see it. Use an x86_64 guest with TCG
-      # software emulation for deterministic screenshots; the production APK
-      # remains a separate arm64 build.
+      # macos-15-intel is the Intel GitHub-hosted image. It can run the
+      # x86_64 Android 35 system image natively, so the emulator does not hit
+      # the aarch64-host/x86_64-guest architecture failure seen on macos-latest.
       TARGET_ABI: x86_64
       EMULATOR_ARCH: x86_64
       RUST_ANDROID_TARGET: x86_64-linux-android
@@ -77,8 +75,7 @@ jobs:
         env:
           # Start a fresh adb daemon because this runner image can leave a
           # stale daemon behind before the action launches the emulator.
-          # The x86_64 guest deliberately uses the portable software backend on
-          # macOS latest, where nested HVF is unavailable to the hosted runner.
+          # Keep the emulator software backend deterministic on the hosted VM.
           ANDROID_I_WANT_MY_TCG: yes
           SSSERVER: ssserver
           SCREENSHOT_PROXY_SERVERS: "true"
