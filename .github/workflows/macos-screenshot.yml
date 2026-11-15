@@ -75,8 +75,8 @@ jobs:
         env:
           # Start a fresh adb daemon because this runner image can leave a
           # stale daemon behind before the action launches the emulator.
-          # Keep the emulator software backend deterministic on the hosted VM.
-          ANDROID_I_WANT_MY_TCG: yes
+          # The Intel runner can use its native Hypervisor.framework backend;
+          # do not force the very slow TCG path used on Apple Silicon.
           SSSERVER: ssserver
           SCREENSHOT_PROXY_SERVERS: "true"
           SCREENSHOT_PROFILE_URL: https://api.gengjiawen.com/clash.yml
@@ -92,7 +92,7 @@ jobs:
           # enough time for the first boot.
           emulator-options: >-
             -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-            -no-snapshot -accel off -feature -Vulkan
+            -no-snapshot -feature -Vulkan
           emulator-boot-timeout: 1200
           disable-animations: true
           # The action executes each physical script line in its own shell.
