@@ -344,10 +344,11 @@ done
 # whole e2e doubles as a migration test — the VPN can only come up if the
 # app found the profile through the rename path. (test-e2e-http.sh injects
 # meow.db directly, covering the fresh-install path.)
-"$ADB" push /tmp/meow.db //data/local/tmp/meow.db
-"$ADB" shell "cat /data/local/tmp/meow.db | run-as $PKG sh -c 'cat > databases/mihomo.db'"
+# Stream the SQLite file directly into run-as. Older API 30 emulator images
+# reject adb push's post-copy fchown under /data/local/tmp, while a raw shell
+# stream writes the same app-owned database without that ownership operation.
+"$ADB" shell -T "run-as $PKG sh -c 'cat > databases/mihomo.db'" < /tmp/meow.db
 "$ADB" shell "run-as $PKG rm -f databases/mihomo.db-wal databases/mihomo.db-shm databases/meow.db databases/meow.db-wal databases/meow.db-shm"
-"$ADB" shell rm -f //data/local/tmp/meow.db
 info "  Subscription configuration done."
 
 # Generic bounds tap helper used by both the VPN and UI-only screenshot paths.
