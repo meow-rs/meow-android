@@ -561,10 +561,21 @@ capture_proxy_servers() {
         "$ADB" shell uiautomator dump //sdcard/ui_dump.xml >/dev/null 2>&1 || true
         local ui_xml
         ui_xml=$("$ADB" shell cat //sdcard/ui_dump.xml 2>/dev/null || true)
-        row_line=$(echo "$ui_xml" | tr '>' '\n' | grep -F 'text="Proxy Servers"' | head -1 || true)
+        anr_line=$(echo "$ui_xml" | tr '>' '\n' | grep -F 'resource-id="android:id/aerr_wait"' | head -1 || true)
+        if [[ -n "$anr_line" ]]; then
+            tap_bounds "$anr_line" "system ANR Wait" || true
+            sleep 2
+            continue
+        fi
+        row_line=$(echo "$ui_xml" | tr '>' '\n' | grep -E 'text="Proxy Servers"|content-desc="Proxy Servers"' | head -1 || true)
         if [[ -n "$row_line" ]]; then
             tap_bounds "$row_line" "Proxy Servers"
             break
+        fi
+        # The Home card is below the initial viewport. Scroll it into view so
+        # uiautomator can expose the clickable NavRow text/content description.
+        if (( i % 3 == 0 )); then
+            "$ADB" shell input swipe 360 1120 360 420 350 >/dev/null 2>&1 || true
         fi
         sleep 1
     done
