@@ -155,7 +155,6 @@ private fun ProxyField(
             field = field,
             enabled = enabled,
             onChange = onChange,
-            onRemove = onRemove,
         )
         else -> SensitiveTextField(
             field = field,
@@ -228,7 +227,6 @@ private fun SelectField(
     field: ProxyEditField,
     enabled: Boolean,
     onChange: (String, String) -> Unit,
-    onRemove: (String) -> Unit,
 ) {
     var expanded by remember(field.key) { mutableStateOf(false) }
     val options = (field.options + field.value).distinct()
@@ -250,15 +248,6 @@ private fun SelectField(
                     onClick = {
                         expanded = false
                         onChange(field.key, option)
-                    },
-                )
-            }
-            if (enabled && field.present && !field.required) {
-                DropdownMenuItem(
-                    text = { Text("Remove") },
-                    onClick = {
-                        expanded = false
-                        onRemove(field.key)
                     },
                 )
             }
