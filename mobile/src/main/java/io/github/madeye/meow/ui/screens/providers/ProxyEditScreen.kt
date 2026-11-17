@@ -14,7 +14,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -223,6 +226,7 @@ private fun SensitiveTextField(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun SelectField(
     field: ProxyEditField,
     enabled: Boolean,
@@ -230,21 +234,28 @@ private fun SelectField(
 ) {
     var expanded by remember(field.key) { mutableStateOf(false) }
     val options = (field.options + field.value).distinct()
-    Box {
+    val emptyLabel = if (field.key == "dialer-proxy") "None" else "Default"
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { if (enabled) expanded = it },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         OutlinedTextField(
-            value = field.value.ifEmpty { "Default" },
+            value = field.value.ifEmpty { emptyLabel },
             enabled = enabled,
             onValueChange = {},
             readOnly = true,
             label = { Text(field.label + if (field.required) " *" else "") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("proxy_edit_${field.key}")
-                .clickable(enabled = enabled) { expanded = true },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
+                .testTag("proxy_edit_${field.key}"),
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option.ifEmpty { "Default" }) },
+                    text = { Text(option.ifEmpty { emptyLabel }) },
                     onClick = {
                         expanded = false
                         onChange(field.key, option)

@@ -372,6 +372,7 @@ private fun proxyFieldSpecs(
     type: String,
     actual: Map<String, ParsedValue>,
     current: Map<String, String> = actual.mapValues { it.value.value },
+    dialerOptions: List<String> = emptyList(),
 ): List<ProxyFieldSpec> {
     val muxRoot = when {
         actual.keys.any { it == "smux" || it.startsWith("smux.") } -> "smux"
@@ -481,7 +482,7 @@ private fun proxyFieldSpecs(
     } else {
         emptyList()
     }
-    return when (type.lowercase()) {
+    val specs = when (type.lowercase()) {
     "direct" -> listOf(
         number("connect-timeout", "Connect timeout (seconds)", "Direct"),
         list("dns", "DNS servers (comma separated)", "Direct"),
@@ -565,6 +566,11 @@ private fun proxyFieldSpecs(
     )
     else -> endpointSpecs() // Keep a useful editor for a newer engine type.
     }
+    return specs.map { spec ->
+        if (spec.path == "dialer-proxy") {
+            spec.copy(kind = ProxyEditFieldKind.Select, section = "Routing", options = dialerOptions)
+        } else spec
+    }
 }
 
 private data class ParsedValue(val path: String, val value: String, val kind: ProxyEditFieldKind)
@@ -643,7 +649,11 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
     }
     val type = values.firstOrNull { it.path == "type" }?.value.orEmpty()
     val byPath = values.associateBy { it.path }
-    val specs = proxyFieldSpecs(type, byPath)
+    val specs = proxyFieldSpecs(
+        type, byPath,
+        dialerOptions = (listOf("", "DIRECT") + proxyTargetNamesFromYaml(yaml) +
+            listOfNotNull(byPath["dialer-proxy"]?.value)).distinct().filterNot { it == name },
+    )
     val specPaths = specs.map { it.path }.toSet()
     val fields = buildList {
         specs.forEach { spec ->
@@ -678,7 +688,42 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
             }
         }
     }
-    return ParsedProxyEntry(type, fields)
+    return ParsedProxyEntry(type, fields.sortedBy { it.key == "dialer-proxy" })
+}
+
+/** Named routing targets in the saved profile; nested member lists are not targets. */
+internal fun proxyTargetNamesFromYaml(yaml: String): List<String> {
+    val lines = yaml.replace("\r\n", "\n").split('\n')
+    val names = linkedSetOf<String>()
+    var inTargets = false
+    var itemIndent: Int? = null
+    var readingItemName = false
+    lines.forEach { line ->
+        val content = stripYamlComment(line).trimEnd()
+        val trimmed = content.trimStart()
+        if (trimmed.isEmpty()) return@forEach
+        val indent = leadingSpaces(content)
+        if (indent == 0 && !trimmed.startsWith("-")) {
+            inTargets = trimmed == "proxies:" || trimmed == "proxy-groups:"
+            itemIndent = null
+            readingItemName = false
+            return@forEach
+        }
+        if (!inTargets) return@forEach
+        if (trimmed.startsWith("- ") && (itemIndent == null || itemIndent == indent)) {
+            itemIndent = indent
+            val name = proxyNameFromItem(content)
+            name?.takeIf(String::isNotBlank)?.let(names::add)
+            readingItemName = name == null
+        } else if (readingItemName && indent == (itemIndent ?: -2) + 2) {
+            val mapping = parseMappingLine(content)
+            if (mapping?.key == "name") {
+                yamlScalar(mapping.raw).takeIf(String::isNotBlank)?.let(names::add)
+                readingItemName = false
+            }
+        }
+    }
+    return names.toList()
 }
 
 /** Header maps are a supported part of several transports, even though their
@@ -712,7 +757,7 @@ internal fun adaptProxyFields(type: String, fields: List<ProxyEditField>): List<
         ParsedValue(field.key, field.value, field.kind)
     }
     val current = oldByPath.mapValues { it.value.value }
-    val specs = proxyFieldSpecs(type, actual, current)
+    val specs = proxyFieldSpecs(type, actual, current, oldByPath["dialer-proxy"]?.options.orEmpty())
     val specPaths = specs.mapTo(mutableSetOf()) { it.path }
     return buildList {
         specs.forEach { spec ->
@@ -736,7 +781,7 @@ internal fun adaptProxyFields(type: String, fields: List<ProxyEditField>): List<
             // current schema. Keep it editable/removable in Advanced rather
             // than leaving a stale required marker from the old capability.
             .forEach { add(it.copy(section = "Advanced", required = false)) }
-    }
+    }.sortedBy { it.key == "dialer-proxy" }
 }
 
 private fun parseBlockValues(lines: List<String>, from: Int, until: Int): List<ParsedValue> {
