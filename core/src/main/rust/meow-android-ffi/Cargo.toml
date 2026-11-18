@@ -88,7 +88,9 @@ jni = "0.21"
 # Global allocator. mimalloc returns freed pages to the OS more aggressively
 # than the platform malloc and avoids fragmentation under the VPN service's
 # tight memory budget.
-mimalloc = { version = "0.1", default-features = false }
+# Use v2 to avoid the v3.3 thread initialization crash when Android reloads
+# the configuration from a worker thread (microsoft/mimalloc#1288).
+mimalloc = { version = "0.1", default-features = false, features = ["v2"] }
 
 # Patched lwip: upstream 0.3.15's `Stream::poll_next` impls
 # (TcpListenerImpl / NetStackImpl / UdpSocket) mutate shared state
