@@ -97,6 +97,15 @@
     <string name="proxy_groups_tips_long_press">اضغط مطولًا على عقدة لفتح تفاصيلها واختبارها بمفردها:</string>
     <string name="proxy_groups_tips_connect">تتطلب الاختبارات اتصال VPN.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">خوادم البروكسي</string>
+    <string name="proxy_servers_inline_title">وكلاء الملف الشخصي</string>
+    <string name="proxy_servers_empty">لم يتم العثور على خوادم بروكسي. صِل VPN بملف يعرّف وكلاء مضمّنين أو موفري بروكسي.</string>
+    <string name="proxy_servers_no_nodes">لا توجد عقد في موفر الخدمة هذا.</string>
+    <string name="proxy_servers_load_error">تعذر تحميل خوادم البروكسي</string>
+    <string name="proxy_servers_health_check">فحص كل العقد</string>
+    <string name="proxy_servers_test">اختبار العقدة</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">الاشتراكات</string>
     <string name="subs_none">لا توجد اشتراكات</string>
@@ -422,4 +431,11 @@
         <item quantity="many">%1$d تطبيقًا محددًا</item>
         <item quantity="other">%1$d تطبيق محدد</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">بحث في الخوادم…</string>
+    <string name="proxy_servers_clear_search">مسح بحث الخوادم</string>
+    <string name="proxy_servers_no_matches">لا توجد خوادم وكيلة مطابقة.</string>
+    <string name="proxy_servers_node_count">%1$d عقد</string>
+    <string name="proxy_edit_discard_changes">هل تريد تجاهل التغييرات غير المحفوظة؟</string>
 </resources>

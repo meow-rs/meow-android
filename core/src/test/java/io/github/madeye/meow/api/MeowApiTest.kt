@@ -254,6 +254,57 @@ class MeowApiTest {
         assertEquals(1786960800000L, result.proxies.getValue("rust").history.single().timeMillis)
     }
 
+    @Test
+    fun `proxy providers parse nodes and subscription usage`() = runTest {
+        enqueue(
+            """
+            {"providers": {
+              "airport": {
+                "name": "airport", "vehicleType": "HTTP", "testUrl": "https://example.com/204",
+                "expectedStatus": "204", "updatedAt": "2026-08-17T10:00:00Z",
+                "subscriptionInfo": {"Upload": 10, "Download": 20, "Total": 100, "Expire": 1786960800},
+                "proxies": [
+                  {"name": "hk-01", "type": "Shadowsocks", "alive": true, "delay": 76,
+                   "history": [{"time": "2026-08-17T10:00:00Z", "delay": 76}]},
+                  {"name": "jp-01", "type": "Trojan", "alive": false,
+                   "history": [{"time": "2026-08-17T10:01:00Z", "delay": 0}]}
+                ]
+              }
+            }}
+            """.trimIndent(),
+        )
+
+        val provider = api.proxyProviders().single()
+
+        assertEquals("airport", provider.name)
+        assertEquals("HTTP", provider.vehicleType)
+        assertEquals(2, provider.nodes.size)
+        assertEquals(76, provider.nodes[0].latestDelay)
+        assertEquals(false, provider.nodes[1].alive)
+        assertTrue(provider.nodes[1].timedOut)
+        assertEquals(100L, provider.usage?.total)
+    }
+
+    @Test
+    fun `proxy provider health checks use provider paths`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+        api.healthCheckProxyProvider("airport")
+        assertEquals(
+            "/providers/proxies/airport/healthcheck",
+            server.takeRequest().requestUrl?.encodedPath,
+        )
+
+        server.enqueue(MockResponse().setBody("{\"delay\": 42}"))
+        assertEquals(
+            42,
+            api.testProxyProviderDelay("airport", "hk 01", url = "https://example.com/204", timeoutMs = 5000),
+        )
+        val request = server.takeRequest()
+        assertEquals("/providers/proxies/airport/hk%2001/healthcheck", request.requestUrl?.encodedPath)
+        assertEquals("https://example.com/204", request.requestUrl?.queryParameter("url"))
+        assertEquals("5000", request.requestUrl?.queryParameter("timeout"))
+    }
+
     // -------------------------------------------------------------------------
     // Delay probes
     // -------------------------------------------------------------------------
