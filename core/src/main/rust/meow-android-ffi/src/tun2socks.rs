@@ -350,12 +350,8 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
                 }
 
                 let frame: AnyIpPktFrame = ip_data.to_vec();
-                match stack_ingress_tx.try_send(frame) {
-                    Ok(()) => {}
-                    Err(mpsc::error::TrySendError::Full(frame)) => {
-                        let _ = stack_ingress_tx.send(frame).await;
-                    }
-                    Err(mpsc::error::TrySendError::Closed(_)) => return,
+                if !send_ingress(&stack_ingress_tx, frame, &mut stopped).await {
+                    return;
                 }
             }
         }
@@ -372,6 +368,20 @@ async fn run_tun2socks(fd: RawFd) -> io::Result<()> {
 
     logging::bridge_log("tun2socks: exiting");
     Ok(())
+}
+
+async fn send_ingress(
+    tx: &mpsc::Sender<AnyIpPktFrame>,
+    frame: AnyIpPktFrame,
+    stopped: &mut (impl std::future::Future<Output = ()> + Unpin),
+) -> bool {
+    // A full ingress queue must not hide stop from the TUN reader. Cancelling
+    // send drops this whole packet; it never leaves a partial frame queued.
+    tokio::select! {
+        biased;
+        () = stopped => false,
+        result = tx.send(frame) => result.is_ok(),
+    }
 }
 
 fn track_flow_task(flow_tasks: &FlowTasks, handle: JoinHandle<()>) {
@@ -711,6 +721,52 @@ fn ipv4_header_checksum(h: &[u8]) -> u16 {
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn full_ingress_queue_does_not_delay_stop() {
+        let (tx, mut rx) = mpsc::channel(1);
+        tx.send(vec![1]).await.unwrap();
+        let notify = Notify::new();
+        let stopped = notify.notified();
+        tokio::pin!(stopped);
+        let pending = send_ingress(&tx, vec![2], &mut stopped);
+        tokio::pin!(pending);
+        tokio::select! {
+            biased;
+            _ = &mut pending => panic!("full queue must wait"),
+            _ = tokio::task::yield_now() => {}
+        }
+        notify.notify_waiters();
+        let sent = tokio::time::timeout(Duration::from_millis(100), &mut pending)
+            .await
+            .expect("stop must cancel a full-queue wait");
+        assert!(!sent);
+        assert_eq!(rx.recv().await, Some(vec![1]));
+        assert!(rx.try_recv().is_err(), "cancelled frame must not be queued");
+    }
+
+    #[tokio::test]
+    async fn stop_wins_over_a_ready_ingress_queue() {
+        let (tx, mut rx) = mpsc::channel(1);
+        let notify = Notify::new();
+        let stopped = notify.notified();
+        tokio::pin!(stopped);
+        notify.notify_waiters();
+        assert!(!send_ingress(&tx, vec![1], &mut stopped).await);
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[tokio::test]
+    async fn ingress_send_preserves_packets_and_reports_closed_queue() {
+        let (tx, mut rx) = mpsc::channel(1);
+        let notify = Notify::new();
+        let stopped = notify.notified();
+        tokio::pin!(stopped);
+        assert!(send_ingress(&tx, vec![1, 2, 3], &mut stopped).await);
+        assert_eq!(rx.recv().await, Some(vec![1, 2, 3]));
+        drop(rx);
+        assert!(!send_ingress(&tx, vec![4], &mut stopped).await);
+    }
+
     use super::*;
     use crate::test_support::{dns_query, from_the_profile_nameserver, txt_nameserver, SERIAL};
     use std::time::Instant;
