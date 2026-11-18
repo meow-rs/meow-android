@@ -90,6 +90,15 @@
     <string name="proxy_groups_tips_long_press">node တစ်ခု၏ အသေးစိတ်ကို ဖွင့်ပြီး ၎င်းတစ်ခုတည်းကို စစ်ဆေးရန် ကြာကြာ ဖိထားပါ -</string>
     <string name="proxy_groups_tips_connect">စစ်ဆေးရန် VPN ချိတ်ဆက်ထားရပါမည်။</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">ပရောက်စီဆာဗာများ</string>
+    <string name="proxy_servers_inline_title">ပရိုဖိုင် ပရောက်စီများ</string>
+    <string name="proxy_servers_empty">ပရောက်စီဆာဗာ မတွေ့ပါ။ အတွင်းပါ ပရောက်စီများ သို့မဟုတ် ပရောက်စီပံ့ပိုးသူများပါသော ပရိုဖိုင်ဖြင့် VPN ကို ချိတ်ဆက်ပါ။</string>
+    <string name="proxy_servers_no_nodes">ဤပံ့ပိုးသူတွင် node မရှိပါ။</string>
+    <string name="proxy_servers_load_error">ပရောက်စီဆာဗာများ ဖွင့်မရပါ</string>
+    <string name="proxy_servers_health_check">node အားလုံး စစ်ဆေးရန်</string>
+    <string name="proxy_servers_test">node စမ်းသပ်ရန်</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">စာရင်းသွင်းမှုများ</string>
     <string name="subs_none">စာရင်းသွင်းမှု မရှိပါ</string>
@@ -365,4 +374,11 @@
     <plurals name="perapp_selected">
         <item quantity="other">%1$d ခု ရွေးထားသည်</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">ရှာဖွေရန်…</string>
+    <string name="proxy_servers_clear_search">ဆာဗာရှာဖွေမှုကို ရှင်းလင်းရန်</string>
+    <string name="proxy_servers_no_matches">ကိုက်ညီသော ပရောက်စီဆာဗာ မရှိပါ။</string>
+    <string name="proxy_servers_node_count">Node %1$d ခု</string>
+    <string name="proxy_edit_discard_changes">မသိမ်းရသေးသော ပြောင်းလဲမှုများကို ပယ်ဖျက်မလား?</string>
 </resources>

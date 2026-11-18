@@ -85,6 +85,15 @@
     <string name="proxy_groups_tips_long_press">Ayrıntılarını açmak ve yalnızca onu test etmek için bir düğüme uzun basın:</string>
     <string name="proxy_groups_tips_connect">Testler için VPN bağlı olmalıdır.</string>
 
+    <!-- Proxy servers -->
+    <string name="proxy_servers_title">Proxy Sunucuları</string>
+    <string name="proxy_servers_inline_title">Profil proxy\'leri</string>
+    <string name="proxy_servers_empty">Proxy sunucusu bulunamadı. Satır içi proxy\'ler veya proxy sağlayıcıları içeren bir profile bağlanın.</string>
+    <string name="proxy_servers_no_nodes">Bu sağlayıcıda düğüm yok.</string>
+    <string name="proxy_servers_load_error">Proxy sunucuları yüklenemedi</string>
+    <string name="proxy_servers_health_check">Tüm düğümleri denetle</string>
+    <string name="proxy_servers_test">Düğümü test et</string>
+
     <!-- Subscriptions -->
     <string name="subs_title">Abonelikler</string>
     <string name="subs_none">Abonelik yok</string>
@@ -370,4 +379,11 @@
         <item quantity="one">%1$d seçili</item>
         <item quantity="other">%1$d seçili</item>
     </plurals>
+
+    <!-- Mature proxy server browsing and editing -->
+    <string name="proxy_servers_search">Sunucularda ara…</string>
+    <string name="proxy_servers_clear_search">Sunucu aramasını temizle</string>
+    <string name="proxy_servers_no_matches">Eşleşen proxy sunucusu yok.</string>
+    <string name="proxy_servers_node_count">%1$d düğüm</string>
+    <string name="proxy_edit_discard_changes">Kaydedilmemiş değişiklikler atılsın mı?</string>
 </resources>

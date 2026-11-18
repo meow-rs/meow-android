@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.VpnKeyOff
@@ -75,6 +76,7 @@ fun HomeScreen(
     exitNat: NatUiState,
     onRefreshExitIp: () -> Unit,
     onOpenSubscriptions: () -> Unit,
+    onProxyServers: () -> Unit,
     onRules: () -> Unit,
     topTraffic: TrafficDetailsUiState,
     appIcon: suspend (packageName: String) -> Drawable?,
@@ -110,10 +112,18 @@ fun HomeScreen(
             item { ExitIpCard(state = exitIp, nat = exitNat, onRefresh = onRefreshExitIp) }
         }
 
-        // Rules reads the engine's controller API, so it is only reachable
-        // while the VPN is up.
+        // Provider nodes and rules read the engine's controller API, so they
+        // are only reachable while the VPN is up.
         item {
             GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                NavRow(
+                    title = stringResource(R.string.proxy_servers_title),
+                    icon = Icons.Filled.Dns,
+                    onClick = onProxyServers,
+                    enabled = state.isConnected,
+                    subtitle = offlineHint.takeUnless { state.isConnected },
+                )
+                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.meow.border)
                 NavRow(
                     title = stringResource(R.string.rules_title),
                     icon = Icons.AutoMirrored.Filled.List,
