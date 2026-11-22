@@ -85,6 +85,52 @@ class GroupTestProgressTest {
         assertSame(loaded, loaded.withTests(emptyMap()))
     }
 
+    @Test
+    fun `url-test nodes are ordered by delay with failures and untested last`() {
+        val group = ProxyGroupUi(
+            name = "Auto",
+            type = "URLTest",
+            now = "slow",
+            nodes = listOf(
+                node("slow", NodeDelay.Measured(320)),
+                node("fast", NodeDelay.Measured(80)),
+                node("failed", NodeDelay.TimedOut),
+                node("never", NodeDelay.Untested),
+                node("same-delay", NodeDelay.Measured(80)),
+            ),
+        )
+
+        assertEquals(
+            listOf("fast", "same-delay", "slow", "failed", "never"),
+            group.nodes.sortedForGroup(group.type).map { it.name },
+        )
+    }
+
+    @Test
+    fun `running url-test results reorder rows while preserving ties`() {
+        val group = ProxyGroupUi(
+            name = "Auto",
+            type = "URLTest",
+            now = "slow",
+            nodes = listOf(
+                node("slow", NodeDelay.Testing),
+                node("fast", NodeDelay.Testing),
+                node("same-delay", NodeDelay.Testing),
+            ),
+        )
+        val tests = mapOf(
+            "Auto" to GroupTestProgress.start(listOf("slow", "fast", "same-delay"))
+                .withResult(MemberDelay("slow", 320))
+                .withResult(MemberDelay("fast", 80))
+                .withResult(MemberDelay("same-delay", 80)),
+        )
+
+        assertEquals(
+            listOf("fast", "same-delay", "slow"),
+            listOf(group).withTests(tests).single().nodes.map { it.name },
+        )
+    }
+
     private fun history(delay: Int) = ProxyHistory(timeMillis = 0, delay = delay)
 
     private fun node(name: String, delay: NodeDelay = NodeDelay.Untested) =

@@ -74,7 +74,32 @@ internal fun List<ProxyGroupUi>.withTests(
             // A member added by a reload mid-test keeps its loaded state.
             nodes = group.nodes.map { node ->
                 progress.delays[node.name]?.let { node.copy(delay = it) } ?: node
-            },
+            }.sortedForGroup(group.type),
         )
     }
+}
+
+/**
+ * URL-test groups are presented in the order users care about most: the
+ * fastest measured member first. Failed and untested members stay available
+ * at the end, while ties retain the engine's order.
+ */
+internal fun List<ProxyNodeUi>.sortedForGroup(type: String): List<ProxyNodeUi> {
+    if (!type.equals("URLTest", ignoreCase = true)) return this
+
+    return sortedWith { left, right ->
+        val leftDelay = left.delay.sortKey()
+        val rightDelay = right.delay.sortKey()
+        when {
+            leftDelay.first != rightDelay.first -> leftDelay.first.compareTo(rightDelay.first)
+            leftDelay.second != rightDelay.second -> leftDelay.second.compareTo(rightDelay.second)
+            else -> 0
+        }
+    }
+}
+
+private fun NodeDelay.sortKey(): Pair<Int, Int> = when (this) {
+    is NodeDelay.Measured -> 0 to ms
+    NodeDelay.TimedOut -> 1 to 0
+    NodeDelay.Testing, NodeDelay.Untested -> 2 to 0
 }
