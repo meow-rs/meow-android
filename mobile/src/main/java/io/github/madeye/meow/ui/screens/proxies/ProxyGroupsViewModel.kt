@@ -190,7 +190,7 @@ class ProxyGroupsViewModel(
                                 delay = NodeDelay.fromHistory(node?.history ?: member?.history.orEmpty()),
                                 selected = nodeName == group.now,
                             )
-                        },
+                        }.sortedForGroup(group.type),
                     )
                 }
             } catch (e: MeowApiException) {
