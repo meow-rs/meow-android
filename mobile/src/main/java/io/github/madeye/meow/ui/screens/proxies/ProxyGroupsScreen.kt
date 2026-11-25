@@ -267,6 +267,14 @@ private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit, onLongClick: ()
                     color = colors.mutedText,
                 )
             }
+            node.dialer?.let { dialer ->
+                Text(
+                    text = stringResource(R.string.proxy_node_dialer, dialer),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.accent,
+                    maxLines = 1,
+                )
+            }
         }
         DelayBadge(
             delayMs = (node.delay as? NodeDelay.Measured)?.ms,
