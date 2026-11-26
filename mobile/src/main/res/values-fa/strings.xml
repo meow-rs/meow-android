@@ -65,6 +65,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">پایان مهلت</string>
     <string name="proxy_node_details">جزئیات</string>
+    <string name="proxy_node_dialer">پراکسی واسط: \u2068%1$s\u2069</string>
     <string name="proxy_detail_type">نوع پروکسی</string>
     <string name="proxy_detail_udp">رله UDP</string>
     <string name="proxy_detail_supported">پشتیبانی می‌شود</string>

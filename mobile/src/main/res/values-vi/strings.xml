@@ -57,6 +57,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">Hết giờ</string>
     <string name="proxy_node_details">Chi tiết</string>
+    <string name="proxy_node_dialer">Proxy trung gian: %1$s</string>
     <string name="proxy_detail_type">Loại proxy</string>
     <string name="proxy_detail_udp">Chuyển tiếp UDP</string>
     <string name="proxy_detail_supported">Hỗ trợ</string>

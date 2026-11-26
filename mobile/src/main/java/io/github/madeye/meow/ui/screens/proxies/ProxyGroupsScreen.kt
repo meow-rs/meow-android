@@ -41,7 +41,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.github.madeye.meow.R
 import io.github.madeye.meow.bg.BaseService
@@ -260,11 +264,23 @@ private fun ProxyNodeRow(node: ProxyNodeUi, onClick: () -> Unit, onLongClick: ()
         Spacer(Modifier.size(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(text = node.name, style = MaterialTheme.typography.bodyMedium)
-            if (node.type.isNotEmpty()) {
+            val dialer = node.dialer?.let { stringResource(R.string.proxy_node_dialer, it) }
+            if (node.type.isNotEmpty() || dialer != null) {
                 Text(
-                    text = node.type,
+                    text = buildAnnotatedString {
+                        if (node.type.isNotEmpty()) {
+                            withStyle(SpanStyle(color = colors.mutedText)) { append(node.type) }
+                        }
+                        if (dialer != null) {
+                            if (node.type.isNotEmpty()) {
+                                withStyle(SpanStyle(color = colors.mutedText)) { append(" · ") }
+                            }
+                            withStyle(SpanStyle(color = colors.accent)) { append(dialer) }
+                        }
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = colors.mutedText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

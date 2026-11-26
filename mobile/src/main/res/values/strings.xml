@@ -68,6 +68,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">Timeout</string>
     <string name="proxy_node_details">Details</string>
+    <string name="proxy_node_dialer">Dialer: %1$s</string>
     <string name="proxy_detail_type">Proxy Type</string>
     <string name="proxy_detail_udp">UDP Relay</string>
     <string name="proxy_detail_supported">Supported</string>

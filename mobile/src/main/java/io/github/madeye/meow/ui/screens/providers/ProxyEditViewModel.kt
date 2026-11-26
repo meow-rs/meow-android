@@ -682,6 +682,26 @@ internal fun parseProxyEntry(yaml: String, name: String): ParsedProxyEntry? {
     return ParsedProxyEntry(type, fields.sortedBy { it.key == "dialer-proxy" })
 }
 
+/** Returns the non-empty `dialer-proxy` value for each configured proxy node. */
+internal fun proxyDialersFromYaml(yaml: String): Map<String, String> {
+    val lines = yaml.replace("\r\n", "\n").split('\n')
+    return yamlListLocations(lines, "proxies").mapNotNull { location ->
+        val values = if (location.flow) {
+            parseFlowValues(lines[location.start])
+                .map { ParsedValue(it.first, yamlScalar(it.second), inferFieldKind(it.first, it.second)) }
+        } else {
+            val block = blockProxyLines(lines, location)
+            parseBlockValues(block, 0, block.size)
+        }
+        val name = values.firstOrNull { it.path == "name" }?.value?.takeIf(String::isNotBlank)
+        val dialer = values.firstOrNull { it.path == "dialer-proxy" }
+            ?.value
+            ?.trim()
+            ?.takeIf(String::isNotEmpty)
+        if (name != null && dialer != null) name to dialer else null
+    }.toMap()
+}
+
 /** Named routing targets in the saved profile; nested member lists are not targets. */
 internal fun proxyTargetNamesFromYaml(yaml: String): List<String> {
     val lines = yaml.replace("\r\n", "\n").split('\n')

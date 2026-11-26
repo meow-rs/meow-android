@@ -11,6 +11,7 @@ import io.github.madeye.meow.api.RouteMode
 import io.github.madeye.meow.bg.BaseService
 import io.github.madeye.meow.repo.ProfileRepository
 import io.github.madeye.meow.ui.screens.home.RouteChanges
+import io.github.madeye.meow.ui.screens.providers.proxyDialersFromYaml
 import io.github.madeye.meow.vpn.VpnStateRepository
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -31,6 +32,8 @@ data class ProxyNodeUi(
     val type: String,
     val delay: NodeDelay,
     val selected: Boolean,
+    /** The configured front proxy, when this node uses a dialer-proxy chain. */
+    val dialer: String? = null,
 )
 
 @Immutable
@@ -171,6 +174,7 @@ class ProxyGroupsViewModel(
         return viewModelScope.launch {
             // Read first: the mode decides whether GLOBAL is listed.
             val mode = loadRouteMode()
+            val dialers = loadDialers()
             groups.value = try {
                 val result = api.proxies()
                 result.visibleGroups(mode).map { group ->
@@ -189,6 +193,7 @@ class ProxyGroupsViewModel(
                                 type = node?.type ?: member?.type.orEmpty(),
                                 delay = NodeDelay.fromHistory(node?.history ?: member?.history.orEmpty()),
                                 selected = nodeName == group.now,
+                                dialer = dialers[nodeName],
                             )
                         }.sortedForGroup(group.type),
                     )
@@ -200,6 +205,13 @@ class ProxyGroupsViewModel(
                 emptyList()
             }
         }
+    }
+
+    private suspend fun loadDialers(): Map<String, String> = try {
+        profiles.getSelected()?.yamlContent?.let(::proxyDialersFromYaml).orEmpty()
+    } catch (e: Exception) {
+        Timber.w(e, "loading proxy dialers failed")
+        emptyMap()
     }
 
     private suspend fun loadRouteMode(): RouteMode? = try {

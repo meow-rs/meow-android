@@ -62,6 +62,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">အချိန်ကုန်</string>
     <string name="proxy_node_details">အသေးစိတ်</string>
+    <string name="proxy_node_dialer">ကြားခံ ပရောက်စီ: %1$s</string>
     <string name="proxy_detail_type">ပရောက်စီ အမျိုးအစား</string>
     <string name="proxy_detail_udp">UDP ထပ်ဆင့်ပို့ခြင်း</string>
     <string name="proxy_detail_supported">ပံ့ပိုးသည်</string>

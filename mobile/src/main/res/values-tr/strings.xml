@@ -57,6 +57,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">Zaman aşımı</string>
     <string name="proxy_node_details">Ayrıntılar</string>
+    <string name="proxy_node_dialer">Ön proxy: %1$s</string>
     <string name="proxy_detail_type">Proxy türü</string>
     <string name="proxy_detail_udp">UDP aktarımı</string>
     <string name="proxy_detail_supported">Destekleniyor</string>

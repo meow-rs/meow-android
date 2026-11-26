@@ -57,6 +57,7 @@
     <string name="proxy_delay_ms">%1$d 毫秒</string>
     <string name="proxy_delay_timeout">超时</string>
     <string name="proxy_node_details">详情</string>
+    <string name="proxy_node_dialer">前置代理：%1$s</string>
     <string name="proxy_detail_type">代理类型</string>
     <string name="proxy_detail_udp">UDP 转发</string>
     <string name="proxy_detail_supported">支持</string>
