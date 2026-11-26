@@ -69,6 +69,7 @@
     <string name="proxy_delay_ms">%1$d ms</string>
     <string name="proxy_delay_timeout">انتهت المهلة</string>
     <string name="proxy_node_details">التفاصيل</string>
+    <string name="proxy_node_dialer">البروكسي الوسيط: \u2068%1$s\u2069</string>
     <string name="proxy_detail_type">نوع البروكسي</string>
     <string name="proxy_detail_udp">ترحيل UDP</string>
     <string name="proxy_detail_supported">مدعوم</string>
